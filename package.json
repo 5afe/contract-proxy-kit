@@ -1,0 +1,31 @@
+{
+  "name": "safe-proxy-sdk",
+  "version": "0.1.0",
+  "description": "Enable batched transactions and contract account interactions using a unique deterministic Gnosis Safe.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gnosis/safe-proxy-sdk.git"
+  },
+  "keywords": [
+    "gnosis",
+    "safe",
+    "proxy",
+    "sdk",
+    "ethereum",
+    "smart",
+    "contract",
+    "batch",
+    "transaction",
+    "wallet"
+  ],
+  "author": "Gnosis (https://gnosis.io)",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/gnosis/safe-proxy-sdk/issues"
+  },
+  "homepage": "https://github.com/gnosis/safe-proxy-sdk#readme"
+}
