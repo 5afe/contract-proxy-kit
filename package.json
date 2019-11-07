@@ -2,9 +2,9 @@
   "name": "safe-proxy-sdk",
   "version": "0.1.0",
   "description": "Enable batched transactions and contract account interactions using a unique deterministic Gnosis Safe.",
-  "main": "index.js",
+  "main": "src/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "truffle test"
   },
   "repository": {
     "type": "git",
@@ -27,5 +27,15 @@
   "bugs": {
     "url": "https://github.com/gnosis/safe-proxy-sdk/issues"
   },
-  "homepage": "https://github.com/gnosis/safe-proxy-sdk#readme"
+  "homepage": "https://github.com/gnosis/safe-proxy-sdk#readme",
+  "devDependencies": {
+    "@gnosis.pm/safe-contracts": "github:gnosis/safe-contracts#deployment_1_1_0",
+    "eslint": "^6.6.0",
+    "eslint-config-airbnb-base": "^14.0.0",
+    "eslint-plugin-import": "^2.18.2",
+    "should": "^13.2.3",
+    "truffle": "^5.1.0",
+    "web3-1-2": "npm:web3@^1.2.4",
+    "web3-2-alpha": "npm:web3@^2.0.0-alpha.1"
+  }
 }
