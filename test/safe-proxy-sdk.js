@@ -7,6 +7,8 @@ const web3Versions = [Web3Maj1Min2, Web3Maj2Alpha];
 
 const SafeProxy = require('..');
 
+const Multistep = artifacts.require('Multistep');
+
 function shouldWorkWithWeb3(Web3) {
   describe(`with Web3 version ${(new Web3()).version}`, () => {
     let ueb3;
@@ -34,11 +36,57 @@ function shouldWorkWithWeb3(Web3) {
       it('can produce instances', async () => {
         should.exist(await SafeProxy.create({ web3: ueb3, networks }));
       });
+
+      describe('with an instance', () => {
+        let safeProxy;
+
+        before('create instance', async () => {
+          safeProxy = await SafeProxy.create({ web3: ueb3, networks });
+        });
+
+        it('can get checksummed address of instance', () => {
+          should.exist(safeProxy.address);
+          ueb3.utils.checkAddressChecksum(safeProxy.address).should.be.true();
+        });
+
+        it('can execute a single transaction', async () => {
+          const multiStep = await Multistep.new();
+          (await multiStep.lastStepFinished(safeProxy.address)).toNumber().should.equal(0);
+
+          await safeProxy.execTransactions([{
+            operation: SafeProxy.CALL,
+            to: multiStep.address,
+            value: 0,
+            data: multiStep.contract.methods.doStep(1).encodeABI(),
+          }]);
+          (await multiStep.lastStepFinished(safeProxy.address)).toNumber().should.equal(1);
+        });
+
+        it('can batch transactions together', async () => {
+          const multiStep = await Multistep.new();
+          (await multiStep.lastStepFinished(safeProxy.address)).toNumber().should.equal(0);
+
+          await safeProxy.execTransactions([
+            {
+              operation: SafeProxy.CALL,
+              to: multiStep.address,
+              value: 0,
+              data: multiStep.contract.methods.doStep(1).encodeABI(),
+            }, {
+              operation: SafeProxy.CALL,
+              to: multiStep.address,
+              value: 0,
+              data: multiStep.contract.methods.doStep(2).encodeABI(),
+            },
+          ]);
+          (await multiStep.lastStepFinished(safeProxy.address)).toNumber().should.equal(2);
+        });
+      });
     });
   });
 }
 
-describe('SafeProxy', () => {
+contract('SafeProxy', () => {
   it('should exist', () => {
     should.exist(SafeProxy);
   });

@@ -4,6 +4,7 @@ module.exports = {
   },
   globals: {
     artifacts: 'readonly',
+    contract: 'readonly',
     web3: 'readonly',
   },
 };
