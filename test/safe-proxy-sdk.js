@@ -8,6 +8,7 @@ const web3Versions = [Web3Maj1Min2, Web3Maj2Alpha];
 const SafeProxy = require('..');
 
 const Multistep = artifacts.require('Multistep');
+const ERC20Mintable = artifacts.require('ERC20Mintable');
 
 function shouldWorkWithWeb3(Web3) {
   describe(`with Web3 version ${(new Web3()).version}`, () => {
@@ -39,9 +40,11 @@ function shouldWorkWithWeb3(Web3) {
 
       describe('with an instance', () => {
         let safeProxy;
+        let proxyOwner;
 
         before('create instance', async () => {
           safeProxy = await SafeProxy.create({ web3: ueb3, networks });
+          proxyOwner = await safeProxy.getOwnerAccount();
         });
 
         it('can get checksummed address of instance', () => {
@@ -49,37 +52,83 @@ function shouldWorkWithWeb3(Web3) {
           ueb3.utils.checkAddressChecksum(safeProxy.address).should.be.true();
         });
 
-        it('can execute a single transaction', async () => {
-          const multiStep = await Multistep.new();
-          (await multiStep.lastStepFinished(safeProxy.address)).toNumber().should.equal(0);
+        describe('with mock contracts', () => {
+          let multiStep;
+          let erc20;
 
-          await safeProxy.execTransactions([{
-            operation: SafeProxy.CALL,
-            to: multiStep.address,
-            value: 0,
-            data: multiStep.contract.methods.doStep(1).encodeABI(),
-          }]);
-          (await multiStep.lastStepFinished(safeProxy.address)).toNumber().should.equal(1);
-        });
+          beforeEach('deploy mock contracts', async () => {
+            multiStep = await Multistep.new();
+            erc20 = await ERC20Mintable.new();
+            await erc20.mint(proxyOwner, `${1e20}`);
+          });
 
-        it('can batch transactions together', async () => {
-          const multiStep = await Multistep.new();
-          (await multiStep.lastStepFinished(safeProxy.address)).toNumber().should.equal(0);
+          it('can execute a single transaction', async () => {
+            (await multiStep.lastStepFinished(safeProxy.address)).toNumber().should.equal(0);
 
-          await safeProxy.execTransactions([
-            {
+            await safeProxy.execTransactions([{
               operation: SafeProxy.CALL,
               to: multiStep.address,
               value: 0,
               data: multiStep.contract.methods.doStep(1).encodeABI(),
-            }, {
-              operation: SafeProxy.CALL,
-              to: multiStep.address,
-              value: 0,
-              data: multiStep.contract.methods.doStep(2).encodeABI(),
-            },
-          ]);
-          (await multiStep.lastStepFinished(safeProxy.address)).toNumber().should.equal(2);
+            }]);
+            (await multiStep.lastStepFinished(safeProxy.address)).toNumber().should.equal(1);
+          });
+
+          it('can batch transactions together', async () => {
+            (await multiStep.lastStepFinished(safeProxy.address)).toNumber().should.equal(0);
+
+            await safeProxy.execTransactions([
+              {
+                operation: SafeProxy.CALL,
+                to: multiStep.address,
+                value: 0,
+                data: multiStep.contract.methods.doStep(1).encodeABI(),
+              }, {
+                operation: SafeProxy.CALL,
+                to: multiStep.address,
+                value: 0,
+                data: multiStep.contract.methods.doStep(2).encodeABI(),
+              },
+            ]);
+            (await multiStep.lastStepFinished(safeProxy.address)).toNumber().should.equal(2);
+          });
+
+          it('can batch ERC20 transactions', async () => {
+            await erc20.approve(safeProxy.address, `${1e20}`, { from: proxyOwner });
+
+            (await multiStep.lastStepFinished(safeProxy.address)).toNumber().should.equal(0);
+
+            await safeProxy.execTransactions([
+              {
+                operation: SafeProxy.CALL,
+                to: erc20.address,
+                value: 0,
+                data: erc20.contract.methods.transferFrom(proxyOwner, safeProxy.address, `${3e18}`).encodeABI(),
+              },
+              {
+                operation: SafeProxy.CALL,
+                to: erc20.address,
+                value: 0,
+                data: erc20.contract.methods.approve(multiStep.address, `${3e18}`).encodeABI(),
+              },
+              {
+                operation: SafeProxy.CALL,
+                to: multiStep.address,
+                value: 0,
+                data: multiStep.contract.methods.doStep(1).encodeABI(),
+              }, {
+                operation: SafeProxy.CALL,
+                to: multiStep.address,
+                value: 0,
+                data: multiStep.contract.methods.doERC20Step(2, erc20.address).encodeABI(),
+              },
+            ]);
+
+            (await multiStep.lastStepFinished(safeProxy.address)).toNumber().should.equal(2);
+            web3.utils.fromWei(await erc20.balanceOf(safeProxy.address)).should.equal('1');
+            web3.utils.fromWei(await erc20.balanceOf(multiStep.address)).should.equal('2');
+            web3.utils.fromWei(await erc20.balanceOf(proxyOwner)).should.equal('97');
+          });
         });
       });
     });
