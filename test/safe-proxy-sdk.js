@@ -28,7 +28,7 @@ function shouldWorkWithWeb3(Web3) {
         networks = {
           [await ueb3.eth.net.getId()]: {
             masterCopyAddress: artifacts.require('GnosisSafe').address,
-            proxyFactoryAddress: artifacts.require('ProxyFactory').address,
+            proxyFactoryAddress: artifacts.require('SafeProxyFactory').address,
             multiSendAddress: artifacts.require('MultiSend').address,
           },
         };

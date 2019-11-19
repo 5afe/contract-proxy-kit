@@ -38,7 +38,7 @@ const safeAbi = [
   },
 ];
 
-const proxyFactoryAbi = [
+const safeProxyFactoryAbi = [
   {
     type: 'function',
     name: 'proxyCreationCode',
@@ -50,15 +50,15 @@ const proxyFactoryAbi = [
   },
   {
     type: 'function',
+    name: 'createSafeProxy',
+    constant: false,
     payable: false,
     stateMutability: 'nonpayable',
-    constant: false,
     inputs: [
       { type: 'address', name: 'masterCopy' },
       { type: 'bytes', name: 'initializer' },
       { type: 'uint256', name: 'saltNonce' },
     ],
-    name: 'createProxyWithNonce',
     outputs: [{ type: 'address', name: 'proxy' }],
   },
 ];
@@ -81,25 +81,21 @@ const defaultNetworks = {
   // mainnet
   1: {
     masterCopyAddress: '0xaE32496491b53841efb51829d6f886387708F99B',
-    proxyFactoryAddress: '0x50e55Af101C777bA7A1d560a774A82eF002ced9F',
     multiSendAddress: '0xB522a9f781924eD250A11C54105E51840B138AdD',
   },
   // rinkeby
   4: {
     masterCopyAddress: '0xaE32496491b53841efb51829d6f886387708F99B',
-    proxyFactoryAddress: '0x50e55Af101C777bA7A1d560a774A82eF002ced9F',
     multiSendAddress: '0xB522a9f781924eD250A11C54105E51840B138AdD',
   },
   // goerli
   5: {
     masterCopyAddress: '0xaE32496491b53841efb51829d6f886387708F99B',
-    proxyFactoryAddress: '0x50e55Af101C777bA7A1d560a774A82eF002ced9F',
     multiSendAddress: '0xB522a9f781924eD250A11C54105E51840B138AdD',
   },
   // kovan
   42: {
     masterCopyAddress: '0xaE32496491b53841efb51829d6f886387708F99B',
-    proxyFactoryAddress: '0x50e55Af101C777bA7A1d560a774A82eF002ced9F',
     multiSendAddress: '0xB522a9f781924eD250A11C54105E51840B138AdD',
   },
 };
@@ -157,26 +153,15 @@ const SafeProxy = class SafeProxy {
     } = network;
 
     this.masterCopyAddress = masterCopyAddress;
-    this.proxyFactory = new this.web3.eth.Contract(proxyFactoryAbi, proxyFactoryAddress);
+    this.proxyFactory = new this.web3.eth.Contract(safeProxyFactoryAbi, proxyFactoryAddress);
     this.multiSend = new this.web3.eth.Contract(multiSendAbi, multiSendAddress);
 
     const ownerAccount = await this.getOwnerAccount();
 
-    this.setupCallData = this.contract.methods.setup(
-      [ownerAccount],
-      1,
-      zeroAddress,
-      '0x',
-      zeroAddress,
-      zeroAddress,
-      0,
-      zeroAddress,
-    ).encodeABI();
-
-    const create2Salt = this.web3.utils.soliditySha3(
-      this.web3.utils.keccak256(this.setupCallData),
-      predeterminedSaltNonce,
-    );
+    const create2Salt = this.web3.utils.keccak256(this.web3.eth.abi.encodeParameters(
+      ['address', 'uint256'],
+      [ownerAccount, predeterminedSaltNonce],
+    ));
 
     this.contract.options.address = this.web3.utils.toChecksumAddress(
       this.web3.utils.soliditySha3(
@@ -204,19 +189,11 @@ const SafeProxy = class SafeProxy {
     };
 
     const codeAtAddress = await this.web3.eth.getCode(this.contract.options.address);
-    if (codeAtAddress === '0x') {
-      await this.proxyFactory.methods.createProxyWithNonce(
-        this.masterCopyAddress,
-        this.setupCallData,
-        predeterminedSaltNonce,
-      ).send(sendOpts);
-    }
-
     const signature = `0x000000000000000000000000${
       ownerAccount.replace(/^0x/, '').toLowerCase()
     }000000000000000000000000000000000000000000000000000000000000000001`;
 
-    if (transactions.length === 1) {
+    if (transactions.length === 1 && codeAtAddress !== '0x') {
       const transaction = transactions[0];
       const {
         operation,
@@ -232,18 +209,37 @@ const SafeProxy = class SafeProxy {
       ).send(sendOpts).promise;
     }
 
+    const transactionsData = this.multiSend.methods.multiSend(`0x${
+      transactions.map((tx) => [
+        this.web3.eth.abi.encodeParameter('uint8', tx.operation).slice(-2),
+        this.web3.eth.abi.encodeParameter('address', tx.to).slice(-40),
+        this.web3.eth.abi.encodeParameter('uint256', tx.value).slice(-64),
+        this.web3.eth.abi.encodeParameter('uint256', this.web3.utils.hexToBytes(tx.data).length).slice(-64),
+        tx.data.replace(/^0x/, ''),
+      ].join(''))
+        .join('')
+    }`).encodeABI();
+
+    if (codeAtAddress === '0x') {
+      return this.proxyFactory.methods.createSafeProxy(
+        this.masterCopyAddress,
+        this.contract.methods.setup(
+          [ownerAccount],
+          1,
+          // NOTE: this can be problematic cuz it happens before fallback handler
+          this.multiSend.options.address,
+          transactionsData,
+          zeroAddress,
+          zeroAddress,
+          0,
+          zeroAddress,
+        ).encodeABI(),
+        predeterminedSaltNonce,
+      ).send(sendOpts).promise;
+    }
+
     return this.contract.methods.execTransaction(
-      this.multiSend.options.address, 0,
-      this.multiSend.methods.multiSend(`0x${
-        transactions.map((tx) => [
-          this.web3.eth.abi.encodeParameter('uint8', tx.operation).slice(-2),
-          this.web3.eth.abi.encodeParameter('address', tx.to).slice(-40),
-          this.web3.eth.abi.encodeParameter('uint256', tx.value).slice(-64),
-          this.web3.eth.abi.encodeParameter('uint256', this.web3.utils.hexToBytes(tx.data).length).slice(-64),
-          tx.data.replace(/^0x/, ''),
-        ].join(''))
-          .join('')
-      }`).encodeABI(),
+      this.multiSend.options.address, 0, transactionsData,
       SafeProxy.DELEGATECALL,
       0, 0, 0, zeroAddress, zeroAddress,
       signature,
