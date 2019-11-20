@@ -128,16 +128,6 @@ const SafeProxy = class SafeProxy {
     this.contract = new this.web3.eth.Contract(safeAbi);
   }
 
-  async getOwnerAccount() {
-    return this.ownerAccount
-      || this.web3.eth.defaultAccount
-      || (await this.web3.eth.getAccounts())[0];
-  }
-
-  setOwnerAccount(ownerAccount) {
-    this.ownerAccount = ownerAccount;
-  }
-
   async init() {
     const networkID = await this.web3.eth.net.getId();
     const network = this.networks[networkID];
@@ -174,6 +164,16 @@ const SafeProxy = class SafeProxy {
         ),
       ).slice(-40),
     );
+  }
+
+  async getOwnerAccount() {
+    return this.ownerAccount
+      || this.web3.eth.defaultAccount
+      || (await this.web3.eth.getAccounts())[0];
+  }
+
+  setOwnerAccount(ownerAccount) {
+    this.ownerAccount = ownerAccount;
   }
 
   get address() {
