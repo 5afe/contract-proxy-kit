@@ -82,21 +82,25 @@ const defaultNetworks = {
   1: {
     masterCopyAddress: '0xaE32496491b53841efb51829d6f886387708F99B',
     multiSendAddress: '0xB522a9f781924eD250A11C54105E51840B138AdD',
+    callbackHandlerAddress: '0x40A930851BD2e590Bd5A5C981b436de25742E980',
   },
   // rinkeby
   4: {
     masterCopyAddress: '0xaE32496491b53841efb51829d6f886387708F99B',
     multiSendAddress: '0xB522a9f781924eD250A11C54105E51840B138AdD',
+    callbackHandlerAddress: '0x40A930851BD2e590Bd5A5C981b436de25742E980',
   },
   // goerli
   5: {
     masterCopyAddress: '0xaE32496491b53841efb51829d6f886387708F99B',
     multiSendAddress: '0xB522a9f781924eD250A11C54105E51840B138AdD',
+    callbackHandlerAddress: '0x40A930851BD2e590Bd5A5C981b436de25742E980',
   },
   // kovan
   42: {
     masterCopyAddress: '0xaE32496491b53841efb51829d6f886387708F99B',
     multiSendAddress: '0xB522a9f781924eD250A11C54105E51840B138AdD',
+    callbackHandlerAddress: '0x40A930851BD2e590Bd5A5C981b436de25742E980',
   },
 };
 
@@ -140,11 +144,13 @@ const SafeProxy = class SafeProxy {
       masterCopyAddress,
       proxyFactoryAddress,
       multiSendAddress,
+      callbackHandlerAddress,
     } = network;
 
     this.masterCopyAddress = masterCopyAddress;
     this.proxyFactory = new this.web3.eth.Contract(safeProxyFactoryAbi, proxyFactoryAddress);
     this.multiSend = new this.web3.eth.Contract(multiSendAbi, multiSendAddress);
+    this.callbackHandlerAddress = callbackHandlerAddress;
 
     const ownerAccount = await this.getOwnerAccount();
 
@@ -229,7 +235,7 @@ const SafeProxy = class SafeProxy {
           // NOTE: this can be problematic cuz it happens before fallback handler
           this.multiSend.options.address,
           transactionsData,
-          zeroAddress,
+          this.callbackHandlerAddress,
           zeroAddress,
           0,
           zeroAddress,

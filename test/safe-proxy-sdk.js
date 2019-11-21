@@ -30,6 +30,7 @@ function shouldWorkWithWeb3(Web3) {
             masterCopyAddress: artifacts.require('GnosisSafe').address,
             proxyFactoryAddress: artifacts.require('SafeProxyFactory').address,
             multiSendAddress: artifacts.require('MultiSend').address,
+            callbackHandlerAddress: artifacts.require('DefaultCallbackHandler').address,
           },
         };
       });
