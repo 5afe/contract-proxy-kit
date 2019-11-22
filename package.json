@@ -29,6 +29,7 @@
   },
   "homepage": "https://github.com/gnosis/safe-proxy-sdk#readme",
   "devDependencies": {
+    "@gnosis.pm/conditional-tokens-contracts": "^0.5.4",
     "@gnosis.pm/safe-contracts": "github:gnosis/safe-contracts#deployment_1_1_0",
     "eslint": "^6.6.0",
     "eslint-config-airbnb-base": "^14.0.0",
