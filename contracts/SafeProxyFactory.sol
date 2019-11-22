@@ -9,7 +9,7 @@ contract SafeProxyFactory {
         return type(Proxy).creationCode;
     }
 
-    function createSafeProxy(address masterCopy, bytes calldata initializer, uint256 saltNonce)
+    function createSafeProxy(address masterCopy, uint256 saltNonce, address delegatecallTarget, bytes calldata initialCalldata)
         external
         returns (Proxy proxy)
     {
@@ -21,8 +21,8 @@ contract SafeProxyFactory {
         }
         require(address(proxy) != address(0), "create2 call failed");
 
-        if (initializer.length > 0) {
-            (bool success, bytes memory retdata) = address(proxy).call(initializer);
+        if (initialCalldata.length > 0) {
+            (bool success, bytes memory retdata) = address(delegatecallTarget).delegatecall(initialCalldata);
             require(success, string(retdata));
         }
         emit ProxyCreation(proxy);

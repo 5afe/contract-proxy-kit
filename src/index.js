@@ -36,6 +36,18 @@ const safeAbi = [
     ],
     outputs: [{ type: 'bool', name: 'success' }],
   },
+  {
+    type: 'function',
+    name: 'swapOwner',
+    constant: false,
+    payable: false,
+    stateMutability: 'nonpayable',
+    inputs: [
+      { type: 'address', name: 'prevOwner' },
+      { type: 'address', name: 'oldOwner' },
+      { type: 'address', name: 'newOwner' },
+    ],
+  },
 ];
 
 const safeProxyFactoryAbi = [
@@ -56,8 +68,9 @@ const safeProxyFactoryAbi = [
     stateMutability: 'nonpayable',
     inputs: [
       { type: 'address', name: 'masterCopy' },
-      { type: 'bytes', name: 'initializer' },
       { type: 'uint256', name: 'saltNonce' },
+      { type: 'address', name: 'delegatecallTarget' },
+      { type: 'bytes', name: 'initialCalldata' },
     ],
     outputs: [{ type: 'address', name: 'proxy' }],
   },
@@ -105,9 +118,15 @@ const defaultNetworks = {
 };
 
 const zeroAddress = `0x${'0'.repeat(40)}`;
+const SENTINEL_OWNERS = `0x${'0'.repeat(39)}1`;
 
 // keccak256('Safe Proxy SDK')
 const predeterminedSaltNonce = '0xc2c578f2767787805d9e1c4d285808763ed96bd0883de61207107249afc6ae55';
+
+const toConfirmationPromise = (promievent) => new Promise(
+  (resolve, reject) => promievent.on('confirmation',
+    (confirmationNumber, receipt) => resolve(receipt)).catch(reject),
+);
 
 const SafeProxy = class SafeProxy {
   static async create(opts) {
@@ -194,10 +213,11 @@ const SafeProxy = class SafeProxy {
       gas: blockGasLimit,
     };
 
-    const codeAtAddress = await this.web3.eth.getCode(this.contract.options.address);
-    const signature = `0x000000000000000000000000${
-      ownerAccount.replace(/^0x/, '').toLowerCase()
+    const signatureForAddress = (address) => `0x000000000000000000000000${
+      address.replace(/^0x/, '').toLowerCase()
     }000000000000000000000000000000000000000000000000000000000000000001`;
+
+    const codeAtAddress = await this.web3.eth.getCode(this.contract.options.address);
 
     if (transactions.length === 1 && codeAtAddress !== '0x') {
       const transaction = transactions[0];
@@ -208,48 +228,76 @@ const SafeProxy = class SafeProxy {
         data,
       } = transaction;
 
-      return this.contract.methods.execTransaction(
+      return toConfirmationPromise(this.contract.methods.execTransaction(
         to, value, data, operation,
         0, 0, 0, zeroAddress, zeroAddress,
-        signature,
-      ).send(sendOpts).promise;
+        signatureForAddress(ownerAccount),
+      ).send(sendOpts));
     }
 
-    const transactionsData = this.multiSend.methods.multiSend(`0x${
-      transactions.map((tx) => [
+    const encodeMultiSendCalldata = (txs) => this.multiSend.methods.multiSend(
+      `0x${txs.map((tx) => [
         this.web3.eth.abi.encodeParameter('uint8', tx.operation).slice(-2),
         this.web3.eth.abi.encodeParameter('address', tx.to).slice(-40),
         this.web3.eth.abi.encodeParameter('uint256', tx.value).slice(-64),
         this.web3.eth.abi.encodeParameter('uint256', this.web3.utils.hexToBytes(tx.data).length).slice(-64),
         tx.data.replace(/^0x/, ''),
-      ].join(''))
-        .join('')
-    }`).encodeABI();
+      ].join('')).join('')}`,
+    ).encodeABI();
 
     if (codeAtAddress === '0x') {
-      return this.proxyFactory.methods.createSafeProxy(
+      return toConfirmationPromise(this.proxyFactory.methods.createSafeProxy(
         this.masterCopyAddress,
-        this.contract.methods.setup(
-          [ownerAccount],
-          1,
-          // NOTE: this can be problematic cuz it happens before fallback handler
-          this.multiSend.options.address,
-          transactionsData,
-          this.callbackHandlerAddress,
-          zeroAddress,
-          0,
-          zeroAddress,
-        ).encodeABI(),
         predeterminedSaltNonce,
-      ).send(sendOpts).promise;
+        this.multiSend.options.address,
+        encodeMultiSendCalldata([
+          {
+            operation: SafeProxy.CALL,
+            to: this.address,
+            value: 0,
+            data: this.contract.methods.setup(
+              [this.proxyFactory.options.address],
+              1,
+              zeroAddress,
+              '0x',
+              this.callbackHandlerAddress,
+              zeroAddress,
+              0,
+              zeroAddress,
+            ).encodeABI(),
+          },
+          {
+            operation: SafeProxy.CALL,
+            to: this.address,
+            value: 0,
+            data: this.contract.methods.execTransaction(
+              this.multiSend.options.address, 0,
+              encodeMultiSendCalldata(transactions.concat([{
+                operation: SafeProxy.CALL,
+                to: this.address,
+                value: 0,
+                data: this.contract.methods.swapOwner(
+                  SENTINEL_OWNERS,
+                  this.proxyFactory.options.address,
+                  ownerAccount,
+                ).encodeABI(),
+              }])),
+              SafeProxy.DELEGATECALL,
+              0, 0, 0, zeroAddress, zeroAddress,
+              signatureForAddress(this.proxyFactory.options.address),
+            ).encodeABI(),
+          },
+        ]),
+      ).send(sendOpts));
     }
 
-    return this.contract.methods.execTransaction(
-      this.multiSend.options.address, 0, transactionsData,
+    return toConfirmationPromise(this.contract.methods.execTransaction(
+      this.multiSend.options.address, 0,
+      encodeMultiSendCalldata(transactions),
       SafeProxy.DELEGATECALL,
       0, 0, 0, zeroAddress, zeroAddress,
-      signature,
-    ).send(sendOpts).promise;
+      signatureForAddress(ownerAccount),
+    ).send(sendOpts));
   }
 };
 

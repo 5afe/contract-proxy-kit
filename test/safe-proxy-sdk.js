@@ -13,7 +13,12 @@ const Multistep = artifacts.require('Multistep');
 const ConditionalTokens = artifacts.require('ConditionalTokens');
 const ERC20Mintable = artifacts.require('ERC20Mintable');
 
-function shouldWorkWithWeb3(Web3) {
+const toConfirmationPromise = (promievent) => new Promise(
+  (resolve, reject) => promievent.on('confirmation',
+    (confirmationNumber, receipt) => resolve(receipt)).catch(reject),
+);
+
+function shouldWorkWithWeb3(Web3, defaultAccount) {
   describe(`with Web3 version ${(new Web3()).version}`, () => {
     const ueb3 = new Web3(web3.currentProvider);
     const { getConditionId } = makeConditionalTokensIdHelpers(ueb3.utils);
@@ -54,7 +59,6 @@ function shouldWorkWithWeb3(Web3) {
           beforeEach('rebind symbols', async () => {
             safeProxy = await getSafeProxy();
             proxyOwner = await safeProxy.getOwnerAccount();
-            console.log(proxyOwner);
           });
 
           let conditionalTokens;
@@ -72,13 +76,13 @@ function shouldWorkWithWeb3(Web3) {
           });
 
           beforeEach('give proxy ERC20 allowance', async () => {
-            await ueb3.eth.sendTransaction({
+            await toConfirmationPromise(ueb3.eth.sendTransaction({
               from: proxyOwner,
               to: erc20.address,
               value: 0,
               gas: '6000000',
               data: erc20.contract.methods.approve(safeProxy.address, `${1e20}`).encodeABI(),
-            });
+            }));
           });
 
           it('can execute a single transaction', async () => {
@@ -221,14 +225,14 @@ function shouldWorkWithWeb3(Web3) {
       describe('with fresh accounts', () => {
         shouldSupportDifferentTransactions({
           async getSafeProxy() {
-            const firstAccount = (await ueb3.eth.getAccounts())[0];
             const newAccount = ueb3.eth.accounts.create();
             ueb3.eth.accounts.wallet.add(newAccount);
-            await ueb3.eth.sendTransaction({
-              from: firstAccount,
+            await toConfirmationPromise(ueb3.eth.sendTransaction({
+              from: defaultAccount,
               to: newAccount.address,
-              value: `${1e18}`,
-            });
+              value: `${2e18}`,
+              gas: '6000000',
+            }));
 
             return SafeProxy.create({
               web3: ueb3,
@@ -242,7 +246,7 @@ function shouldWorkWithWeb3(Web3) {
   });
 }
 
-contract('SafeProxy', () => {
+contract('SafeProxy', ([defaultAccount]) => {
   it('should exist', () => {
     should.exist(SafeProxy);
   });
@@ -255,5 +259,5 @@ contract('SafeProxy', () => {
     await SafeProxy.create({}).should.be.rejectedWith('web3 property missing from options');
   });
 
-  web3Versions.forEach((Web3) => { shouldWorkWithWeb3(Web3); });
+  web3Versions.forEach((Web3) => { shouldWorkWithWeb3(Web3, defaultAccount); });
 });
