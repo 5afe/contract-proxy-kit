@@ -138,21 +138,34 @@ const SafeProxy = class SafeProxy {
 
   constructor({
     web3,
+    ethers,
+    signer,
     ownerAccount,
     networks,
   }) {
-    if (web3 == null) throw new Error('web3 property missing from options');
-    this.web3 = web3;
+    if (web3 != null) {
+      this.apiType = 'web3';
+      this.web3 = web3;
+    } else if (ethers != null) {
+      this.apiType = 'ethers';
+      this.ethers = ethers;
+      if (signer == null) {
+        throw new Error('missing signer required for ethers');
+      }
+      this.signer = signer;
+    } else throw new Error('web3/ethers property missing from options');
+
     this.setOwnerAccount(ownerAccount);
     this.networks = {
       ...defaultNetworks,
       ...(networks || {}),
     };
-    this.contract = new this.web3.eth.Contract(safeAbi);
   }
 
   async init() {
-    const networkID = await this.web3.eth.net.getId();
+    const networkID = this.apiType === 'web3'
+      ? await this.web3.eth.net.getId()
+      : (await this.signer.provider.getNetwork()).chainId;
     const network = this.networks[networkID];
 
     if (network == null) {
@@ -167,34 +180,62 @@ const SafeProxy = class SafeProxy {
     } = network;
 
     this.masterCopyAddress = masterCopyAddress;
-    this.proxyFactory = new this.web3.eth.Contract(safeProxyFactoryAbi, proxyFactoryAddress);
-    this.multiSend = new this.web3.eth.Contract(multiSendAbi, multiSendAddress);
     this.callbackHandlerAddress = callbackHandlerAddress;
 
     const ownerAccount = await this.getOwnerAccount();
 
-    const create2Salt = this.web3.utils.keccak256(this.web3.eth.abi.encodeParameters(
-      ['address', 'uint256'],
-      [ownerAccount, predeterminedSaltNonce],
-    ));
+    if (this.apiType === 'web3') {
+      this.proxyFactory = new this.web3.eth.Contract(safeProxyFactoryAbi, proxyFactoryAddress);
+      this.multiSend = new this.web3.eth.Contract(multiSendAbi, multiSendAddress);
 
-    this.contract.options.address = this.web3.utils.toChecksumAddress(
-      this.web3.utils.soliditySha3(
-        '0xff',
-        { t: 'address', v: this.proxyFactory.options.address },
-        { t: 'bytes32', v: create2Salt },
+      const create2Salt = this.web3.utils.keccak256(this.web3.eth.abi.encodeParameters(
+        ['address', 'uint256'],
+        [ownerAccount, predeterminedSaltNonce],
+      ));
+
+      this.contract = new this.web3.eth.Contract(safeAbi, this.web3.utils.toChecksumAddress(
         this.web3.utils.soliditySha3(
-          await this.proxyFactory.methods.proxyCreationCode().call(),
-          this.web3.eth.abi.encodeParameters(['address'], [this.masterCopyAddress]),
-        ),
-      ).slice(-40),
-    );
+          '0xff',
+          { t: 'address', v: this.proxyFactory.options.address },
+          { t: 'bytes32', v: create2Salt },
+          this.web3.utils.soliditySha3(
+            await this.proxyFactory.methods.proxyCreationCode().call(),
+            this.web3.eth.abi.encodeParameters(['address'], [this.masterCopyAddress]),
+          ),
+        ).slice(-40),
+      ));
+    } else if (this.apiType === 'ethers') {
+      this.proxyFactory = new this.ethers.Contract(
+        proxyFactoryAddress,
+        safeProxyFactoryAbi,
+        this.signer,
+      );
+      this.multiSend = new this.ethers.Contract(multiSendAddress, multiSendAbi, this.signer);
+
+      const create2Salt = this.ethers.utils.keccak256(this.ethers.utils.defaultAbiCoder.encode(
+        ['address', 'uint256'],
+        [ownerAccount, predeterminedSaltNonce],
+      ));
+
+      this.contract = new this.ethers.Contract(this.ethers.utils.getAddress(
+        this.ethers.utils.solidityKeccak256(['bytes', 'address', 'bytes32', 'bytes32'], [
+          '0xff',
+          this.proxyFactory.address,
+          create2Salt,
+          this.ethers.utils.solidityKeccak256(['bytes', 'bytes'], [
+            await this.proxyFactory.proxyCreationCode(),
+            this.ethers.utils.defaultAbiCoder.encode(['address'], [this.masterCopyAddress]),
+          ]),
+        ]).slice(-40),
+      ), safeAbi, this.signer);
+    }
   }
 
   async getOwnerAccount() {
-    return this.ownerAccount
-      || this.web3.eth.defaultAccount
-      || (await this.web3.eth.getAccounts())[0];
+    if (this.ownerAccount != null) return this.ownerAccount;
+    if (this.apiType === 'web3') return this.web3.eth.defaultAccount || (await this.web3.eth.getAccounts())[0];
+    if (this.apiType === 'ethers') return this.signer.getAddress();
+    throw new Error(`invalid API type ${this.apiType}`);
   }
 
   setOwnerAccount(ownerAccount) {
@@ -202,38 +243,17 @@ const SafeProxy = class SafeProxy {
   }
 
   get address() {
-    return this.contract.options.address;
+    if (this.apiType === 'web3') return this.contract.options.address;
+    if (this.apiType === 'ethers') return this.contract.address;
+    throw new Error(`invalid API type ${this.apiType}`);
   }
 
   async execTransactions(transactions) {
-    const ownerAccount = await this.getOwnerAccount();
-    const blockGasLimit = (await this.web3.eth.getBlock(this.web3.eth.defaultBlock)).gasLimit;
-    const sendOpts = {
-      from: ownerAccount,
-      gas: blockGasLimit,
-    };
-
     const signatureForAddress = (address) => `0x000000000000000000000000${
       address.replace(/^0x/, '').toLowerCase()
     }000000000000000000000000000000000000000000000000000000000000000001`;
 
-    const codeAtAddress = await this.web3.eth.getCode(this.contract.options.address);
-
-    if (transactions.length === 1 && codeAtAddress !== '0x') {
-      const transaction = transactions[0];
-      const {
-        operation,
-        to,
-        value,
-        data,
-      } = transaction;
-
-      return toConfirmationPromise(this.contract.methods.execTransaction(
-        to, value, data, operation,
-        0, 0, 0, zeroAddress, zeroAddress,
-        signatureForAddress(ownerAccount),
-      ).send(sendOpts));
-    }
+    const ownerAccount = await this.getOwnerAccount();
 
     const encodeMultiSendCalldata = (txs) => this.multiSend.methods.multiSend(
       `0x${txs.map((tx) => [
@@ -245,18 +265,52 @@ const SafeProxy = class SafeProxy {
       ].join('')).join('')}`,
     ).encodeABI();
 
+    const encodeContractCalldata = (contract, methodName, params) => (
+      contract.methods[methodName](...params).encodeABI()
+    );
+
+    const getContractAddress = (contract) => contract.options.address;
+
+    const blockGasLimit = (await this.web3.eth.getBlock(this.web3.eth.defaultBlock)).gasLimit;
+    const sendOpts = {
+      from: ownerAccount,
+      gas: blockGasLimit,
+    };
+
+    const codeAtAddress = await this.web3.eth.getCode(this.contract.options.address);
+
+    const sendTransactionToContract = (contract, methodName, params) => toConfirmationPromise(
+      contract.methods[methodName](...params).send(sendOpts),
+    );
+
+    if (transactions.length === 1 && codeAtAddress !== '0x') {
+      const transaction = transactions[0];
+      const {
+        operation,
+        to,
+        value,
+        data,
+      } = transaction;
+
+      return sendTransactionToContract(this.contract, 'execTransaction', [
+        to, value, data, operation,
+        0, 0, 0, zeroAddress, zeroAddress,
+        signatureForAddress(ownerAccount),
+      ]);
+    }
+
     if (codeAtAddress === '0x') {
-      return toConfirmationPromise(this.proxyFactory.methods.createSafeProxy(
+      return sendTransactionToContract(this.proxyFactory, 'createSafeProxy', [
         this.masterCopyAddress,
         predeterminedSaltNonce,
-        this.multiSend.options.address,
+        getContractAddress(this.multiSend),
         encodeMultiSendCalldata([
           {
             operation: SafeProxy.CALL,
             to: this.address,
             value: 0,
-            data: this.contract.methods.setup(
-              [this.proxyFactory.options.address],
+            data: encodeContractCalldata(this.contract, 'setup', [
+              [getContractAddress(this.proxyFactory)],
               1,
               zeroAddress,
               '0x',
@@ -264,40 +318,40 @@ const SafeProxy = class SafeProxy {
               zeroAddress,
               0,
               zeroAddress,
-            ).encodeABI(),
+            ]),
           },
           {
             operation: SafeProxy.CALL,
             to: this.address,
             value: 0,
-            data: this.contract.methods.execTransaction(
-              this.multiSend.options.address, 0,
+            data: encodeContractCalldata(this.contract, 'execTransaction', [
+              getContractAddress(this.multiSend), 0,
               encodeMultiSendCalldata(transactions.concat([{
                 operation: SafeProxy.CALL,
                 to: this.address,
                 value: 0,
-                data: this.contract.methods.swapOwner(
+                data: encodeContractCalldata(this.contract, 'swapOwner', [
                   SENTINEL_OWNERS,
-                  this.proxyFactory.options.address,
+                  getContractAddress(this.proxyFactory),
                   ownerAccount,
-                ).encodeABI(),
+                ]),
               }])),
               SafeProxy.DELEGATECALL,
               0, 0, 0, zeroAddress, zeroAddress,
-              signatureForAddress(this.proxyFactory.options.address),
-            ).encodeABI(),
+              signatureForAddress(getContractAddress(this.proxyFactory)),
+            ]),
           },
         ]),
-      ).send(sendOpts));
+      ]);
     }
 
-    return toConfirmationPromise(this.contract.methods.execTransaction(
-      this.multiSend.options.address, 0,
+    return sendTransactionToContract(this.contract, 'execTransaction', [
+      getContractAddress(this.multiSend), 0,
       encodeMultiSendCalldata(transactions),
       SafeProxy.DELEGATECALL,
       0, 0, 0, zeroAddress, zeroAddress,
       signatureForAddress(ownerAccount),
-    ).send(sendOpts));
+    ]);
   }
 };
 
