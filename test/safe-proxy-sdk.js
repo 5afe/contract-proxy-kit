@@ -130,9 +130,9 @@ function shouldSupportDifferentTransactions({
       ]);
 
       (await multiStep.lastStepFinished(safeProxy.address)).toNumber().should.equal(2);
-      fromWei(await erc20.balanceOf(safeProxy.address)).should.equal('1');
-      fromWei(await erc20.balanceOf(multiStep.address)).should.equal('2');
-      fromWei(await erc20.balanceOf(proxyOwner)).should.equal('97');
+      fromWei(await erc20.balanceOf(safeProxy.address)).should.equal(1);
+      fromWei(await erc20.balanceOf(multiStep.address)).should.equal(2);
+      fromWei(await erc20.balanceOf(proxyOwner)).should.equal(97);
     });
 
     it('can batch ERC-1155 token interactions', async () => {
@@ -176,9 +176,9 @@ function shouldSupportDifferentTransactions({
         },
       ]);
 
-      fromWei(await erc20.balanceOf(safeProxy.address)).should.equal('2');
-      fromWei(await erc20.balanceOf(conditionalTokens.address)).should.equal('1');
-      fromWei(await erc20.balanceOf(proxyOwner)).should.equal('97');
+      fromWei(await erc20.balanceOf(safeProxy.address)).should.equal(2);
+      fromWei(await erc20.balanceOf(conditionalTokens.address)).should.equal(1);
+      fromWei(await erc20.balanceOf(proxyOwner)).should.equal(97);
     });
   });
 }
@@ -192,7 +192,7 @@ function shouldWorkWithWeb3(Web3, defaultAccount) {
       checkAddressChecksum: ueb3.utils.checkAddressChecksum,
       sendTransaction: (txObj) => toConfirmationPromise(ueb3.eth.sendTransaction(txObj)),
       randomHexWord: () => ueb3.utils.randomHex(32),
-      fromWei: ueb3.utils.fromWei,
+      fromWei: (amount) => Number(ueb3.utils.fromWei(amount)),
     };
 
     it('should not produce instances when web3 not connected to a recognized network', async () => {
@@ -274,7 +274,7 @@ function shouldWorkWithEthers(ethers, defaultAccount) {
       checkAddressChecksum: (address) => ethers.utils.getAddress(address) === address,
       sendTransaction: ({ from, ...txObj }) => signerBox[0].sendTransaction(txObj),
       randomHexWord: () => ethers.utils.hexlify(ethers.utils.randomBytes(32)),
-      fromWei: (amount) => ethers.utils.formatUnits(amount, 'ether'),
+      fromWei: (amount) => Number(ethers.utils.formatUnits(amount.toString(), 'ether')),
     });
 
     it('should not produce instances when signer is missing', async () => {

@@ -255,33 +255,68 @@ const SafeProxy = class SafeProxy {
 
     const ownerAccount = await this.getOwnerAccount();
 
-    const encodeMultiSendCalldata = (txs) => this.multiSend.methods.multiSend(
-      `0x${txs.map((tx) => [
-        this.web3.eth.abi.encodeParameter('uint8', tx.operation).slice(-2),
-        this.web3.eth.abi.encodeParameter('address', tx.to).slice(-40),
-        this.web3.eth.abi.encodeParameter('uint256', tx.value).slice(-64),
-        this.web3.eth.abi.encodeParameter('uint256', this.web3.utils.hexToBytes(tx.data).length).slice(-64),
-        tx.data.replace(/^0x/, ''),
-      ].join('')).join('')}`,
-    ).encodeABI();
+    let sendTransactionToContract;
+    let codeAtAddress;
+    let getContractAddress;
+    let encodeMultiSendCalldata;
+    let encodeContractCalldata;
 
-    const encodeContractCalldata = (contract, methodName, params) => (
-      contract.methods[methodName](...params).encodeABI()
-    );
+    if (this.apiType === 'web3') {
+      const blockGasLimit = (await this.web3.eth.getBlock(this.web3.eth.defaultBlock)).gasLimit;
+      const sendOpts = {
+        from: ownerAccount,
+        gas: blockGasLimit,
+      };
 
-    const getContractAddress = (contract) => contract.options.address;
+      sendTransactionToContract = (contract, methodName, params) => toConfirmationPromise(
+        contract.methods[methodName](...params).send(sendOpts),
+      );
 
-    const blockGasLimit = (await this.web3.eth.getBlock(this.web3.eth.defaultBlock)).gasLimit;
-    const sendOpts = {
-      from: ownerAccount,
-      gas: blockGasLimit,
-    };
+      codeAtAddress = await this.web3.eth.getCode(this.address);
 
-    const codeAtAddress = await this.web3.eth.getCode(this.contract.options.address);
+      getContractAddress = (contract) => contract.options.address;
 
-    const sendTransactionToContract = (contract, methodName, params) => toConfirmationPromise(
-      contract.methods[methodName](...params).send(sendOpts),
-    );
+      encodeMultiSendCalldata = (txs) => this.multiSend.methods.multiSend(
+        `0x${txs.map((tx) => [
+          this.web3.eth.abi.encodeParameter('uint8', tx.operation).slice(-2),
+          this.web3.eth.abi.encodeParameter('address', tx.to).slice(-40),
+          this.web3.eth.abi.encodeParameter('uint256', tx.value).slice(-64),
+          this.web3.eth.abi.encodeParameter('uint256', this.web3.utils.hexToBytes(tx.data).length).slice(-64),
+          tx.data.replace(/^0x/, ''),
+        ].join('')).join('')}`,
+      ).encodeABI();
+
+      encodeContractCalldata = (contract, methodName, params) => (
+        contract.methods[methodName](...params).encodeABI()
+      );
+    } else if (this.apiType === 'ethers') {
+      sendTransactionToContract = (contract, methodName, params) => (
+        contract.functions[methodName](...params)
+      );
+
+      codeAtAddress = (await this.signer.provider.getCode(this.address));
+
+      getContractAddress = (contract) => contract.address;
+
+      encodeMultiSendCalldata = (txs) => this.multiSend.interface.functions.multiSend.encode([
+        this.ethers.utils.hexlify(
+          this.ethers.utils.concat(
+            txs.map(
+              (tx) => this.ethers.utils.solidityPack(
+                ['uint8', 'address', 'uint256', 'uint256', 'bytes'],
+                [tx.operation, tx.to, tx.value, this.ethers.utils.hexDataLength(tx.data), tx.data],
+              ),
+            ),
+          ),
+        ),
+      ]);
+
+      encodeContractCalldata = (contract, methodName, params) => (
+        contract.interface.functions[methodName].encode(params)
+      );
+    } else {
+      throw new Error(`invalid API type ${this.apiType}`);
+    }
 
     if (transactions.length === 1 && codeAtAddress !== '0x') {
       const transaction = transactions[0];
