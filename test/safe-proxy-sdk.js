@@ -251,7 +251,7 @@ function shouldWorkWithWeb3(Web3, defaultAccount) {
             masterCopyAddress: artifacts.require('GnosisSafe').address,
             proxyFactoryAddress: artifacts.require('SafeProxyFactory').address,
             multiSendAddress: artifacts.require('MultiSend').address,
-            callbackHandlerAddress: artifacts.require('DefaultCallbackHandler').address,
+            fallbackHandlerAddress: artifacts.require('DefaultCallbackHandler').address,
           },
         };
       });
@@ -338,7 +338,7 @@ function shouldWorkWithEthers(ethers, defaultAccount) {
             masterCopyAddress: artifacts.require('GnosisSafe').address,
             proxyFactoryAddress: artifacts.require('SafeProxyFactory').address,
             multiSendAddress: artifacts.require('MultiSend').address,
-            callbackHandlerAddress: artifacts.require('DefaultCallbackHandler').address,
+            fallbackHandlerAddress: artifacts.require('DefaultCallbackHandler').address,
           },
         };
       });

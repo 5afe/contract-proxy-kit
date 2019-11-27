@@ -100,25 +100,25 @@ const defaultNetworks = {
   1: {
     masterCopyAddress: '0xaE32496491b53841efb51829d6f886387708F99B',
     multiSendAddress: '0xB522a9f781924eD250A11C54105E51840B138AdD',
-    callbackHandlerAddress: '0x40A930851BD2e590Bd5A5C981b436de25742E980',
+    fallbackHandlerAddress: '0x40A930851BD2e590Bd5A5C981b436de25742E980',
   },
   // rinkeby
   4: {
     masterCopyAddress: '0xaE32496491b53841efb51829d6f886387708F99B',
     multiSendAddress: '0xB522a9f781924eD250A11C54105E51840B138AdD',
-    callbackHandlerAddress: '0x40A930851BD2e590Bd5A5C981b436de25742E980',
+    fallbackHandlerAddress: '0x40A930851BD2e590Bd5A5C981b436de25742E980',
   },
   // goerli
   5: {
     masterCopyAddress: '0xaE32496491b53841efb51829d6f886387708F99B',
     multiSendAddress: '0xB522a9f781924eD250A11C54105E51840B138AdD',
-    callbackHandlerAddress: '0x40A930851BD2e590Bd5A5C981b436de25742E980',
+    fallbackHandlerAddress: '0x40A930851BD2e590Bd5A5C981b436de25742E980',
   },
   // kovan
   42: {
     masterCopyAddress: '0xaE32496491b53841efb51829d6f886387708F99B',
     multiSendAddress: '0xB522a9f781924eD250A11C54105E51840B138AdD',
-    callbackHandlerAddress: '0x40A930851BD2e590Bd5A5C981b436de25742E980',
+    fallbackHandlerAddress: '0x40A930851BD2e590Bd5A5C981b436de25742E980',
   },
 };
 
@@ -175,11 +175,11 @@ const SafeProxy = class SafeProxy {
       masterCopyAddress,
       proxyFactoryAddress,
       multiSendAddress,
-      callbackHandlerAddress,
+      fallbackHandlerAddress,
     } = network;
 
     this.masterCopyAddress = masterCopyAddress;
-    this.callbackHandlerAddress = callbackHandlerAddress;
+    this.fallbackHandlerAddress = fallbackHandlerAddress;
 
     const ownerAccount = await this.getOwnerAccount();
 
@@ -382,7 +382,7 @@ const SafeProxy = class SafeProxy {
         [
           this.masterCopyAddress,
           predeterminedSaltNonce,
-          this.callbackHandlerAddress,
+          this.fallbackHandlerAddress,
           to, value, data, operation,
         ],
         new Error('proxy creation and transaction execution expected to fail'),
@@ -410,7 +410,7 @@ const SafeProxy = class SafeProxy {
       [
         this.masterCopyAddress,
         predeterminedSaltNonce,
-        this.callbackHandlerAddress,
+        this.fallbackHandlerAddress,
         getContractAddress(this.multiSend), 0,
         encodeMultiSendCalldata(transactions),
         SafeProxy.DELEGATECALL,
