@@ -18,7 +18,7 @@ const SafeProxy = require('safe-proxy-sdk')
 * web3.js 2.0 alpha
 * ethers.js 4.0
 
-### `SafeProxy.create`(`opts`: *Object*) -> *Promise<SafeProxy>*
+### SafeProxy.create
 
 To create a *SafeProxy* instance, use the static method `SafeProxy.create`. This method accepts an options object as a parameter, and will result in a promise which resolves to a *SafeProxy* instance if successful and rejects with an error otherwise.
 
@@ -80,7 +80,7 @@ const safeProxy = await SafeProxy.create({
 
 Please refer to the `migrations/` folder of this package for information on how to deploy the required contracts on a network, and note that these addresses must be available for the connected network in order for *SafeProxy* creation to be successful.
 
-### *SafeProxy*#`address`
+### SafeProxy#address
 
 Once created, the `address` property on a *SafeProxy* instance will provide the proxy's checksummed Ethereum address:
 
@@ -91,7 +91,7 @@ Once created, the `address` property on a *SafeProxy* instance will provide the 
 
 This address is calculated even if the proxy has not been deployed yet, and it is deterministically generated from the proxy owner address.
 
-### *SafeProxy*#`execTransactions`(`transactions`: *Array<Object>*) -> *Promise<TransactionReceipt>*
+### SafeProxy#execTransactions
 
 To execute transactions using a *SafeProxy* instance, call `execTransactions` with an *Array* of transactions to execute. If the proxy has not been deployed, this will also batch the proxy's deployment into the transaction. Multiple transactions will be batched and executed together if the proxy has been deployed.
 
