@@ -62,17 +62,22 @@ const safeProxyFactoryAbi = [
   },
   {
     type: 'function',
-    name: 'createSafeProxy',
+    name: 'createSafeProxyAndExecTransaction',
     constant: false,
     payable: false,
     stateMutability: 'nonpayable',
     inputs: [
       { type: 'address', name: 'masterCopy' },
       { type: 'uint256', name: 'saltNonce' },
-      { type: 'address', name: 'delegatecallTarget' },
-      { type: 'bytes', name: 'initialCalldata' },
+      { type: 'address', name: 'fallbackHandler' },
+      { type: 'address', name: 'to' },
+      { type: 'uint256', name: 'value' },
+      { type: 'bytes', name: 'data' },
+      { type: 'uint8', name: 'operation' },
     ],
-    outputs: [{ type: 'address', name: 'proxy' }],
+    outputs: [
+      { type: 'bool', name: 'execTransactionSuccess' },
+    ],
   },
 ];
 
@@ -118,15 +123,9 @@ const defaultNetworks = {
 };
 
 const zeroAddress = `0x${'0'.repeat(40)}`;
-const SENTINEL_OWNERS = `0x${'0'.repeat(39)}1`;
 
 // keccak256('Safe Proxy SDK')
 const predeterminedSaltNonce = '0xc2c578f2767787805d9e1c4d285808763ed96bd0883de61207107249afc6ae55';
-
-const toConfirmationPromise = (promievent) => new Promise(
-  (resolve, reject) => promievent.on('confirmation',
-    (confirmationNumber, receipt) => resolve(receipt)).catch(reject),
-);
 
 const SafeProxy = class SafeProxy {
   static async create(opts) {
@@ -205,11 +204,26 @@ const SafeProxy = class SafeProxy {
         ).slice(-40),
       ));
     } else if (this.apiType === 'ethers') {
+      const abiToViewAbi = (abi) => abi.map(({
+        constant,
+        stateMutability,
+        ...rest
+      }) => Object.assign(rest, {
+        constant: true,
+        stateMutability: 'view',
+      }));
+
       this.proxyFactory = new this.ethers.Contract(
         proxyFactoryAddress,
         safeProxyFactoryAbi,
         this.signer,
       );
+      this.viewProxyFactory = new this.ethers.Contract(
+        proxyFactoryAddress,
+        abiToViewAbi(safeProxyFactoryAbi),
+        this.signer,
+      );
+
       this.multiSend = new this.ethers.Contract(multiSendAddress, multiSendAbi, this.signer);
 
       const create2Salt = this.ethers.utils.keccak256(this.ethers.utils.defaultAbiCoder.encode(
@@ -217,7 +231,7 @@ const SafeProxy = class SafeProxy {
         [ownerAccount, predeterminedSaltNonce],
       ));
 
-      this.contract = new this.ethers.Contract(this.ethers.utils.getAddress(
+      const address = this.ethers.utils.getAddress(
         this.ethers.utils.solidityKeccak256(['bytes', 'address', 'bytes32', 'bytes32'], [
           '0xff',
           this.proxyFactory.address,
@@ -227,7 +241,10 @@ const SafeProxy = class SafeProxy {
             this.ethers.utils.defaultAbiCoder.encode(['address'], [this.masterCopyAddress]),
           ]),
         ]).slice(-40),
-      ), safeAbi, this.signer);
+      );
+
+      this.contract = new this.ethers.Contract(address, safeAbi, this.signer);
+      this.viewContract = new this.ethers.Contract(address, abiToViewAbi(safeAbi), this.signer);
     }
   }
 
@@ -255,22 +272,37 @@ const SafeProxy = class SafeProxy {
 
     const ownerAccount = await this.getOwnerAccount();
 
-    let sendTransactionToContract;
+    let checkSingleCall;
+    let attemptTransaction;
     let codeAtAddress;
     let getContractAddress;
     let encodeMultiSendCalldata;
-    let encodeContractCalldata;
 
     if (this.apiType === 'web3') {
+      const toConfirmationPromise = (promievent) => new Promise(
+        (resolve, reject) => promievent.on('confirmation',
+          (confirmationNumber, receipt) => resolve(receipt)).catch(reject),
+      );
+
       const blockGasLimit = (await this.web3.eth.getBlock(this.web3.eth.defaultBlock)).gasLimit;
       const sendOpts = {
         from: ownerAccount,
         gas: blockGasLimit,
       };
 
-      sendTransactionToContract = (contract, methodName, params) => toConfirmationPromise(
-        contract.methods[methodName](...params).send(sendOpts),
-      );
+      checkSingleCall = (to, value, data) => this.web3.eth.call({
+        from: this.address,
+        to,
+        value,
+        data,
+      });
+
+      attemptTransaction = async (contract, viewContract, methodName, params, err) => {
+        if (!(await contract.methods[methodName](...params).call(sendOpts))) throw err;
+        return toConfirmationPromise(
+          contract.methods[methodName](...params).send(sendOpts),
+        );
+      };
 
       codeAtAddress = await this.web3.eth.getCode(this.address);
 
@@ -285,14 +317,18 @@ const SafeProxy = class SafeProxy {
           tx.data.replace(/^0x/, ''),
         ].join('')).join('')}`,
       ).encodeABI();
-
-      encodeContractCalldata = (contract, methodName, params) => (
-        contract.methods[methodName](...params).encodeABI()
-      );
     } else if (this.apiType === 'ethers') {
-      sendTransactionToContract = (contract, methodName, params) => (
-        contract.functions[methodName](...params)
-      );
+      checkSingleCall = (to, value, data) => this.signer.provider.call({
+        from: this.address,
+        to,
+        value,
+        data,
+      });
+
+      attemptTransaction = async (contract, viewContract, methodName, params, err) => {
+        if (!(await viewContract.functions[methodName](...params))) throw err;
+        return (await contract.functions[methodName](...params)).wait();
+      };
 
       codeAtAddress = (await this.signer.provider.getCode(this.address));
 
@@ -310,15 +346,11 @@ const SafeProxy = class SafeProxy {
           ),
         ),
       ]);
-
-      encodeContractCalldata = (contract, methodName, params) => (
-        contract.interface.functions[methodName].encode(params)
-      );
     } else {
       throw new Error(`invalid API type ${this.apiType}`);
     }
 
-    if (transactions.length === 1 && codeAtAddress !== '0x') {
+    if (transactions.length === 1) {
       const transaction = transactions[0];
       const {
         operation,
@@ -327,66 +359,64 @@ const SafeProxy = class SafeProxy {
         data,
       } = transaction;
 
-      return sendTransactionToContract(this.contract, 'execTransaction', [
-        to, value, data, operation,
-        0, 0, 0, zeroAddress, zeroAddress,
-        signatureForAddress(ownerAccount),
-      ]);
+      if (operation === SafeProxy.CALL) {
+        await checkSingleCall(to, value, data);
+      }
+
+      if (codeAtAddress !== '0x') {
+        return attemptTransaction(
+          this.contract, this.viewContract,
+          'execTransaction',
+          [
+            to, value, data, operation,
+            0, 0, 0, zeroAddress, zeroAddress,
+            signatureForAddress(ownerAccount),
+          ],
+          new Error('transaction execution expected to fail'),
+        );
+      }
+
+      return attemptTransaction(
+        this.proxyFactory, this.viewProxyFactory,
+        'createSafeProxyAndExecTransaction',
+        [
+          this.masterCopyAddress,
+          predeterminedSaltNonce,
+          this.callbackHandlerAddress,
+          to, value, data, operation,
+        ],
+        new Error('proxy creation and transaction execution expected to fail'),
+      );
     }
 
-    if (codeAtAddress === '0x') {
-      return sendTransactionToContract(this.proxyFactory, 'createSafeProxy', [
+    if (codeAtAddress !== '0x') {
+      return attemptTransaction(
+        this.contract, this.viewContract,
+        'execTransaction',
+        [
+          getContractAddress(this.multiSend), 0,
+          encodeMultiSendCalldata(transactions),
+          SafeProxy.DELEGATECALL,
+          0, 0, 0, zeroAddress, zeroAddress,
+          signatureForAddress(ownerAccount),
+        ],
+        new Error('transaction execution expected to fail'),
+      );
+    }
+
+    return attemptTransaction(
+      this.proxyFactory, this.viewProxyFactory,
+      'createSafeProxyAndExecTransaction',
+      [
         this.masterCopyAddress,
         predeterminedSaltNonce,
-        getContractAddress(this.multiSend),
-        encodeMultiSendCalldata([
-          {
-            operation: SafeProxy.CALL,
-            to: this.address,
-            value: 0,
-            data: encodeContractCalldata(this.contract, 'setup', [
-              [getContractAddress(this.proxyFactory)],
-              1,
-              zeroAddress,
-              '0x',
-              this.callbackHandlerAddress,
-              zeroAddress,
-              0,
-              zeroAddress,
-            ]),
-          },
-          {
-            operation: SafeProxy.CALL,
-            to: this.address,
-            value: 0,
-            data: encodeContractCalldata(this.contract, 'execTransaction', [
-              getContractAddress(this.multiSend), 0,
-              encodeMultiSendCalldata(transactions.concat([{
-                operation: SafeProxy.CALL,
-                to: this.address,
-                value: 0,
-                data: encodeContractCalldata(this.contract, 'swapOwner', [
-                  SENTINEL_OWNERS,
-                  getContractAddress(this.proxyFactory),
-                  ownerAccount,
-                ]),
-              }])),
-              SafeProxy.DELEGATECALL,
-              0, 0, 0, zeroAddress, zeroAddress,
-              signatureForAddress(getContractAddress(this.proxyFactory)),
-            ]),
-          },
-        ]),
-      ]);
-    }
-
-    return sendTransactionToContract(this.contract, 'execTransaction', [
-      getContractAddress(this.multiSend), 0,
-      encodeMultiSendCalldata(transactions),
-      SafeProxy.DELEGATECALL,
-      0, 0, 0, zeroAddress, zeroAddress,
-      signatureForAddress(ownerAccount),
-    ]);
+        this.callbackHandlerAddress,
+        getContractAddress(this.multiSend), 0,
+        encodeMultiSendCalldata(transactions),
+        SafeProxy.DELEGATECALL,
+      ],
+      new Error('proxy creation and transaction execution expected to fail'),
+    );
   }
 };
 

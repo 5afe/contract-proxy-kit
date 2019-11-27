@@ -26,6 +26,7 @@ function shouldSupportDifferentTransactions({
   sendTransaction,
   randomHexWord,
   fromWei,
+  getTransactionCount,
 }) {
   const { getConditionId } = makeConditionalTokensIdHelpers(web3.utils);
 
@@ -180,6 +181,47 @@ function shouldSupportDifferentTransactions({
       fromWei(await erc20.balanceOf(conditionalTokens.address)).should.equal(1);
       fromWei(await erc20.balanceOf(proxyOwner)).should.equal(97);
     });
+
+    it('by default errors without transacting when single transaction would fail', async () => {
+      (await multiStep.lastStepFinished(safeProxy.address)).toNumber().should.equal(0);
+      const ownerAccount = await safeProxy.getOwnerAccount();
+      const startingTransactionCount = await getTransactionCount(ownerAccount);
+
+      await safeProxy.execTransactions([{
+        operation: SafeProxy.CALL,
+        to: multiStep.address,
+        value: 0,
+        data: multiStep.contract.methods.doStep(2).encodeABI(),
+      }]).should.be.rejectedWith(/must do the next step/);
+
+      (await multiStep.lastStepFinished(safeProxy.address)).toNumber().should.equal(0);
+      await getTransactionCount(ownerAccount)
+        .should.eventually.equal(startingTransactionCount);
+    });
+
+    it('by default errors without transacting when any transaction in batch would fail', async () => {
+      (await multiStep.lastStepFinished(safeProxy.address)).toNumber().should.equal(0);
+      const ownerAccount = await safeProxy.getOwnerAccount();
+      const startingTransactionCount = await getTransactionCount(ownerAccount);
+
+      await safeProxy.execTransactions([
+        {
+          operation: SafeProxy.CALL,
+          to: multiStep.address,
+          value: 0,
+          data: multiStep.contract.methods.doStep(1).encodeABI(),
+        }, {
+          operation: SafeProxy.CALL,
+          to: multiStep.address,
+          value: 0,
+          data: multiStep.contract.methods.doStep(3).encodeABI(),
+        },
+      ]).should.be.rejectedWith(/(proxy creation and )?transaction execution expected to fail/);
+
+      (await multiStep.lastStepFinished(safeProxy.address)).toNumber().should.equal(0);
+      await getTransactionCount(ownerAccount)
+        .should.eventually.equal(startingTransactionCount);
+    });
   });
 }
 
@@ -193,6 +235,7 @@ function shouldWorkWithWeb3(Web3, defaultAccount) {
       sendTransaction: (txObj) => toConfirmationPromise(ueb3.eth.sendTransaction(txObj)),
       randomHexWord: () => ueb3.utils.randomHex(32),
       fromWei: (amount) => Number(ueb3.utils.fromWei(amount)),
+      getTransactionCount: ueb3.eth.getTransactionCount,
     };
 
     it('should not produce instances when web3 not connected to a recognized network', async () => {
@@ -275,6 +318,7 @@ function shouldWorkWithEthers(ethers, defaultAccount) {
       sendTransaction: ({ from, ...txObj }) => signerBox[0].sendTransaction(txObj),
       randomHexWord: () => ethers.utils.hexlify(ethers.utils.randomBytes(32)),
       fromWei: (amount) => Number(ethers.utils.formatUnits(amount.toString(), 'ether')),
+      getTransactionCount: signer.provider.getTransactionCount.bind(signer.provider),
     });
 
     it('should not produce instances when signer is missing', async () => {
