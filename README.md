@@ -55,7 +55,7 @@ The proxy owner will be the account associated with the signer.
 
 #### Networks configuration
 
-Regardless of which type of underlying API is being used, the *CPK* instance will check the ID of the network given by the provider in order to prepare for contract interactions. By default, the main Ethereum network (ID 1), as well as the Rinkeby (ID 4), Goerli (ID 5), and Kovan (ID 42) test networks will have preconfigured addresses for the required contracts:
+Regardless of which type of underlying API is being used, the *CPK* instance will check the ID of the network given by the provider in order to prepare for contract interactions. By default, the Rinkeby (ID 4), Goerli (ID 5), and Kovan (ID 42) test networks (but currently not the main network) will have preconfigured addresses for the required contracts:
 
 * `masterCopyAddress`: Gnosis Safe master copy
 * `proxyFactoryAddress`: CPK factory
