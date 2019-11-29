@@ -50,7 +50,7 @@ const safeAbi = [
   },
 ];
 
-const safeProxyFactoryAbi = [
+const cpkFactoryAbi = [
   {
     type: 'function',
     name: 'proxyCreationCode',
@@ -62,7 +62,7 @@ const safeProxyFactoryAbi = [
   },
   {
     type: 'function',
-    name: 'createSafeProxyAndExecTransaction',
+    name: 'createProxyAndExecTransaction',
     constant: false,
     payable: false,
     stateMutability: 'nonpayable',
@@ -124,15 +124,15 @@ const defaultNetworks = {
 
 const zeroAddress = `0x${'0'.repeat(40)}`;
 
-// keccak256('Safe Proxy SDK')
-const predeterminedSaltNonce = '0xc2c578f2767787805d9e1c4d285808763ed96bd0883de61207107249afc6ae55';
+// keccak256(toUtf8Bytes('Contract Proxy Kit'))
+const predeterminedSaltNonce = '0xcfe33a586323e7325be6aa6ecd8b4600d232a9037e83c8ece69413b777dabe65';
 
-const SafeProxy = class SafeProxy {
+const CPK = class CPK {
   static async create(opts) {
     if (opts == null) throw new Error('missing options');
-    const safeProxy = new SafeProxy(opts);
-    await safeProxy.init();
-    return safeProxy;
+    const cpk = new CPK(opts);
+    await cpk.init();
+    return cpk;
   }
 
   constructor({
@@ -184,7 +184,7 @@ const SafeProxy = class SafeProxy {
     const ownerAccount = await this.getOwnerAccount();
 
     if (this.apiType === 'web3') {
-      this.proxyFactory = new this.web3.eth.Contract(safeProxyFactoryAbi, proxyFactoryAddress);
+      this.proxyFactory = new this.web3.eth.Contract(cpkFactoryAbi, proxyFactoryAddress);
       this.multiSend = new this.web3.eth.Contract(multiSendAbi, multiSendAddress);
 
       const create2Salt = this.web3.utils.keccak256(this.web3.eth.abi.encodeParameters(
@@ -215,12 +215,12 @@ const SafeProxy = class SafeProxy {
 
       this.proxyFactory = new this.ethers.Contract(
         proxyFactoryAddress,
-        safeProxyFactoryAbi,
+        cpkFactoryAbi,
         this.signer,
       );
       this.viewProxyFactory = new this.ethers.Contract(
         proxyFactoryAddress,
-        abiToViewAbi(safeProxyFactoryAbi),
+        abiToViewAbi(cpkFactoryAbi),
         this.signer,
       );
 
@@ -359,7 +359,7 @@ const SafeProxy = class SafeProxy {
         data,
       } = transaction;
 
-      if (operation === SafeProxy.CALL) {
+      if (operation === CPK.CALL) {
         await checkSingleCall(to, value, data);
       }
 
@@ -378,7 +378,7 @@ const SafeProxy = class SafeProxy {
 
       return attemptTransaction(
         this.proxyFactory, this.viewProxyFactory,
-        'createSafeProxyAndExecTransaction',
+        'createProxyAndExecTransaction',
         [
           this.masterCopyAddress,
           predeterminedSaltNonce,
@@ -396,7 +396,7 @@ const SafeProxy = class SafeProxy {
         [
           getContractAddress(this.multiSend), 0,
           encodeMultiSendCalldata(transactions),
-          SafeProxy.DELEGATECALL,
+          CPK.DELEGATECALL,
           0, 0, 0, zeroAddress, zeroAddress,
           signatureForAddress(ownerAccount),
         ],
@@ -406,21 +406,21 @@ const SafeProxy = class SafeProxy {
 
     return attemptTransaction(
       this.proxyFactory, this.viewProxyFactory,
-      'createSafeProxyAndExecTransaction',
+      'createProxyAndExecTransaction',
       [
         this.masterCopyAddress,
         predeterminedSaltNonce,
         this.fallbackHandlerAddress,
         getContractAddress(this.multiSend), 0,
         encodeMultiSendCalldata(transactions),
-        SafeProxy.DELEGATECALL,
+        CPK.DELEGATECALL,
       ],
       new Error('proxy creation and transaction execution expected to fail'),
     );
   }
 };
 
-SafeProxy.CALL = 0;
-SafeProxy.DELEGATECALL = 1;
+CPK.CALL = 0;
+CPK.DELEGATECALL = 1;
 
-module.exports = SafeProxy;
+module.exports = CPK;

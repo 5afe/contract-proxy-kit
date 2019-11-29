@@ -1,5 +1,5 @@
 {
-  "name": "safe-proxy-sdk",
+  "name": "contract-proxy-kit",
   "version": "0.1.0",
   "description": "Enable batched transactions and contract account interactions using a unique deterministic Gnosis Safe.",
   "main": "src/index.js",
@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/gnosis/safe-proxy-sdk.git"
+    "url": "git+https://github.com/gnosis/contract-proxy-kit.git"
   },
   "keywords": [
     "gnosis",
@@ -25,12 +25,12 @@
   "author": "Gnosis (https://gnosis.io)",
   "license": "GPL-3.0",
   "bugs": {
-    "url": "https://github.com/gnosis/safe-proxy-sdk/issues"
+    "url": "https://github.com/gnosis/contract-proxy-kit/issues"
   },
-  "homepage": "https://github.com/gnosis/safe-proxy-sdk#readme",
+  "homepage": "https://github.com/gnosis/contract-proxy-kit#readme",
   "devDependencies": {
     "@gnosis.pm/conditional-tokens-contracts": "^0.5.4",
-    "@gnosis.pm/safe-contracts": "github:gnosis/safe-contracts#deployment_1_1_0",
+    "@gnosis.pm/safe-contracts": "^1.1.0",
     "eslint": "^6.6.0",
     "eslint-config-airbnb-base": "^14.0.0",
     "eslint-plugin-import": "^2.18.2",

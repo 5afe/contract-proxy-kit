@@ -4,14 +4,14 @@ import { Enum } from "@gnosis.pm/safe-contracts/contracts/common/Enum.sol";
 import { Proxy } from "@gnosis.pm/safe-contracts/contracts/proxies/Proxy.sol";
 import { GnosisSafe } from "@gnosis.pm/safe-contracts/contracts/GnosisSafe.sol";
 
-contract SafeProxyFactory {
+contract CPKFactory {
     event ProxyCreation(Proxy proxy);
 
     function proxyCreationCode() external pure returns (bytes memory) {
         return type(Proxy).creationCode;
     }
 
-    function createSafeProxyAndExecTransaction(
+    function createProxyAndExecTransaction(
         address masterCopy,
         uint256 saltNonce,
         address fallbackHandler,

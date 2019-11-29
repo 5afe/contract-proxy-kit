@@ -8,7 +8,7 @@ const makeConditionalTokensIdHelpers = require('@gnosis.pm/conditional-tokens-co
 
 const web3Versions = [Web3Maj1Min2, Web3Maj2Alpha];
 
-const SafeProxy = require('..');
+const CPK = require('..');
 
 const Multistep = artifacts.require('Multistep');
 const ConditionalTokens = artifacts.require('ConditionalTokens');
@@ -21,7 +21,7 @@ const toConfirmationPromise = (promievent) => new Promise(
 
 
 function shouldSupportDifferentTransactions({
-  getSafeProxy,
+  getCPK,
   checkAddressChecksum,
   sendTransaction,
   randomHexWord,
@@ -31,18 +31,18 @@ function shouldSupportDifferentTransactions({
   const { getConditionId } = makeConditionalTokensIdHelpers(web3.utils);
 
   it('can get checksummed address of instance', async () => {
-    const safeProxy = await getSafeProxy();
-    should.exist(safeProxy.address);
-    checkAddressChecksum(safeProxy.address).should.be.true();
+    const cpk = await getCPK();
+    should.exist(cpk.address);
+    checkAddressChecksum(cpk.address).should.be.true();
   });
 
   describe('with mock contracts', () => {
-    let safeProxy;
+    let cpk;
     let proxyOwner;
 
     beforeEach('rebind symbols', async () => {
-      safeProxy = await getSafeProxy();
-      proxyOwner = await safeProxy.getOwnerAccount();
+      cpk = await getCPK();
+      proxyOwner = await cpk.getOwnerAccount();
     });
 
     let conditionalTokens;
@@ -65,106 +65,106 @@ function shouldSupportDifferentTransactions({
         to: erc20.address,
         value: 0,
         gasLimit: '0x5b8d80',
-        data: erc20.contract.methods.approve(safeProxy.address, `${1e20}`).encodeABI(),
+        data: erc20.contract.methods.approve(cpk.address, `${1e20}`).encodeABI(),
       });
     });
 
     it('can execute a single transaction', async () => {
-      (await multiStep.lastStepFinished(safeProxy.address)).toNumber().should.equal(0);
+      (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
 
-      await safeProxy.execTransactions([{
-        operation: SafeProxy.CALL,
+      await cpk.execTransactions([{
+        operation: CPK.CALL,
         to: multiStep.address,
         value: 0,
         data: multiStep.contract.methods.doStep(1).encodeABI(),
       }]);
-      (await multiStep.lastStepFinished(safeProxy.address)).toNumber().should.equal(1);
+      (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(1);
     });
 
     it('can batch transactions together', async () => {
-      (await multiStep.lastStepFinished(safeProxy.address)).toNumber().should.equal(0);
+      (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
 
-      await safeProxy.execTransactions([
+      await cpk.execTransactions([
         {
-          operation: SafeProxy.CALL,
+          operation: CPK.CALL,
           to: multiStep.address,
           value: 0,
           data: multiStep.contract.methods.doStep(1).encodeABI(),
         }, {
-          operation: SafeProxy.CALL,
+          operation: CPK.CALL,
           to: multiStep.address,
           value: 0,
           data: multiStep.contract.methods.doStep(2).encodeABI(),
         },
       ]);
-      (await multiStep.lastStepFinished(safeProxy.address)).toNumber().should.equal(2);
+      (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(2);
     });
 
     it('can batch ERC20 transactions', async () => {
-      (await multiStep.lastStepFinished(safeProxy.address)).toNumber().should.equal(0);
+      (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
 
-      await safeProxy.execTransactions([
+      await cpk.execTransactions([
         {
-          operation: SafeProxy.CALL,
+          operation: CPK.CALL,
           to: erc20.address,
           value: 0,
-          data: erc20.contract.methods.transferFrom(proxyOwner, safeProxy.address, `${3e18}`).encodeABI(),
+          data: erc20.contract.methods.transferFrom(proxyOwner, cpk.address, `${3e18}`).encodeABI(),
         },
         {
-          operation: SafeProxy.CALL,
+          operation: CPK.CALL,
           to: erc20.address,
           value: 0,
           data: erc20.contract.methods.approve(multiStep.address, `${3e18}`).encodeABI(),
         },
         {
-          operation: SafeProxy.CALL,
+          operation: CPK.CALL,
           to: multiStep.address,
           value: 0,
           data: multiStep.contract.methods.doStep(1).encodeABI(),
         },
         {
-          operation: SafeProxy.CALL,
+          operation: CPK.CALL,
           to: multiStep.address,
           value: 0,
           data: multiStep.contract.methods.doERC20Step(2, erc20.address).encodeABI(),
         },
       ]);
 
-      (await multiStep.lastStepFinished(safeProxy.address)).toNumber().should.equal(2);
-      fromWei(await erc20.balanceOf(safeProxy.address)).should.equal(1);
+      (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(2);
+      fromWei(await erc20.balanceOf(cpk.address)).should.equal(1);
       fromWei(await erc20.balanceOf(multiStep.address)).should.equal(2);
       fromWei(await erc20.balanceOf(proxyOwner)).should.equal(97);
     });
 
     it('can batch ERC-1155 token interactions', async () => {
       const questionId = randomHexWord();
-      const conditionId = getConditionId(safeProxy.address, questionId, 2);
+      const conditionId = getConditionId(cpk.address, questionId, 2);
 
-      await safeProxy.execTransactions([
+      await cpk.execTransactions([
         {
-          operation: SafeProxy.CALL,
+          operation: CPK.CALL,
           to: erc20.address,
           value: 0,
-          data: erc20.contract.methods.transferFrom(proxyOwner, safeProxy.address, `${3e18}`).encodeABI(),
+          data: erc20.contract.methods.transferFrom(proxyOwner, cpk.address, `${3e18}`).encodeABI(),
         },
         {
-          operation: SafeProxy.CALL,
+          operation: CPK.CALL,
           to: erc20.address,
           value: 0,
           data: erc20.contract.methods.approve(conditionalTokens.address, `${1e18}`).encodeABI(),
         },
         {
-          operation: SafeProxy.CALL,
+          operation: CPK.CALL,
           to: conditionalTokens.address,
           value: 0,
           data: conditionalTokens.contract.methods.prepareCondition(
-            safeProxy.address,
+            cpk.address,
             questionId,
             2,
           ).encodeABI(),
         },
         {
-          operation: SafeProxy.CALL,
+          operation: CPK.CALL,
           to: conditionalTokens.address,
           value: 0,
           data: conditionalTokens.contract.methods.splitPosition(
@@ -177,48 +177,48 @@ function shouldSupportDifferentTransactions({
         },
       ]);
 
-      fromWei(await erc20.balanceOf(safeProxy.address)).should.equal(2);
+      fromWei(await erc20.balanceOf(cpk.address)).should.equal(2);
       fromWei(await erc20.balanceOf(conditionalTokens.address)).should.equal(1);
       fromWei(await erc20.balanceOf(proxyOwner)).should.equal(97);
     });
 
     it('by default errors without transacting when single transaction would fail', async () => {
-      (await multiStep.lastStepFinished(safeProxy.address)).toNumber().should.equal(0);
-      const ownerAccount = await safeProxy.getOwnerAccount();
+      (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
+      const ownerAccount = await cpk.getOwnerAccount();
       const startingTransactionCount = await getTransactionCount(ownerAccount);
 
-      await safeProxy.execTransactions([{
-        operation: SafeProxy.CALL,
+      await cpk.execTransactions([{
+        operation: CPK.CALL,
         to: multiStep.address,
         value: 0,
         data: multiStep.contract.methods.doStep(2).encodeABI(),
       }]).should.be.rejectedWith(/must do the next step/);
 
-      (await multiStep.lastStepFinished(safeProxy.address)).toNumber().should.equal(0);
+      (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
       await getTransactionCount(ownerAccount)
         .should.eventually.equal(startingTransactionCount);
     });
 
     it('by default errors without transacting when any transaction in batch would fail', async () => {
-      (await multiStep.lastStepFinished(safeProxy.address)).toNumber().should.equal(0);
-      const ownerAccount = await safeProxy.getOwnerAccount();
+      (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
+      const ownerAccount = await cpk.getOwnerAccount();
       const startingTransactionCount = await getTransactionCount(ownerAccount);
 
-      await safeProxy.execTransactions([
+      await cpk.execTransactions([
         {
-          operation: SafeProxy.CALL,
+          operation: CPK.CALL,
           to: multiStep.address,
           value: 0,
           data: multiStep.contract.methods.doStep(1).encodeABI(),
         }, {
-          operation: SafeProxy.CALL,
+          operation: CPK.CALL,
           to: multiStep.address,
           value: 0,
           data: multiStep.contract.methods.doStep(3).encodeABI(),
         },
       ]).should.be.rejectedWith(/(proxy creation and )?transaction execution expected to fail/);
 
-      (await multiStep.lastStepFinished(safeProxy.address)).toNumber().should.equal(0);
+      (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
       await getTransactionCount(ownerAccount)
         .should.eventually.equal(startingTransactionCount);
     });
@@ -239,7 +239,7 @@ function shouldWorkWithWeb3(Web3, defaultAccount) {
     };
 
     it('should not produce instances when web3 not connected to a recognized network', async () => {
-      await SafeProxy.create({ web3: ueb3 }).should.be.rejectedWith(/unrecognized network ID \d+/);
+      await CPK.create({ web3: ueb3 }).should.be.rejectedWith(/unrecognized network ID \d+/);
     });
 
     describe('with valid networks configuration', () => {
@@ -249,7 +249,7 @@ function shouldWorkWithWeb3(Web3, defaultAccount) {
         networks = {
           [await ueb3.eth.net.getId()]: {
             masterCopyAddress: artifacts.require('GnosisSafe').address,
-            proxyFactoryAddress: artifacts.require('SafeProxyFactory').address,
+            proxyFactoryAddress: artifacts.require('CPKFactory').address,
             multiSendAddress: artifacts.require('MultiSend').address,
             fallbackHandlerAddress: artifacts.require('DefaultCallbackHandler').address,
           },
@@ -257,20 +257,20 @@ function shouldWorkWithWeb3(Web3, defaultAccount) {
       });
 
       it('can produce instances', async () => {
-        should.exist(await SafeProxy.create({ web3: ueb3, networks }));
+        should.exist(await CPK.create({ web3: ueb3, networks }));
       });
 
       describe('with warm instance', () => {
-        let safeProxy;
+        let cpk;
 
         before('create instance', async () => {
-          safeProxy = await SafeProxy.create({ web3: ueb3, networks });
+          cpk = await CPK.create({ web3: ueb3, networks });
         });
 
         before('warm instance', async () => {
           const idPrecompile = `0x${'0'.repeat(39)}4`;
-          await safeProxy.execTransactions([{
-            operation: SafeProxy.CALL,
+          await cpk.execTransactions([{
+            operation: CPK.CALL,
             to: idPrecompile,
             value: 0,
             data: '0x',
@@ -279,14 +279,14 @@ function shouldWorkWithWeb3(Web3, defaultAccount) {
 
         shouldSupportDifferentTransactions({
           ...ueb3TestHelpers,
-          async getSafeProxy() { return safeProxy; },
+          async getCPK() { return cpk; },
         });
       });
 
       describe('with fresh accounts', () => {
         shouldSupportDifferentTransactions({
           ...ueb3TestHelpers,
-          async getSafeProxy() {
+          async getCPK() {
             const newAccount = ueb3.eth.accounts.create();
             ueb3.eth.accounts.wallet.add(newAccount);
             await ueb3TestHelpers.sendTransaction({
@@ -296,7 +296,7 @@ function shouldWorkWithWeb3(Web3, defaultAccount) {
               gasLimit: '0x5b8d80',
             });
 
-            return SafeProxy.create({
+            return CPK.create({
               web3: ueb3,
               networks,
               ownerAccount: newAccount.address,
@@ -322,11 +322,11 @@ function shouldWorkWithEthers(ethers, defaultAccount) {
     });
 
     it('should not produce instances when signer is missing', async () => {
-      await SafeProxy.create({ ethers }).should.be.rejectedWith('missing signer required for ethers');
+      await CPK.create({ ethers }).should.be.rejectedWith('missing signer required for ethers');
     });
 
     it('should not produce instances when ethers not connected to a recognized network', async () => {
-      await SafeProxy.create({ ethers, signer }).should.be.rejectedWith(/unrecognized network ID \d+/);
+      await CPK.create({ ethers, signer }).should.be.rejectedWith(/unrecognized network ID \d+/);
     });
 
     describe('with valid networks configuration', () => {
@@ -336,7 +336,7 @@ function shouldWorkWithEthers(ethers, defaultAccount) {
         networks = {
           [(await signer.provider.getNetwork()).chainId]: {
             masterCopyAddress: artifacts.require('GnosisSafe').address,
-            proxyFactoryAddress: artifacts.require('SafeProxyFactory').address,
+            proxyFactoryAddress: artifacts.require('CPKFactory').address,
             multiSendAddress: artifacts.require('MultiSend').address,
             fallbackHandlerAddress: artifacts.require('DefaultCallbackHandler').address,
           },
@@ -344,11 +344,11 @@ function shouldWorkWithEthers(ethers, defaultAccount) {
       });
 
       it('can produce instances', async () => {
-        should.exist(await SafeProxy.create({ ethers, signer, networks }));
+        should.exist(await CPK.create({ ethers, signer, networks }));
       });
 
       describe('with warm instance', () => {
-        let safeProxy;
+        let cpk;
 
         before('fund owner/signer', async () => {
           await toConfirmationPromise(web3.eth.sendTransaction({
@@ -360,13 +360,13 @@ function shouldWorkWithEthers(ethers, defaultAccount) {
         });
 
         before('create instance', async () => {
-          safeProxy = await SafeProxy.create({ ethers, signer, networks });
+          cpk = await CPK.create({ ethers, signer, networks });
         });
 
         before('warm instance', async () => {
           const idPrecompile = `0x${'0'.repeat(39)}4`;
-          await safeProxy.execTransactions([{
-            operation: SafeProxy.CALL,
+          await cpk.execTransactions([{
+            operation: CPK.CALL,
             to: idPrecompile,
             value: 0,
             data: '0x',
@@ -375,7 +375,7 @@ function shouldWorkWithEthers(ethers, defaultAccount) {
 
         shouldSupportDifferentTransactions({
           ...ethersTestHelpers([signer]),
-          async getSafeProxy() { return safeProxy; },
+          async getCPK() { return cpk; },
         });
       });
 
@@ -383,7 +383,7 @@ function shouldWorkWithEthers(ethers, defaultAccount) {
         const freshSignerBox = [];
         shouldSupportDifferentTransactions({
           ...ethersTestHelpers(freshSignerBox),
-          async getSafeProxy() {
+          async getCPK() {
             freshSignerBox[0] = ethers.Wallet.createRandom()
               .connect(new ethers.providers.Web3Provider(web3.currentProvider));
 
@@ -394,7 +394,7 @@ function shouldWorkWithEthers(ethers, defaultAccount) {
               gasLimit: '0x5b8d80',
             }));
 
-            return SafeProxy.create({
+            return CPK.create({
               ethers,
               signer: freshSignerBox[0],
               networks,
@@ -406,17 +406,17 @@ function shouldWorkWithEthers(ethers, defaultAccount) {
   });
 }
 
-contract('SafeProxy', ([defaultAccount]) => {
+contract('CPK', ([defaultAccount]) => {
   it('should exist', () => {
-    should.exist(SafeProxy);
+    should.exist(CPK);
   });
 
   it('should not produce instances when options are missing', async () => {
-    await SafeProxy.create().should.be.rejectedWith('missing options');
+    await CPK.create().should.be.rejectedWith('missing options');
   });
 
   it('should not produce instances when web3/ethers not provided', async () => {
-    await SafeProxy.create({}).should.be.rejectedWith('web3/ethers property missing from options');
+    await CPK.create({}).should.be.rejectedWith('web3/ethers property missing from options');
   });
 
   web3Versions.forEach((Web3) => { shouldWorkWithWeb3(Web3, defaultAccount); });
