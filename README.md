@@ -103,3 +103,23 @@ Each of the `transactions` provided as input to this function must be an *Object
 * `data`: The calldata to send along with the transaction.
 
 If any of the transactions would revert, this function will reject instead, and nothing will be executed.
+
+For example, if the proxy account holds some ether, it may batch send ether to multiple accounts like so:
+
+```js
+const safeProxy = await SafeProxy.create(/* ... */);
+const txReceipt = await safeProxy.execTransactions([
+  {
+    operation: SafeProxy.CALL,
+    to: '0x90f8bf6a479f320ead074411a4b0e7944ea8c9c1',
+    value: `${1e18}`,
+    data: '0x',
+  },
+  {
+    operation: SafeProxy.CALL,
+    to: '0xffcf8fdee72ac11b5c542428b35eef5769c409f0',
+    value: `${1e18}`,
+    data: '0x',
+  },
+]);
+```
