@@ -123,3 +123,85 @@ const txReceipt = await safeProxy.execTransactions([
   },
 ]);
 ```
+
+#### Example calls to web3.js/Truffle contracts
+
+The `data` field may be used to make calls to contracts from the proxy account. Suppose that `erc20` is a *web3.eth.Contract* instance for an ERC20 token for which the proxy account holds a balance, and `exchange` is a *web3.eth.Contract* instance of an exchange contract with an deposit requirement, where calling the deposit function on the exchange requires an allowance for the exchange by the depositor. Batching these transactions may be done like so:
+
+```js
+const txReceipt = await safeProxy.execTransactions([
+  {
+    operation: SafeProxy.CALL,
+    to: erc20.options.address,
+    value: 0,
+    data: erc20.methods.approve(
+      exchange.options.address,
+      `${1e18}`,
+    ).encodeABI(),
+  },
+  {
+    operation: SafeProxy.CALL,
+    to: exchange.options.address,
+    value: 0,
+    data: exchange.methods.deposit(
+      erc20.options.address,
+      `${1e18}`,
+    ).encodeABI(),
+  },
+]);
+
+```
+
+Suppose instead `erc20` and `exchange` are Truffle contract abstraction instances instead. Since Truffle contract abstraction instances contain a reference to an underlying *web3.eth.Contract* instance, they may be used in a similar manner:
+
+```js
+const txReceipt = await safeProxy.execTransactions([
+  {
+    operation: SafeProxy.CALL,
+    to: erc20.address,
+    value: 0,
+    data: erc20.contract.methods.approve(
+      exchange.address,
+      `${1e18}`,
+    ).encodeABI(),
+  },
+  {
+    operation: SafeProxy.CALL,
+    to: exchange.address,
+    value: 0,
+    data: exchange.contract.methods.deposit(
+      erc20.address,
+      `${1e18}`,
+    ).encodeABI(),
+  },
+]);
+
+```
+
+#### Example calls to ethers.js contracts
+
+Similarly to the example in the previous section, suppose that `erc20` is a *ethers.Contract* instance for an ERC20 token for which the proxy account holds a balance, and `exchange` is a *ethers.Contract* instance of an exchange contract with an deposit requirement, where calling the deposit function on the exchange requires an allowance for the exchange by the depositor. Batching these transactions may be done like so:
+
+```js
+const txReceipt = await safeProxy.execTransactions([
+  {
+    operation: SafeProxy.CALL,
+    to: erc20.address,
+    value: 0,
+    data: erc20.interface.functions.approve.encode(
+      exchange.address,
+      `${1e18}`,
+    ),
+  },
+  {
+    operation: SafeProxy.CALL,
+    to: exchange.address,
+    value: 0,
+    data: exchange.interface.functions.deposit.encode(
+      erc20.address,
+      `${1e18}`,
+    ),
+  },
+]);
+
+```
