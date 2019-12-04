@@ -276,11 +276,6 @@ const CPK = class CPK {
     let encodeMultiSendCalldata;
 
     if (this.apiType === 'web3') {
-      const toConfirmationPromise = (promievent) => new Promise(
-        (resolve, reject) => promievent.on('confirmation',
-          (confirmationNumber, receipt) => resolve(receipt)).catch(reject),
-      );
-
       const blockGasLimit = (await this.web3.eth.getBlock(this.web3.eth.defaultBlock)).gasLimit;
       const sendOpts = {
         from: ownerAccount,
@@ -296,8 +291,14 @@ const CPK = class CPK {
 
       attemptTransaction = async (contract, viewContract, methodName, params, err) => {
         if (!(await contract.methods[methodName](...params).call(sendOpts))) throw err;
-        return toConfirmationPromise(
-          contract.methods[methodName](...params).send(sendOpts),
+
+        const promiEvent = contract.methods[methodName](...params).send(sendOpts);
+
+        return new Promise(
+          (resolve, reject) => promiEvent.on(
+            'confirmation',
+            (confirmationNumber, receipt) => resolve({ promiEvent, receipt }),
+          ).catch(reject),
         );
       };
 
@@ -324,7 +325,9 @@ const CPK = class CPK {
 
       attemptTransaction = async (contract, viewContract, methodName, params, err) => {
         if (!(await viewContract.functions[methodName](...params))) throw err;
-        return (await contract.functions[methodName](...params)).wait();
+        const transactionResponse = await contract.functions[methodName](...params);
+        const transactionReceipt = await transactionResponse.wait();
+        return { transactionResponse, transactionReceipt };
       };
 
       codeAtAddress = (await this.signer.provider.getCode(this.address));
