@@ -14,8 +14,8 @@ const Multistep = artifacts.require('Multistep');
 const ConditionalTokens = artifacts.require('ConditionalTokens');
 const ERC20Mintable = artifacts.require('ERC20Mintable');
 
-const toConfirmationPromise = (promievent) => new Promise(
-  (resolve, reject) => promievent.on('confirmation',
+const toConfirmationPromise = (promiEvent) => new Promise(
+  (resolve, reject) => promiEvent.on('confirmation',
     (confirmationNumber, receipt) => resolve(receipt)).catch(reject),
 );
 
@@ -27,6 +27,8 @@ function shouldSupportDifferentTransactions({
   randomHexWord,
   fromWei,
   getTransactionCount,
+  testedTxObjProps,
+  checkTxObj,
 }) {
   const { getConditionId } = makeConditionalTokensIdHelpers(web3.utils);
 
@@ -222,6 +224,15 @@ function shouldSupportDifferentTransactions({
       await getTransactionCount(ownerAccount)
         .should.eventually.equal(startingTransactionCount);
     });
+
+    it(`returns an object with ${testedTxObjProps} when doing a transaction`, async () => {
+      checkTxObj(await cpk.execTransactions([{
+        operation: CPK.CALL,
+        to: multiStep.address,
+        value: 0,
+        data: multiStep.contract.methods.doStep(1).encodeABI(),
+      }]));
+    });
   });
 }
 
@@ -236,6 +247,11 @@ function shouldWorkWithWeb3(Web3, defaultAccount) {
       randomHexWord: () => ueb3.utils.randomHex(32),
       fromWei: (amount) => Number(ueb3.utils.fromWei(amount)),
       getTransactionCount: ueb3.eth.getTransactionCount,
+      testedTxObjProps: 'the PromiEvent for the transaction and the receipt',
+      checkTxObj: ({ promiEvent, receipt }) => {
+        should.exist(promiEvent);
+        should.exist(receipt);
+      },
     };
 
     it('should not produce instances when web3 not connected to a recognized network', async () => {
@@ -319,6 +335,11 @@ function shouldWorkWithEthers(ethers, defaultAccount) {
       randomHexWord: () => ethers.utils.hexlify(ethers.utils.randomBytes(32)),
       fromWei: (amount) => Number(ethers.utils.formatUnits(amount.toString(), 'ether')),
       getTransactionCount: signer.provider.getTransactionCount.bind(signer.provider),
+      testedTxObjProps: 'the TransactionResponse and the TransactionReceipt',
+      checkTxObj: ({ transactionResponse, transactionReceipt }) => {
+        should.exist(transactionResponse);
+        should.exist(transactionReceipt);
+      },
     });
 
     it('should not produce instances when signer is missing', async () => {

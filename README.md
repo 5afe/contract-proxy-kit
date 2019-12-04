@@ -108,7 +108,7 @@ For example, if the proxy account holds some ether, it may batch send ether to m
 
 ```js
 const cpk = await CPK.create(/* ... */);
-const txReceipt = await cpk.execTransactions([
+const txObject = await cpk.execTransactions([
   {
     operation: CPK.CALL,
     to: '0x90f8bf6a479f320ead074411a4b0e7944ea8c9c1',
@@ -129,7 +129,7 @@ const txReceipt = await cpk.execTransactions([
 The `data` field may be used to make calls to contracts from the proxy account. Suppose that `erc20` is a *web3.eth.Contract* instance for an ERC20 token for which the proxy account holds a balance, and `exchange` is a *web3.eth.Contract* instance of an exchange contract with an deposit requirement, where calling the deposit function on the exchange requires an allowance for the exchange by the depositor. Batching these transactions may be done like so:
 
 ```js
-const txReceipt = await cpk.execTransactions([
+const { promiEvent, receipt } = await cpk.execTransactions([
   {
     operation: CPK.CALL,
     to: erc20.options.address,
@@ -155,7 +155,7 @@ const txReceipt = await cpk.execTransactions([
 Suppose instead `erc20` and `exchange` are Truffle contract abstraction instances instead. Since Truffle contract abstraction instances contain a reference to an underlying *web3.eth.Contract* instance, they may be used in a similar manner:
 
 ```js
-const txReceipt = await cpk.execTransactions([
+const { promiEvent, receipt } = await cpk.execTransactions([
   {
     operation: CPK.CALL,
     to: erc20.address,
@@ -183,7 +183,7 @@ const txReceipt = await cpk.execTransactions([
 Similarly to the example in the previous section, suppose that `erc20` is a *ethers.Contract* instance for an ERC20 token for which the proxy account holds a balance, and `exchange` is a *ethers.Contract* instance of an exchange contract with an deposit requirement, where calling the deposit function on the exchange requires an allowance for the exchange by the depositor. Batching these transactions may be done like so:
 
 ```js
-const txReceipt = await cpk.execTransactions([
+const { transactionResponse, transactionReceipt } = await cpk.execTransactions([
   {
     operation: CPK.CALL,
     to: erc20.address,
