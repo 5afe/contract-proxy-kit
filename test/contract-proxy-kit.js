@@ -27,6 +27,8 @@ function shouldSupportDifferentTransactions({
   randomHexWord,
   fromWei,
   getTransactionCount,
+  getBalance,
+  getGasUsed,
   testedTxObjProps,
   checkTxObj,
 }) {
@@ -233,6 +235,61 @@ function shouldSupportDifferentTransactions({
         data: multiStep.contract.methods.doStep(1).encodeABI(),
       }]));
     });
+
+    it('can execute a single transaction with a specific gas price', async () => {
+      const ownerAccount = await cpk.getOwnerAccount();
+      const startingBalance = await getBalance(ownerAccount);
+
+      (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
+
+      const gasPrice = 123;
+      const txObj = await cpk.execTransactions(
+        [{
+          operation: CPK.CALL,
+          to: multiStep.address,
+          value: 0,
+          data: multiStep.contract.methods.doStep(1).encodeABI(),
+        }],
+        { gasPrice },
+      );
+      const gasUsed = getGasUsed(txObj);
+
+      const endingBalance = await getBalance(ownerAccount);
+      const gasCosts = startingBalance.sub(endingBalance).toNumber();
+
+      gasCosts.should.be.equal(gasPrice * gasUsed);
+    });
+
+    it('can execute a batch transaction with a specific gas price', async () => {
+      const ownerAccount = await cpk.getOwnerAccount();
+      const startingBalance = await getBalance(ownerAccount);
+
+      (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
+
+      const gasPrice = 123;
+      const txObj = await cpk.execTransactions(
+        [
+          {
+            operation: CPK.CALL,
+            to: multiStep.address,
+            value: 0,
+            data: multiStep.contract.methods.doStep(1).encodeABI(),
+          }, {
+            operation: CPK.CALL,
+            to: multiStep.address,
+            value: 0,
+            data: multiStep.contract.methods.doStep(2).encodeABI(),
+          },
+        ],
+        { gasPrice },
+      );
+      const gasUsed = getGasUsed(txObj);
+
+      const endingBalance = await getBalance(ownerAccount);
+      const gasCosts = startingBalance.sub(endingBalance).toNumber();
+
+      gasCosts.should.be.equal(gasPrice * gasUsed);
+    });
   });
 }
 
@@ -248,6 +305,10 @@ function shouldWorkWithWeb3(Web3, defaultAccount) {
       fromWei: (amount) => Number(ueb3.utils.fromWei(amount)),
       getTransactionCount: ueb3.eth.getTransactionCount,
       testedTxObjProps: 'the PromiEvent for the transaction and the receipt',
+      getBalance: (address) => ueb3.eth.getBalance(address)
+        .then((balance) => ueb3.utils.toBN(balance)),
+      getGasUsed: ({ receipt }) => receipt.gasUsed,
+
       checkTxObj: ({ promiEvent, receipt }) => {
         should.exist(promiEvent);
         should.exist(receipt);
@@ -335,6 +396,8 @@ function shouldWorkWithEthers(ethers, defaultAccount) {
       randomHexWord: () => ethers.utils.hexlify(ethers.utils.randomBytes(32)),
       fromWei: (amount) => Number(ethers.utils.formatUnits(amount.toString(), 'ether')),
       getTransactionCount: signer.provider.getTransactionCount.bind(signer.provider),
+      getBalance: signer.provider.getBalance.bind(signer.provider),
+      getGasUsed: ({ transactionReceipt }) => transactionReceipt.gasUsed.toNumber(),
       testedTxObjProps: 'the TransactionResponse and the TransactionReceipt',
       checkTxObj: ({ transactionResponse, transactionReceipt }) => {
         should.exist(transactionResponse);

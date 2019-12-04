@@ -262,7 +262,7 @@ const CPK = class CPK {
     throw new Error(`invalid API type ${this.apiType}`);
   }
 
-  async execTransactions(transactions) {
+  async execTransactions(transactions, options) {
     const signatureForAddress = (address) => `0x000000000000000000000000${
       address.replace(/^0x/, '').toLowerCase()
     }000000000000000000000000000000000000000000000000000000000000000001`;
@@ -277,9 +277,10 @@ const CPK = class CPK {
 
     if (this.apiType === 'web3') {
       const blockGasLimit = (await this.web3.eth.getBlock(this.web3.eth.defaultBlock)).gasLimit;
-      const sendOpts = {
+      const sendOptions = {
         from: ownerAccount,
         gas: blockGasLimit,
+        ...(options || {}),
       };
 
       checkSingleCall = (to, value, data) => this.web3.eth.call({
@@ -290,14 +291,14 @@ const CPK = class CPK {
       });
 
       attemptTransaction = async (contract, viewContract, methodName, params, err) => {
-        if (!(await contract.methods[methodName](...params).call(sendOpts))) throw err;
+        if (!(await contract.methods[methodName](...params).call(sendOptions))) throw err;
 
-        const promiEvent = contract.methods[methodName](...params).send(sendOpts);
+        const promiEvent = contract.methods[methodName](...params).send(sendOptions);
 
         return new Promise(
           (resolve, reject) => promiEvent.on(
             'confirmation',
-            (confirmationNumber, receipt) => resolve({ promiEvent, receipt }),
+            (confirmationNumber, receipt) => resolve({ sendOptions, promiEvent, receipt }),
           ).catch(reject),
         );
       };
@@ -325,7 +326,10 @@ const CPK = class CPK {
 
       attemptTransaction = async (contract, viewContract, methodName, params, err) => {
         if (!(await viewContract.functions[methodName](...params))) throw err;
-        const transactionResponse = await contract.functions[methodName](...params);
+        const transactionResponse = await contract.functions[methodName](
+          ...params,
+          ...(options == null ? [] : [options]),
+        );
         const transactionReceipt = await transactionResponse.wait();
         return { transactionResponse, transactionReceipt };
       };

@@ -203,5 +203,28 @@ const { transactionResponse, transactionReceipt } = await cpk.execTransactions([
     ),
   },
 ]);
+```
 
+#### Setting the gas price
+
+An additional optional parameter may be passed to `execTransactions` to override default options for the transaction. For example, to batch send ether while paying a gas price of 3 Gwei, do this:
+
+```js
+const txObject = await cpk.execTransactions(
+  [
+    {
+      operation: CPK.CALL,
+      to: '0x90f8bf6a479f320ead074411a4b0e7944ea8c9c1',
+      value: `${1e18}`,
+      data: '0x',
+    },
+    {
+      operation: CPK.CALL,
+      to: '0xffcf8fdee72ac11b5c542428b35eef5769c409f0',
+      value: `${1e18}`,
+      data: '0x',
+    },
+  ],
+  { gasPrice: `${3e9}` },
+);
 ```
