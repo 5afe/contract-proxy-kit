@@ -4,6 +4,6 @@ module.exports = (deployer, network) => {
   ['Migrations', 'CPKFactory'].forEach(deploy);
 
   if (network === 'test') {
-    ['MultiSend', 'DefaultCallbackHandler', 'GnosisSafe'].forEach(deploy);
+    ['MultiSend', 'DefaultCallbackHandler', 'GnosisSafe', 'ProxyFactory'].forEach(deploy);
   }
 };

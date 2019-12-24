@@ -1,3 +1,4 @@
+const sinon = require('sinon');
 const should = require('should');
 
 const Web3Maj1Min2 = require('web3-1-2');
@@ -13,6 +14,13 @@ const CPK = require('..');
 const Multistep = artifacts.require('Multistep');
 const ConditionalTokens = artifacts.require('ConditionalTokens');
 const ERC20Mintable = artifacts.require('ERC20Mintable');
+
+const GnosisSafe = artifacts.require('GnosisSafe');
+const CPKFactory = artifacts.require('CPKFactory');
+const MultiSend = artifacts.require('MultiSend');
+const DefaultCallbackHandler = artifacts.require('DefaultCallbackHandler');
+const ProxyFactory = artifacts.require('ProxyFactory');
+const zeroAddress = `0x${'0'.repeat(40)}`;
 
 const toConfirmationPromise = (promiEvent) => new Promise(
   (resolve, reject) => promiEvent.on('confirmation',
@@ -31,6 +39,7 @@ function shouldSupportDifferentTransactions({
   getGasUsed,
   testedTxObjProps,
   checkTxObj,
+  ownerIsRecognizedContract,
 }) {
   const { getConditionId } = makeConditionalTokensIdHelpers(web3.utils);
 
@@ -39,6 +48,14 @@ function shouldSupportDifferentTransactions({
     should.exist(cpk.address);
     checkAddressChecksum(cpk.address).should.be.true();
   });
+
+  if (ownerIsRecognizedContract) {
+    it('has same owner as instance\'s address', async () => {
+      const cpk = await getCPK();
+      const proxyOwner = await cpk.getOwnerAccount();
+      proxyOwner.should.be.equal(cpk.address);
+    });
+  }
 
   describe('with mock contracts', () => {
     let cpk;
@@ -294,26 +311,28 @@ function shouldSupportDifferentTransactions({
 }
 
 
-function shouldWorkWithWeb3(Web3, defaultAccount) {
+function shouldWorkWithWeb3(Web3, defaultAccount, gnosisSafeProviderBox) {
   describe(`with Web3 version ${(new Web3()).version}`, () => {
     const ueb3 = new Web3(web3.currentProvider);
 
-    const ueb3TestHelpers = {
-      checkAddressChecksum: ueb3.utils.checkAddressChecksum,
-      sendTransaction: (txObj) => toConfirmationPromise(ueb3.eth.sendTransaction(txObj)),
-      randomHexWord: () => ueb3.utils.randomHex(32),
-      fromWei: (amount) => Number(ueb3.utils.fromWei(amount)),
-      getTransactionCount: ueb3.eth.getTransactionCount,
+    const testHelperMaker = (web3Box) => ({
+      checkAddressChecksum: (address) => web3Box[0].utils.checkAddressChecksum(address),
+      sendTransaction: (txObj) => toConfirmationPromise(web3Box[0].eth.sendTransaction(txObj)),
+      randomHexWord: () => web3Box[0].utils.randomHex(32),
+      fromWei: (amount) => Number(web3Box[0].utils.fromWei(amount)),
+      getTransactionCount: (account) => web3Box[0].eth.getTransactionCount(account),
       testedTxObjProps: 'the PromiEvent for the transaction and the receipt',
-      getBalance: (address) => ueb3.eth.getBalance(address)
-        .then((balance) => ueb3.utils.toBN(balance)),
+      getBalance: (address) => web3Box[0].eth.getBalance(address)
+        .then((balance) => web3Box[0].utils.toBN(balance)),
       getGasUsed: ({ receipt }) => receipt.gasUsed,
 
       checkTxObj: ({ promiEvent, receipt }) => {
         should.exist(promiEvent);
         should.exist(receipt);
       },
-    };
+    });
+
+    const ueb3TestHelpers = testHelperMaker([ueb3]);
 
     it('should not produce instances when web3 not connected to a recognized network', async () => {
       await CPK.create({ web3: ueb3 }).should.be.rejectedWith(/unrecognized network ID \d+/);
@@ -325,10 +344,10 @@ function shouldWorkWithWeb3(Web3, defaultAccount) {
       before('obtain addresses from artifacts', async () => {
         networks = {
           [await ueb3.eth.net.getId()]: {
-            masterCopyAddress: artifacts.require('GnosisSafe').address,
-            proxyFactoryAddress: artifacts.require('CPKFactory').address,
-            multiSendAddress: artifacts.require('MultiSend').address,
-            fallbackHandlerAddress: artifacts.require('DefaultCallbackHandler').address,
+            masterCopyAddress: GnosisSafe.address,
+            proxyFactoryAddress: CPKFactory.address,
+            multiSendAddress: MultiSend.address,
+            fallbackHandlerAddress: DefaultCallbackHandler.address,
           },
         };
       });
@@ -381,11 +400,34 @@ function shouldWorkWithWeb3(Web3, defaultAccount) {
           },
         });
       });
+
+      describe.only('with WalletConnected Gnosis Safe provider', () => {
+        const safeWeb3Box = [];
+
+        before('create Web3 instance', async () => {
+          safeWeb3Box[0] = new Web3(gnosisSafeProviderBox[0]);
+        });
+
+        let cpk;
+
+        before('create instance', async () => {
+          cpk = await CPK.create({
+            web3: safeWeb3Box[0],
+            networks,
+          });
+        });
+
+        shouldSupportDifferentTransactions({
+          ...testHelperMaker(safeWeb3Box),
+          async getCPK() { return cpk; },
+          ownerIsRecognizedContract: true,
+        });
+      });
     });
   });
 }
 
-function shouldWorkWithEthers(ethers, defaultAccount) {
+function shouldWorkWithEthers(ethers, defaultAccount, gnosisSafeProviderBox) {
   describe(`with ethers version ${ethers.version}`, () => {
     const signer = ethers.Wallet.createRandom()
       .connect(new ethers.providers.Web3Provider(web3.currentProvider));
@@ -419,10 +461,10 @@ function shouldWorkWithEthers(ethers, defaultAccount) {
       before('obtain addresses from artifacts', async () => {
         networks = {
           [(await signer.provider.getNetwork()).chainId]: {
-            masterCopyAddress: artifacts.require('GnosisSafe').address,
-            proxyFactoryAddress: artifacts.require('CPKFactory').address,
-            multiSendAddress: artifacts.require('MultiSend').address,
-            fallbackHandlerAddress: artifacts.require('DefaultCallbackHandler').address,
+            masterCopyAddress: GnosisSafe.address,
+            proxyFactoryAddress: CPKFactory.address,
+            multiSendAddress: MultiSend.address,
+            fallbackHandlerAddress: DefaultCallbackHandler.address,
           },
         };
       });
@@ -486,11 +528,43 @@ function shouldWorkWithEthers(ethers, defaultAccount) {
           },
         });
       });
+
+      describe.only('with WalletConnected Gnosis Safe provider', () => {
+        const safeSignerBox = [];
+
+        before('create Web3 instance', async () => {
+          const provider = new ethers.providers.Web3Provider(gnosisSafeProviderBox[0]);
+          safeSignerBox[0] = provider.getSigner();
+        });
+
+        let cpk;
+
+        before('create instance', async () => {
+          cpk = await CPK.create({
+            ethers,
+            signer: safeSignerBox[0],
+            networks,
+          });
+        });
+
+        shouldSupportDifferentTransactions({
+          ...ethersTestHelpers(safeSignerBox),
+          async getCPK() { return cpk; },
+          ownerIsRecognizedContract: true,
+        });
+      });
     });
   });
 }
 
 contract('CPK', ([defaultAccount]) => {
+  const gnosisSafeProviderBox = [];
+  before('emulate Gnosis Safe WalletConnect provider', async () => {
+    const proxyFactory = await ProxyFactory.deployed();
+    const safeMasterCopy = await GnosisSafe.deployed();
+    gnosisSafeProviderBox[0] = web3.currentProvider;
+  });
+
   it('should exist', () => {
     should.exist(CPK);
   });
@@ -503,6 +577,8 @@ contract('CPK', ([defaultAccount]) => {
     await CPK.create({}).should.be.rejectedWith('web3/ethers property missing from options');
   });
 
-  web3Versions.forEach((Web3) => { shouldWorkWithWeb3(Web3, defaultAccount); });
-  shouldWorkWithEthers(ethersMaj4, defaultAccount);
+  web3Versions.forEach((Web3) => {
+    shouldWorkWithWeb3(Web3, defaultAccount, gnosisSafeProviderBox);
+  });
+  shouldWorkWithEthers(ethersMaj4, defaultAccount, gnosisSafeProviderBox);
 });
