@@ -557,12 +557,87 @@ function shouldWorkWithEthers(ethers, defaultAccount, gnosisSafeProviderBox) {
   });
 }
 
-contract('CPK', ([defaultAccount]) => {
+contract('CPK', ([defaultAccount, safeOwner]) => {
   const gnosisSafeProviderBox = [];
+  const allMethodsCalled = {};
   before('emulate Gnosis Safe WalletConnect provider', async () => {
     const proxyFactory = await ProxyFactory.deployed();
     const safeMasterCopy = await GnosisSafe.deployed();
-    gnosisSafeProviderBox[0] = web3.currentProvider;
+    const safeSetupData = safeMasterCopy.contract.methods.setup(
+      [safeOwner], 1,
+      zeroAddress, '0x',
+      DefaultCallbackHandler.address,
+      zeroAddress, '0x', zeroAddress,
+    ).encodeABI();
+    const safeCreationTx = await proxyFactory.createProxy(safeMasterCopy.address, safeSetupData);
+    const safeAddress = safeCreationTx.logs.find(({ event }) => event === 'ProxyCreation').args.proxy;
+    const safeSignature = `0x000000000000000000000000${
+      safeOwner.replace(/^0x/, '').toLowerCase()
+    }000000000000000000000000000000000000000000000000000000000000000001`;
+
+    const emulatedSafeProvider = {
+      ...web3.currentProvider,
+      send(rpcData, callback) {
+        const {
+          id, jsonrpc, method, params,
+        } = rpcData;
+
+        if (method === 'eth_accounts') {
+          return callback(null, {
+            id, jsonrpc, result: [safeAddress],
+          });
+        }
+
+        if (method === 'eth_sendTransaction') {
+          const [{
+            from, to, gas, gasPrice, value, data, nonce,
+          }] = params;
+
+          if (from.toLowerCase() !== safeAddress.toLowerCase()) {
+            return callback(new Error(`expected to be from safe address ${safeAddress} but got ${from}`));
+          }
+
+          return web3.currentProvider.send({
+            id,
+            jsonrpc,
+            method,
+            params: [{
+              from: safeOwner,
+              to: safeAddress,
+              gas,
+              gasPrice,
+              value,
+              nonce,
+              data: safeMasterCopy.contract.methods.execTransaction(
+                to, value || 0, data, CPK.CALL,
+                0, 0, 0, zeroAddress, zeroAddress, safeSignature,
+              ).encodeABI(),
+            }],
+          }, callback);
+        }
+
+        if (method === 'eth_getTransactionCount') {
+          const [account, block] = params;
+          if (account === safeAddress) {
+            return web3.currentProvider.send({
+              id, jsonrpc, method, params: [safeOwner, block],
+            }, callback);
+          }
+        }
+
+        // if (method === 'eth_estimateGas') {
+        //   console.log(method, params);
+        // }
+
+        return web3.currentProvider.send(rpcData, callback);
+      },
+    };
+
+    gnosisSafeProviderBox[0] = emulatedSafeProvider;
+  });
+
+  after('log all the stuff', () => {
+    console.log('foo', allMethodsCalled);
   });
 
   it('should exist', () => {
