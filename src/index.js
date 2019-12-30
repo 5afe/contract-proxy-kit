@@ -180,6 +180,19 @@ const CPK = class CPK {
 
     const ownerAccount = await this.getOwnerAccount();
 
+    const provider = this.apiType === 'web3'
+      ? this.web3.currentProvider
+      : this.signer.provider.provider || this.signer.provider._web3Provider;
+    const wc = provider && (provider.wc || (provider.connection && provider.connection.wc));
+    if (
+      wc && wc.peerMeta && wc.peerMeta.name
+      && wc.peerMeta.name.startsWith('Gnosis Safe')
+    ) {
+      this.isConnectedToSafe = true;
+      this.safeAddress = ownerAccount;
+      return;
+    }
+
     if (this.apiType === 'web3') {
       this.proxyFactory = new this.web3.eth.Contract(cpkFactoryAbi, proxyFactoryAddress);
       this.multiSend = new this.web3.eth.Contract(multiSendAbi, multiSendAddress);
@@ -257,6 +270,7 @@ const CPK = class CPK {
   }
 
   get address() {
+    if (this.isConnectedToSafe) return this.safeAddress;
     if (this.apiType === 'web3') return this.contract.options.address;
     if (this.apiType === 'ethers') return this.contract.address;
     throw new Error(`invalid API type ${this.apiType}`);
@@ -271,6 +285,8 @@ const CPK = class CPK {
 
     let checkSingleCall;
     let attemptTransaction;
+    let attemptSendTransaction;
+    let attemptProviderSend;
     let codeAtAddress;
     let getContractAddress;
     let encodeMultiSendCalldata;
@@ -282,6 +298,12 @@ const CPK = class CPK {
         gas: blockGasLimit,
         ...(options || {}),
       };
+      const promiEventToPromise = (promiEvent) => new Promise(
+        (resolve, reject) => promiEvent.on(
+          'confirmation',
+          (confirmationNumber, receipt) => resolve({ sendOptions, promiEvent, receipt }),
+        ).catch(reject),
+      );
 
       checkSingleCall = (to, value, data) => this.web3.eth.call({
         from: this.address,
@@ -295,13 +317,33 @@ const CPK = class CPK {
 
         const promiEvent = contract.methods[methodName](...params).send(sendOptions);
 
-        return new Promise(
-          (resolve, reject) => promiEvent.on(
-            'confirmation',
-            (confirmationNumber, receipt) => resolve({ sendOptions, promiEvent, receipt }),
-          ).catch(reject),
-        );
+        return promiEventToPromise(promiEvent);
       };
+
+      attemptSendTransaction = (txObj) => {
+        const promiEvent = this.web3.eth.sendTransaction({
+          ...txObj,
+          ...sendOptions,
+        });
+
+        return promiEventToPromise(promiEvent);
+      };
+
+      attemptProviderSend = (method, params) => (
+        this.web3.currentProvider.host === 'CustomProvider'
+          ? this.web3.currentProvider.send(method, params)
+          : new Promise(
+            (resolve, reject) => this.web3.currentProvider.send({
+              jsonrpc: '2.0',
+              id: new Date().getTime(),
+              method,
+              params,
+            }, (err, result) => {
+              if (err) return reject(err);
+              return resolve(result);
+            }),
+          )
+      );
 
       codeAtAddress = await this.web3.eth.getCode(this.address);
 
@@ -334,6 +376,17 @@ const CPK = class CPK {
         return { transactionResponse, transactionReceipt };
       };
 
+      attemptSendTransaction = async (txObj) => {
+        const transactionResponse = await this.signer.sendTransaction({
+          ...txObj,
+          ...(options || {}),
+        });
+        const transactionReceipt = await transactionResponse.wait();
+        return { transactionResponse, transactionReceipt };
+      };
+
+      attemptProviderSend = (method, params) => this.signer.provider.send(method, params);
+
       codeAtAddress = (await this.signer.provider.getCode(this.address));
 
       getContractAddress = (contract) => contract.address;
@@ -365,32 +418,42 @@ const CPK = class CPK {
 
       if (operation === CPK.CALL) {
         await checkSingleCall(to, value, data);
+
+        if (this.isConnectedToSafe) {
+          return attemptSendTransaction({ to, value, data });
+        }
       }
 
-      if (codeAtAddress !== '0x') {
+      if (!this.isConnectedToSafe) {
+        if (codeAtAddress !== '0x') {
+          return attemptTransaction(
+            this.contract, this.viewContract,
+            'execTransaction',
+            [
+              to, value, data, operation,
+              0, 0, 0, zeroAddress, zeroAddress,
+              signatureForAddress(ownerAccount),
+            ],
+            new Error('transaction execution expected to fail'),
+          );
+        }
+
         return attemptTransaction(
-          this.contract, this.viewContract,
-          'execTransaction',
+          this.proxyFactory, this.viewProxyFactory,
+          'createProxyAndExecTransaction',
           [
+            this.masterCopyAddress,
+            predeterminedSaltNonce,
+            this.fallbackHandlerAddress,
             to, value, data, operation,
-            0, 0, 0, zeroAddress, zeroAddress,
-            signatureForAddress(ownerAccount),
           ],
-          new Error('transaction execution expected to fail'),
+          new Error('proxy creation and transaction execution expected to fail'),
         );
       }
+    }
 
-      return attemptTransaction(
-        this.proxyFactory, this.viewProxyFactory,
-        'createProxyAndExecTransaction',
-        [
-          this.masterCopyAddress,
-          predeterminedSaltNonce,
-          this.fallbackHandlerAddress,
-          to, value, data, operation,
-        ],
-        new Error('proxy creation and transaction execution expected to fail'),
-      );
+    if (this.isConnectedToSafe) {
+      return attemptProviderSend('gs_multi_send', transactions);
     }
 
     if (codeAtAddress !== '0x') {

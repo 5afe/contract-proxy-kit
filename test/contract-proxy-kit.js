@@ -579,6 +579,11 @@ contract('CPK', ([defaultAccount, safeOwner]) => {
 
     const emulatedSafeProvider = {
       ...web3.currentProvider,
+      wc: {
+        peerMeta: {
+          name: 'Gnosis Safe - Mock',
+        },
+      },
       send(rpcData, callback) {
         const {
           id, jsonrpc, method, params,
