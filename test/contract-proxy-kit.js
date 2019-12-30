@@ -40,6 +40,7 @@ function shouldSupportDifferentTransactions({
   testedTxObjProps,
   checkTxObj,
   ownerIsRecognizedContract,
+  executor,
 }) {
   const { getConditionId } = makeConditionalTokensIdHelpers(web3.utils);
 
@@ -255,7 +256,7 @@ function shouldSupportDifferentTransactions({
 
     it('can execute a single transaction with a specific gas price', async () => {
       const ownerAccount = await cpk.getOwnerAccount();
-      const startingBalance = await getBalance(ownerAccount);
+      const startingBalance = await getBalance(executor || ownerAccount);
 
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
 
@@ -271,7 +272,7 @@ function shouldSupportDifferentTransactions({
       );
       const gasUsed = getGasUsed(txObj);
 
-      const endingBalance = await getBalance(ownerAccount);
+      const endingBalance = await getBalance(executor || ownerAccount);
       const gasCosts = startingBalance.sub(endingBalance).toNumber();
 
       gasCosts.should.be.equal(gasPrice * gasUsed);
@@ -279,7 +280,7 @@ function shouldSupportDifferentTransactions({
 
     it('can execute a batch transaction with a specific gas price', async () => {
       const ownerAccount = await cpk.getOwnerAccount();
-      const startingBalance = await getBalance(ownerAccount);
+      const startingBalance = await getBalance(executor || ownerAccount);
 
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
 
@@ -302,7 +303,7 @@ function shouldSupportDifferentTransactions({
       );
       const gasUsed = getGasUsed(txObj);
 
-      const endingBalance = await getBalance(ownerAccount);
+      const endingBalance = await getBalance(executor || ownerAccount);
       const gasCosts = startingBalance.sub(endingBalance).toNumber();
 
       gasCosts.should.be.equal(gasPrice * gasUsed);
@@ -311,7 +312,7 @@ function shouldSupportDifferentTransactions({
 }
 
 
-function shouldWorkWithWeb3(Web3, defaultAccount, gnosisSafeProviderBox) {
+function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderBox) {
   describe(`with Web3 version ${(new Web3()).version}`, () => {
     const ueb3 = new Web3(web3.currentProvider);
 
@@ -421,13 +422,14 @@ function shouldWorkWithWeb3(Web3, defaultAccount, gnosisSafeProviderBox) {
           ...testHelperMaker(safeWeb3Box),
           async getCPK() { return cpk; },
           ownerIsRecognizedContract: true,
+          executor: safeOwner,
         });
       });
     });
   });
 }
 
-function shouldWorkWithEthers(ethers, defaultAccount, gnosisSafeProviderBox) {
+function shouldWorkWithEthers(ethers, defaultAccount, safeOwner, gnosisSafeProviderBox) {
   describe(`with ethers version ${ethers.version}`, () => {
     const signer = ethers.Wallet.createRandom()
       .connect(new ethers.providers.Web3Provider(web3.currentProvider));
@@ -551,6 +553,7 @@ function shouldWorkWithEthers(ethers, defaultAccount, gnosisSafeProviderBox) {
           ...ethersTestHelpers(safeSignerBox),
           async getCPK() { return cpk; },
           ownerIsRecognizedContract: true,
+          executor: safeOwner,
         });
       });
     });
@@ -559,7 +562,6 @@ function shouldWorkWithEthers(ethers, defaultAccount, gnosisSafeProviderBox) {
 
 contract('CPK', ([defaultAccount, safeOwner]) => {
   const gnosisSafeProviderBox = [];
-  const allMethodsCalled = {};
   before('emulate Gnosis Safe WalletConnect provider', async () => {
     const proxyFactory = await ProxyFactory.deployed();
     const safeMasterCopy = await GnosisSafe.deployed();
@@ -625,19 +627,37 @@ contract('CPK', ([defaultAccount, safeOwner]) => {
           }
         }
 
-        // if (method === 'eth_estimateGas') {
-        //   console.log(method, params);
-        // }
+        if (method === 'eth_estimateGas') {
+          const [{
+            from, to, gas, gasPrice, value, data, nonce,
+          }] = params;
+
+          if (from.toLowerCase() === safeAddress.toLowerCase()) {
+            return web3.currentProvider.send({
+              id,
+              jsonrpc,
+              method,
+              params: [{
+                from: safeOwner,
+                to: safeAddress,
+                gas,
+                gasPrice,
+                value,
+                nonce,
+                data: safeMasterCopy.contract.methods.execTransaction(
+                  to, value || 0, data, CPK.CALL,
+                  0, 0, 0, zeroAddress, zeroAddress, safeSignature,
+                ).encodeABI(),
+              }],
+            }, callback);
+          }
+        }
 
         return web3.currentProvider.send(rpcData, callback);
       },
     };
 
     gnosisSafeProviderBox[0] = emulatedSafeProvider;
-  });
-
-  after('log all the stuff', () => {
-    console.log('foo', allMethodsCalled);
   });
 
   it('should exist', () => {
@@ -653,7 +673,7 @@ contract('CPK', ([defaultAccount, safeOwner]) => {
   });
 
   web3Versions.forEach((Web3) => {
-    shouldWorkWithWeb3(Web3, defaultAccount, gnosisSafeProviderBox);
+    shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderBox);
   });
-  shouldWorkWithEthers(ethersMaj4, defaultAccount, gnosisSafeProviderBox);
+  shouldWorkWithEthers(ethersMaj4, defaultAccount, safeOwner, gnosisSafeProviderBox);
 });
