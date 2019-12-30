@@ -565,6 +565,7 @@ contract('CPK', ([defaultAccount, safeOwner]) => {
   before('emulate Gnosis Safe WalletConnect provider', async () => {
     const proxyFactory = await ProxyFactory.deployed();
     const safeMasterCopy = await GnosisSafe.deployed();
+    const multiSend = await MultiSend.deployed();
     const safeSetupData = safeMasterCopy.contract.methods.setup(
       [safeOwner], 1,
       zeroAddress, '0x',
@@ -656,6 +657,32 @@ contract('CPK', ([defaultAccount, safeOwner]) => {
               }],
             }, callback);
           }
+        }
+
+        if (method === 'gs_multi_send') {
+          const callData = multiSend.contract.methods.multiSend(
+            `0x${params.map((tx) => [
+              web3.eth.abi.encodeParameter('uint8', tx.operation).slice(-2),
+              web3.eth.abi.encodeParameter('address', tx.to).slice(-40),
+              web3.eth.abi.encodeParameter('uint256', tx.value).slice(-64),
+              web3.eth.abi.encodeParameter('uint256', web3.utils.hexToBytes(tx.data).length).slice(-64),
+              tx.data.replace(/^0x/, ''),
+            ].join('')).join('')}`,
+          ).encodeABI();
+
+          return web3.currentProvider.send({
+            id,
+            jsonrpc,
+            method: 'eth_sendTransaction',
+            params: [{
+              from: safeOwner,
+              to: safeAddress,
+              data: safeMasterCopy.contract.methods.execTransaction(
+                multiSend.address, 0, callData, CPK.DELEGATECALL,
+                0, 0, 0, zeroAddress, zeroAddress, safeSignature,
+              ).encodeABI(),
+            }],
+          }, callback);
         }
 
         return web3.currentProvider.send(rpcData, callback);
