@@ -1,4 +1,3 @@
-const sinon = require('sinon');
 const should = require('should');
 
 const Web3Maj1Min2 = require('web3-1-2');
