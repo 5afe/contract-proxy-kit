@@ -153,9 +153,14 @@ function shouldSupportDifferentTransactions({
       ]);
 
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(2);
-      fromWei(await erc20.balanceOf(cpk.address)).should.equal(1);
+
+      if (cpk.address === proxyOwner) {
+        fromWei(await erc20.balanceOf(cpk.address)).should.equal(98);
+      } else {
+        fromWei(await erc20.balanceOf(cpk.address)).should.equal(1);
+        fromWei(await erc20.balanceOf(proxyOwner)).should.equal(97);
+      }
       fromWei(await erc20.balanceOf(multiStep.address)).should.equal(2);
-      fromWei(await erc20.balanceOf(proxyOwner)).should.equal(97);
     });
 
     it('can batch ERC-1155 token interactions', async () => {
@@ -199,9 +204,13 @@ function shouldSupportDifferentTransactions({
         },
       ]);
 
-      fromWei(await erc20.balanceOf(cpk.address)).should.equal(2);
+      if (cpk.address === proxyOwner) {
+        fromWei(await erc20.balanceOf(cpk.address)).should.equal(99);
+      } else {
+        fromWei(await erc20.balanceOf(cpk.address)).should.equal(2);
+        fromWei(await erc20.balanceOf(proxyOwner)).should.equal(97);
+      }
       fromWei(await erc20.balanceOf(conditionalTokens.address)).should.equal(1);
-      fromWei(await erc20.balanceOf(proxyOwner)).should.equal(97);
     });
 
     it('by default errors without transacting when single transaction would fail', async () => {
@@ -221,7 +230,9 @@ function shouldSupportDifferentTransactions({
         .should.eventually.equal(startingTransactionCount);
     });
 
-    it('by default errors without transacting when any transaction in batch would fail', async () => {
+    (
+      ownerIsRecognizedContract ? it.skip : it
+    )('by default errors without transacting when any transaction in batch would fail', async () => {
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
       const ownerAccount = await cpk.getOwnerAccount();
       const startingTransactionCount = await getTransactionCount(ownerAccount);
@@ -278,7 +289,9 @@ function shouldSupportDifferentTransactions({
       gasCosts.should.be.equal(gasPrice * gasUsed);
     });
 
-    it('can execute a batch transaction with a specific gas price', async () => {
+    (
+      ownerIsRecognizedContract ? it.skip : it
+    )('can execute a batch transaction with a specific gas price', async () => {
       const ownerAccount = await cpk.getOwnerAccount();
       const startingBalance = await getBalance(executor || ownerAccount);
 
@@ -402,7 +415,7 @@ function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderB
         });
       });
 
-      describe.only('with WalletConnected Gnosis Safe provider', () => {
+      describe('with mock WalletConnected Gnosis Safe provider', () => {
         const safeWeb3Box = [];
 
         before('create Web3 instance', async () => {
@@ -531,7 +544,7 @@ function shouldWorkWithEthers(ethers, defaultAccount, safeOwner, gnosisSafeProvi
         });
       });
 
-      describe.only('with WalletConnected Gnosis Safe provider', () => {
+      describe('with mock WalletConnected Gnosis Safe provider', () => {
         const safeSignerBox = [];
 
         before('create Web3 instance', async () => {
@@ -577,6 +590,7 @@ contract('CPK', ([defaultAccount, safeOwner]) => {
     const safeSignature = `0x000000000000000000000000${
       safeOwner.replace(/^0x/, '').toLowerCase()
     }000000000000000000000000000000000000000000000000000000000000000001`;
+    const safe = await GnosisSafe.at(safeAddress);
 
     const emulatedSafeProvider = {
       ...web3.currentProvider,
@@ -670,19 +684,11 @@ contract('CPK', ([defaultAccount, safeOwner]) => {
             ].join('')).join('')}`,
           ).encodeABI();
 
-          return web3.currentProvider.send({
-            id,
-            jsonrpc,
-            method: 'eth_sendTransaction',
-            params: [{
-              from: safeOwner,
-              to: safeAddress,
-              data: safeMasterCopy.contract.methods.execTransaction(
-                multiSend.address, 0, callData, CPK.DELEGATECALL,
-                0, 0, 0, zeroAddress, zeroAddress, safeSignature,
-              ).encodeABI(),
-            }],
-          }, callback);
+          return safe.execTransaction(
+            multiSend.address, 0, callData, CPK.DELEGATECALL,
+            0, 0, 0, zeroAddress, zeroAddress, safeSignature,
+            { from: safeOwner },
+          ).then((result) => callback(null, { id, jsonrpc, result }), callback);
         }
 
         return web3.currentProvider.send(rpcData, callback);

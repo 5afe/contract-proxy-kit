@@ -182,37 +182,40 @@ const CPK = class CPK {
 
     const provider = this.apiType === 'web3'
       ? this.web3.currentProvider
-      : this.signer.provider.provider || this.signer.provider._web3Provider;
+      : this.signer.provider.provider
+      || this.signer.provider._web3Provider; // eslint-disable-line no-underscore-dangle
     const wc = provider && (provider.wc || (provider.connection && provider.connection.wc));
     if (
       wc && wc.peerMeta && wc.peerMeta.name
       && wc.peerMeta.name.startsWith('Gnosis Safe')
     ) {
       this.isConnectedToSafe = true;
-      this.safeAddress = ownerAccount;
-      return;
     }
 
     if (this.apiType === 'web3') {
-      this.proxyFactory = new this.web3.eth.Contract(cpkFactoryAbi, proxyFactoryAddress);
       this.multiSend = new this.web3.eth.Contract(multiSendAbi, multiSendAddress);
 
-      const create2Salt = this.web3.utils.keccak256(this.web3.eth.abi.encodeParameters(
-        ['address', 'uint256'],
-        [ownerAccount, predeterminedSaltNonce],
-      ));
+      if (this.isConnectedToSafe) {
+        this.contract = new this.web3.eth.Contract(safeAbi, ownerAccount);
+      } else {
+        this.proxyFactory = new this.web3.eth.Contract(cpkFactoryAbi, proxyFactoryAddress);
+        const create2Salt = this.web3.utils.keccak256(this.web3.eth.abi.encodeParameters(
+          ['address', 'uint256'],
+          [ownerAccount, predeterminedSaltNonce],
+        ));
 
-      this.contract = new this.web3.eth.Contract(safeAbi, this.web3.utils.toChecksumAddress(
-        this.web3.utils.soliditySha3(
-          '0xff',
-          { t: 'address', v: this.proxyFactory.options.address },
-          { t: 'bytes32', v: create2Salt },
+        this.contract = new this.web3.eth.Contract(safeAbi, this.web3.utils.toChecksumAddress(
           this.web3.utils.soliditySha3(
-            await this.proxyFactory.methods.proxyCreationCode().call(),
-            this.web3.eth.abi.encodeParameters(['address'], [this.masterCopyAddress]),
-          ),
-        ).slice(-40),
-      ));
+            '0xff',
+            { t: 'address', v: this.proxyFactory.options.address },
+            { t: 'bytes32', v: create2Salt },
+            this.web3.utils.soliditySha3(
+              await this.proxyFactory.methods.proxyCreationCode().call(),
+              this.web3.eth.abi.encodeParameters(['address'], [this.masterCopyAddress]),
+            ),
+          ).slice(-40),
+        ));
+      }
     } else if (this.apiType === 'ethers') {
       const abiToViewAbi = (abi) => abi.map(({
         constant,
@@ -223,38 +226,47 @@ const CPK = class CPK {
         stateMutability: 'view',
       }));
 
-      this.proxyFactory = new this.ethers.Contract(
-        proxyFactoryAddress,
-        cpkFactoryAbi,
-        this.signer,
-      );
-      this.viewProxyFactory = new this.ethers.Contract(
-        proxyFactoryAddress,
-        abiToViewAbi(cpkFactoryAbi),
-        this.signer,
-      );
-
       this.multiSend = new this.ethers.Contract(multiSendAddress, multiSendAbi, this.signer);
 
-      const create2Salt = this.ethers.utils.keccak256(this.ethers.utils.defaultAbiCoder.encode(
-        ['address', 'uint256'],
-        [ownerAccount, predeterminedSaltNonce],
-      ));
+      if (this.isConnectedToSafe) {
+        this.contract = new this.ethers.Contract(ownerAccount, safeAbi, this.signer);
+        this.viewContract = new this.ethers.Contract(
+          ownerAccount,
+          abiToViewAbi(safeAbi),
+          this.signer,
+        );
+      } else {
+        this.proxyFactory = new this.ethers.Contract(
+          proxyFactoryAddress,
+          cpkFactoryAbi,
+          this.signer,
+        );
+        this.viewProxyFactory = new this.ethers.Contract(
+          proxyFactoryAddress,
+          abiToViewAbi(cpkFactoryAbi),
+          this.signer,
+        );
 
-      const address = this.ethers.utils.getAddress(
-        this.ethers.utils.solidityKeccak256(['bytes', 'address', 'bytes32', 'bytes32'], [
-          '0xff',
-          this.proxyFactory.address,
-          create2Salt,
-          this.ethers.utils.solidityKeccak256(['bytes', 'bytes'], [
-            await this.proxyFactory.proxyCreationCode(),
-            this.ethers.utils.defaultAbiCoder.encode(['address'], [this.masterCopyAddress]),
-          ]),
-        ]).slice(-40),
-      );
+        const create2Salt = this.ethers.utils.keccak256(this.ethers.utils.defaultAbiCoder.encode(
+          ['address', 'uint256'],
+          [ownerAccount, predeterminedSaltNonce],
+        ));
 
-      this.contract = new this.ethers.Contract(address, safeAbi, this.signer);
-      this.viewContract = new this.ethers.Contract(address, abiToViewAbi(safeAbi), this.signer);
+        const address = this.ethers.utils.getAddress(
+          this.ethers.utils.solidityKeccak256(['bytes', 'address', 'bytes32', 'bytes32'], [
+            '0xff',
+            this.proxyFactory.address,
+            create2Salt,
+            this.ethers.utils.solidityKeccak256(['bytes', 'bytes'], [
+              await this.proxyFactory.proxyCreationCode(),
+              this.ethers.utils.defaultAbiCoder.encode(['address'], [this.masterCopyAddress]),
+            ]),
+          ]).slice(-40),
+        );
+
+        this.contract = new this.ethers.Contract(address, safeAbi, this.signer);
+        this.viewContract = new this.ethers.Contract(address, abiToViewAbi(safeAbi), this.signer);
+      }
     }
   }
 
@@ -270,7 +282,6 @@ const CPK = class CPK {
   }
 
   get address() {
-    if (this.isConnectedToSafe) return this.safeAddress;
     if (this.apiType === 'web3') return this.contract.options.address;
     if (this.apiType === 'ethers') return this.contract.address;
     throw new Error(`invalid API type ${this.apiType}`);
@@ -285,8 +296,8 @@ const CPK = class CPK {
 
     let checkSingleCall;
     let attemptTransaction;
-    let attemptSendTransaction;
-    let attemptProviderSend;
+    let attemptSafeProviderSendTx;
+    let attemptSafeProviderMultiSendTxs;
     let codeAtAddress;
     let getContractAddress;
     let encodeMultiSendCalldata;
@@ -320,7 +331,7 @@ const CPK = class CPK {
         return promiEventToPromise(promiEvent);
       };
 
-      attemptSendTransaction = (txObj) => {
+      attemptSafeProviderSendTx = (txObj) => {
         const promiEvent = this.web3.eth.sendTransaction({
           ...txObj,
           ...sendOptions,
@@ -329,21 +340,25 @@ const CPK = class CPK {
         return promiEventToPromise(promiEvent);
       };
 
-      attemptProviderSend = (method, params) => (
-        this.web3.currentProvider.host === 'CustomProvider'
-          ? this.web3.currentProvider.send(method, params)
-          : new Promise(
-            (resolve, reject) => this.web3.currentProvider.send({
-              jsonrpc: '2.0',
-              id: new Date().getTime(),
-              method,
-              params,
-            }, (err, result) => {
-              if (err) return reject(err);
-              return resolve(result);
-            }),
-          )
-      );
+      attemptSafeProviderMultiSendTxs = async (txs) => {
+        const res = await (
+          this.web3.currentProvider.host === 'CustomProvider'
+            ? this.web3.currentProvider.send('gs_multi_send', txs)
+            : new Promise(
+              (resolve, reject) => this.web3.currentProvider.send({
+                jsonrpc: '2.0',
+                id: new Date().getTime(),
+                method: 'gs_multi_send',
+                params: txs,
+              }, (err, result) => {
+                if (err) return reject(err);
+                if (result.error) return reject(result.error);
+                return resolve(result.result);
+              }),
+            )
+        );
+        return res;
+      };
 
       codeAtAddress = await this.web3.eth.getCode(this.address);
 
@@ -376,7 +391,7 @@ const CPK = class CPK {
         return { transactionResponse, transactionReceipt };
       };
 
-      attemptSendTransaction = async (txObj) => {
+      attemptSafeProviderSendTx = async (txObj) => {
         const transactionResponse = await this.signer.sendTransaction({
           ...txObj,
           ...(options || {}),
@@ -385,7 +400,7 @@ const CPK = class CPK {
         return { transactionResponse, transactionReceipt };
       };
 
-      attemptProviderSend = (method, params) => this.signer.provider.send(method, params);
+      attemptSafeProviderMultiSendTxs = (txs) => this.signer.provider.send('gs_multi_send', txs);
 
       codeAtAddress = (await this.signer.provider.getCode(this.address));
 
@@ -420,7 +435,7 @@ const CPK = class CPK {
         await checkSingleCall(to, value, data);
 
         if (this.isConnectedToSafe) {
-          return attemptSendTransaction({ to, value, data });
+          return attemptSafeProviderSendTx({ to, value, data });
         }
       }
 
@@ -453,7 +468,7 @@ const CPK = class CPK {
     }
 
     if (this.isConnectedToSafe) {
-      return attemptProviderSend('gs_multi_send', transactions);
+      return attemptSafeProviderMultiSendTxs(transactions);
     }
 
     if (codeAtAddress !== '0x') {
