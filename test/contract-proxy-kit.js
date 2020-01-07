@@ -280,7 +280,7 @@ function shouldSupportDifferentTransactions({
         }],
         { gasPrice },
       );
-      const gasUsed = getGasUsed(txObj);
+      const gasUsed = await getGasUsed(txObj);
 
       const endingBalance = await getBalance(executor || ownerAccount);
       const gasCosts = startingBalance.sub(endingBalance).toNumber();
@@ -313,7 +313,7 @@ function shouldSupportDifferentTransactions({
         ],
         { gasPrice },
       );
-      const gasUsed = getGasUsed(txObj);
+      const gasUsed = await getGasUsed(txObj);
 
       const endingBalance = await getBalance(executor || ownerAccount);
       const gasCosts = startingBalance.sub(endingBalance).toNumber();
@@ -334,14 +334,17 @@ function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderB
       randomHexWord: () => web3Box[0].utils.randomHex(32),
       fromWei: (amount) => Number(web3Box[0].utils.fromWei(amount)),
       getTransactionCount: (account) => web3Box[0].eth.getTransactionCount(account),
-      testedTxObjProps: 'the PromiEvent for the transaction and the receipt',
+      testedTxObjProps: 'the PromiEvent for the transaction and the hash',
       getBalance: (address) => web3Box[0].eth.getBalance(address)
         .then((balance) => web3Box[0].utils.toBN(balance)),
-      getGasUsed: ({ receipt }) => receipt.gasUsed,
-
-      checkTxObj: ({ promiEvent, receipt }) => {
+      getGasUsed: ({ promiEvent }) => new Promise(
+        (resolve, reject) => promiEvent
+          .on('confirmation', (confNumber, receipt) => resolve(receipt.gasUsed))
+          .on('error', reject),
+      ),
+      checkTxObj: ({ promiEvent, hash }) => {
         should.exist(promiEvent);
-        should.exist(receipt);
+        should.exist(hash);
       },
     });
 
@@ -453,11 +456,13 @@ function shouldWorkWithEthers(ethers, defaultAccount, safeOwner, gnosisSafeProvi
       fromWei: (amount) => Number(ethers.utils.formatUnits(amount.toString(), 'ether')),
       getTransactionCount: signer.provider.getTransactionCount.bind(signer.provider),
       getBalance: signer.provider.getBalance.bind(signer.provider),
-      getGasUsed: ({ transactionReceipt }) => transactionReceipt.gasUsed.toNumber(),
-      testedTxObjProps: 'the TransactionResponse and the TransactionReceipt',
-      checkTxObj: ({ transactionResponse, transactionReceipt }) => {
+      getGasUsed: async ({ transactionResponse }) => (
+        await transactionResponse.wait()
+      ).gasUsed.toNumber(),
+      testedTxObjProps: 'the TransactionResponse and the hash',
+      checkTxObj: ({ transactionResponse, hash }) => {
         should.exist(transactionResponse);
-        should.exist(transactionReceipt);
+        should.exist(hash);
       },
     });
 

@@ -80,6 +80,14 @@ const cpk = await CPK.create({
 
 Please refer to the `migrations/` folder of this package for information on how to deploy the required contracts on a network, and note that these addresses must be available for the connected network in order for *CPK* creation to be successful.
 
+### CPK#getOwnerAccount
+
+This may be used to figure out which account the proxy considers the owner account. It returns a Promise which resolves to the owner account:
+
+```js
+const ownerAccount = await cpk.getOwnerAccount()
+```
+
 ### CPK#address
 
 Once created, the `address` property on a *CPK* instance will provide the proxy's checksummed Ethereum address:
@@ -90,6 +98,17 @@ Once created, the `address` property on a *CPK* instance will provide the proxy'
 ```
 
 This address is calculated even if the proxy has not been deployed yet, and it is deterministically generated from the proxy owner address.
+
+#### Support for WalletConnected Gnosis Safe
+
+If the provider underlying the *CPK* instance is connected to a Gnosis Safe via WalletConnect, the address will match the owner account:
+
+```js
+const ownerAccount = await cpk.getOwnerAccount()
+cpk.address === ownerAccount // this will be true in that case
+```
+
+*CPK* will use the Safe's native support for batching transactions, and will not create an additional proxy contract account.
 
 ### CPK#execTransactions
 
@@ -155,7 +174,7 @@ const { promiEvent, receipt } = await cpk.execTransactions([
 Suppose instead `erc20` and `exchange` are Truffle contract abstraction instances instead. Since Truffle contract abstraction instances contain a reference to an underlying *web3.eth.Contract* instance, they may be used in a similar manner:
 
 ```js
-const { promiEvent, receipt } = await cpk.execTransactions([
+const { promiEvent, hash } = await cpk.execTransactions([
   {
     operation: CPK.CALL,
     to: erc20.address,
@@ -183,7 +202,7 @@ const { promiEvent, receipt } = await cpk.execTransactions([
 Similarly to the example in the previous section, suppose that `erc20` is a *ethers.Contract* instance for an ERC20 token for which the proxy account holds a balance, and `exchange` is a *ethers.Contract* instance of an exchange contract with an deposit requirement, where calling the deposit function on the exchange requires an allowance for the exchange by the depositor. Batching these transactions may be done like so:
 
 ```js
-const { transactionResponse, transactionReceipt } = await cpk.execTransactions([
+const { transactionResponse, hash } = await cpk.execTransactions([
   {
     operation: CPK.CALL,
     to: erc20.address,
@@ -227,4 +246,25 @@ const txObject = await cpk.execTransactions(
   ],
   { gasPrice: `${3e9}` },
 );
+```
+
+#### Support for WalletConnected Gnosis Safe
+
+When WalletConnected to Gnosis Safe, `execTransactions` will use the Safe's native support for sending batch transactions (via `gs_multi_send`). In this case, the gas price option is not available, and `execTransactions` will only return a transaction hash.
+
+```js
+const { hash } = await cpk.execTransactions([
+  {
+    operation: CPK.CALL,
+    to: '0x90f8bf6a479f320ead074411a4b0e7944ea8c9c1',
+    value: `${1e18}`,
+    data: '0x',
+  },
+  {
+    operation: CPK.CALL,
+    to: '0xffcf8fdee72ac11b5c542428b35eef5769c409f0',
+    value: `${1e18}`,
+    data: '0x',
+  },
+]);
 ```

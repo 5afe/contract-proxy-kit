@@ -310,9 +310,9 @@ const CPK = class CPK {
         ...(options || {}),
       };
       const promiEventToPromise = (promiEvent) => new Promise(
-        (resolve, reject) => promiEvent.on(
-          'confirmation',
-          (confirmationNumber, receipt) => resolve({ sendOptions, promiEvent, receipt }),
+        (resolve, reject) => promiEvent.once(
+          'transactionHash',
+          (hash) => resolve({ sendOptions, promiEvent, hash }),
         ).catch(reject),
       );
 
@@ -341,7 +341,7 @@ const CPK = class CPK {
       };
 
       attemptSafeProviderMultiSendTxs = async (txs) => {
-        const res = await (
+        const hash = await (
           this.web3.currentProvider.host === 'CustomProvider'
             ? this.web3.currentProvider.send('gs_multi_send', txs)
             : new Promise(
@@ -357,7 +357,7 @@ const CPK = class CPK {
               }),
             )
         );
-        return res;
+        return { hash };
       };
 
       codeAtAddress = await this.web3.eth.getCode(this.address);
@@ -387,8 +387,7 @@ const CPK = class CPK {
           ...params,
           ...(options == null ? [] : [options]),
         );
-        const transactionReceipt = await transactionResponse.wait();
-        return { transactionResponse, transactionReceipt };
+        return { transactionResponse, hash: transactionResponse.hash };
       };
 
       attemptSafeProviderSendTx = async (txObj) => {
@@ -396,11 +395,13 @@ const CPK = class CPK {
           ...txObj,
           ...(options || {}),
         });
-        const transactionReceipt = await transactionResponse.wait();
-        return { transactionResponse, transactionReceipt };
+        return { transactionResponse, hash: transactionResponse.hash };
       };
 
-      attemptSafeProviderMultiSendTxs = (txs) => this.signer.provider.send('gs_multi_send', txs);
+      attemptSafeProviderMultiSendTxs = async (txs) => {
+        const hash = await this.signer.provider.send('gs_multi_send', txs);
+        return { hash };
+      };
 
       codeAtAddress = (await this.signer.provider.getCode(this.address));
 
