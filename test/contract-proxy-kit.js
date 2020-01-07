@@ -14,6 +14,13 @@ const Multistep = artifacts.require('Multistep');
 const ConditionalTokens = artifacts.require('ConditionalTokens');
 const ERC20Mintable = artifacts.require('ERC20Mintable');
 
+const GnosisSafe = artifacts.require('GnosisSafe');
+const CPKFactory = artifacts.require('CPKFactory');
+const MultiSend = artifacts.require('MultiSend');
+const DefaultCallbackHandler = artifacts.require('DefaultCallbackHandler');
+const ProxyFactory = artifacts.require('ProxyFactory');
+const zeroAddress = `0x${'0'.repeat(40)}`;
+
 const toConfirmationPromise = (promiEvent) => new Promise(
   (resolve, reject) => promiEvent.on('confirmation',
     (confirmationNumber, receipt) => resolve(receipt)).catch(reject),
@@ -31,6 +38,8 @@ function shouldSupportDifferentTransactions({
   getGasUsed,
   testedTxObjProps,
   checkTxObj,
+  ownerIsRecognizedContract,
+  executor,
 }) {
   const { getConditionId } = makeConditionalTokensIdHelpers(web3.utils);
 
@@ -39,6 +48,14 @@ function shouldSupportDifferentTransactions({
     should.exist(cpk.address);
     checkAddressChecksum(cpk.address).should.be.true();
   });
+
+  if (ownerIsRecognizedContract) {
+    it('has same owner as instance\'s address', async () => {
+      const cpk = await getCPK();
+      const proxyOwner = await cpk.getOwnerAccount();
+      proxyOwner.should.be.equal(cpk.address);
+    });
+  }
 
   describe('with mock contracts', () => {
     let cpk;
@@ -135,9 +152,14 @@ function shouldSupportDifferentTransactions({
       ]);
 
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(2);
-      fromWei(await erc20.balanceOf(cpk.address)).should.equal(1);
+
+      if (cpk.address === proxyOwner) {
+        fromWei(await erc20.balanceOf(cpk.address)).should.equal(98);
+      } else {
+        fromWei(await erc20.balanceOf(cpk.address)).should.equal(1);
+        fromWei(await erc20.balanceOf(proxyOwner)).should.equal(97);
+      }
       fromWei(await erc20.balanceOf(multiStep.address)).should.equal(2);
-      fromWei(await erc20.balanceOf(proxyOwner)).should.equal(97);
     });
 
     it('can batch ERC-1155 token interactions', async () => {
@@ -181,9 +203,13 @@ function shouldSupportDifferentTransactions({
         },
       ]);
 
-      fromWei(await erc20.balanceOf(cpk.address)).should.equal(2);
+      if (cpk.address === proxyOwner) {
+        fromWei(await erc20.balanceOf(cpk.address)).should.equal(99);
+      } else {
+        fromWei(await erc20.balanceOf(cpk.address)).should.equal(2);
+        fromWei(await erc20.balanceOf(proxyOwner)).should.equal(97);
+      }
       fromWei(await erc20.balanceOf(conditionalTokens.address)).should.equal(1);
-      fromWei(await erc20.balanceOf(proxyOwner)).should.equal(97);
     });
 
     it('by default errors without transacting when single transaction would fail', async () => {
@@ -203,7 +229,9 @@ function shouldSupportDifferentTransactions({
         .should.eventually.equal(startingTransactionCount);
     });
 
-    it('by default errors without transacting when any transaction in batch would fail', async () => {
+    (
+      ownerIsRecognizedContract ? it.skip : it
+    )('by default errors without transacting when any transaction in batch would fail', async () => {
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
       const ownerAccount = await cpk.getOwnerAccount();
       const startingTransactionCount = await getTransactionCount(ownerAccount);
@@ -238,7 +266,7 @@ function shouldSupportDifferentTransactions({
 
     it('can execute a single transaction with a specific gas price', async () => {
       const ownerAccount = await cpk.getOwnerAccount();
-      const startingBalance = await getBalance(ownerAccount);
+      const startingBalance = await getBalance(executor || ownerAccount);
 
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
 
@@ -252,17 +280,19 @@ function shouldSupportDifferentTransactions({
         }],
         { gasPrice },
       );
-      const gasUsed = getGasUsed(txObj);
+      const gasUsed = await getGasUsed(txObj);
 
-      const endingBalance = await getBalance(ownerAccount);
+      const endingBalance = await getBalance(executor || ownerAccount);
       const gasCosts = startingBalance.sub(endingBalance).toNumber();
 
       gasCosts.should.be.equal(gasPrice * gasUsed);
     });
 
-    it('can execute a batch transaction with a specific gas price', async () => {
+    (
+      ownerIsRecognizedContract ? it.skip : it
+    )('can execute a batch transaction with a specific gas price', async () => {
       const ownerAccount = await cpk.getOwnerAccount();
-      const startingBalance = await getBalance(ownerAccount);
+      const startingBalance = await getBalance(executor || ownerAccount);
 
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
 
@@ -283,9 +313,9 @@ function shouldSupportDifferentTransactions({
         ],
         { gasPrice },
       );
-      const gasUsed = getGasUsed(txObj);
+      const gasUsed = await getGasUsed(txObj);
 
-      const endingBalance = await getBalance(ownerAccount);
+      const endingBalance = await getBalance(executor || ownerAccount);
       const gasCosts = startingBalance.sub(endingBalance).toNumber();
 
       gasCosts.should.be.equal(gasPrice * gasUsed);
@@ -294,26 +324,31 @@ function shouldSupportDifferentTransactions({
 }
 
 
-function shouldWorkWithWeb3(Web3, defaultAccount) {
+function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderBox) {
   describe(`with Web3 version ${(new Web3()).version}`, () => {
     const ueb3 = new Web3(web3.currentProvider);
 
-    const ueb3TestHelpers = {
-      checkAddressChecksum: ueb3.utils.checkAddressChecksum,
-      sendTransaction: (txObj) => toConfirmationPromise(ueb3.eth.sendTransaction(txObj)),
-      randomHexWord: () => ueb3.utils.randomHex(32),
-      fromWei: (amount) => Number(ueb3.utils.fromWei(amount)),
-      getTransactionCount: ueb3.eth.getTransactionCount,
-      testedTxObjProps: 'the PromiEvent for the transaction and the receipt',
-      getBalance: (address) => ueb3.eth.getBalance(address)
-        .then((balance) => ueb3.utils.toBN(balance)),
-      getGasUsed: ({ receipt }) => receipt.gasUsed,
-
-      checkTxObj: ({ promiEvent, receipt }) => {
+    const testHelperMaker = (web3Box) => ({
+      checkAddressChecksum: (address) => web3Box[0].utils.checkAddressChecksum(address),
+      sendTransaction: (txObj) => toConfirmationPromise(web3Box[0].eth.sendTransaction(txObj)),
+      randomHexWord: () => web3Box[0].utils.randomHex(32),
+      fromWei: (amount) => Number(web3Box[0].utils.fromWei(amount)),
+      getTransactionCount: (account) => web3Box[0].eth.getTransactionCount(account),
+      testedTxObjProps: 'the PromiEvent for the transaction and the hash',
+      getBalance: (address) => web3Box[0].eth.getBalance(address)
+        .then((balance) => web3Box[0].utils.toBN(balance)),
+      getGasUsed: ({ promiEvent }) => new Promise(
+        (resolve, reject) => promiEvent
+          .on('confirmation', (confNumber, receipt) => resolve(receipt.gasUsed))
+          .on('error', reject),
+      ),
+      checkTxObj: ({ promiEvent, hash }) => {
         should.exist(promiEvent);
-        should.exist(receipt);
+        should.exist(hash);
       },
-    };
+    });
+
+    const ueb3TestHelpers = testHelperMaker([ueb3]);
 
     it('should not produce instances when web3 not connected to a recognized network', async () => {
       await CPK.create({ web3: ueb3 }).should.be.rejectedWith(/unrecognized network ID \d+/);
@@ -325,10 +360,10 @@ function shouldWorkWithWeb3(Web3, defaultAccount) {
       before('obtain addresses from artifacts', async () => {
         networks = {
           [await ueb3.eth.net.getId()]: {
-            masterCopyAddress: artifacts.require('GnosisSafe').address,
-            proxyFactoryAddress: artifacts.require('CPKFactory').address,
-            multiSendAddress: artifacts.require('MultiSend').address,
-            fallbackHandlerAddress: artifacts.require('DefaultCallbackHandler').address,
+            masterCopyAddress: GnosisSafe.address,
+            proxyFactoryAddress: CPKFactory.address,
+            multiSendAddress: MultiSend.address,
+            fallbackHandlerAddress: DefaultCallbackHandler.address,
           },
         };
       });
@@ -381,11 +416,35 @@ function shouldWorkWithWeb3(Web3, defaultAccount) {
           },
         });
       });
+
+      describe('with mock WalletConnected Gnosis Safe provider', () => {
+        const safeWeb3Box = [];
+
+        before('create Web3 instance', async () => {
+          safeWeb3Box[0] = new Web3(gnosisSafeProviderBox[0]);
+        });
+
+        let cpk;
+
+        before('create instance', async () => {
+          cpk = await CPK.create({
+            web3: safeWeb3Box[0],
+            networks,
+          });
+        });
+
+        shouldSupportDifferentTransactions({
+          ...testHelperMaker(safeWeb3Box),
+          async getCPK() { return cpk; },
+          ownerIsRecognizedContract: true,
+          executor: safeOwner,
+        });
+      });
     });
   });
 }
 
-function shouldWorkWithEthers(ethers, defaultAccount) {
+function shouldWorkWithEthers(ethers, defaultAccount, safeOwner, gnosisSafeProviderBox) {
   describe(`with ethers version ${ethers.version}`, () => {
     const signer = ethers.Wallet.createRandom()
       .connect(new ethers.providers.Web3Provider(web3.currentProvider));
@@ -397,11 +456,13 @@ function shouldWorkWithEthers(ethers, defaultAccount) {
       fromWei: (amount) => Number(ethers.utils.formatUnits(amount.toString(), 'ether')),
       getTransactionCount: signer.provider.getTransactionCount.bind(signer.provider),
       getBalance: signer.provider.getBalance.bind(signer.provider),
-      getGasUsed: ({ transactionReceipt }) => transactionReceipt.gasUsed.toNumber(),
-      testedTxObjProps: 'the TransactionResponse and the TransactionReceipt',
-      checkTxObj: ({ transactionResponse, transactionReceipt }) => {
+      getGasUsed: async ({ transactionResponse }) => (
+        await transactionResponse.wait()
+      ).gasUsed.toNumber(),
+      testedTxObjProps: 'the TransactionResponse and the hash',
+      checkTxObj: ({ transactionResponse, hash }) => {
         should.exist(transactionResponse);
-        should.exist(transactionReceipt);
+        should.exist(hash);
       },
     });
 
@@ -419,10 +480,10 @@ function shouldWorkWithEthers(ethers, defaultAccount) {
       before('obtain addresses from artifacts', async () => {
         networks = {
           [(await signer.provider.getNetwork()).chainId]: {
-            masterCopyAddress: artifacts.require('GnosisSafe').address,
-            proxyFactoryAddress: artifacts.require('CPKFactory').address,
-            multiSendAddress: artifacts.require('MultiSend').address,
-            fallbackHandlerAddress: artifacts.require('DefaultCallbackHandler').address,
+            masterCopyAddress: GnosisSafe.address,
+            proxyFactoryAddress: CPKFactory.address,
+            multiSendAddress: MultiSend.address,
+            fallbackHandlerAddress: DefaultCallbackHandler.address,
           },
         };
       });
@@ -486,11 +547,161 @@ function shouldWorkWithEthers(ethers, defaultAccount) {
           },
         });
       });
+
+      describe('with mock WalletConnected Gnosis Safe provider', () => {
+        const safeSignerBox = [];
+
+        before('create Web3 instance', async () => {
+          const provider = new ethers.providers.Web3Provider(gnosisSafeProviderBox[0]);
+          safeSignerBox[0] = provider.getSigner();
+        });
+
+        let cpk;
+
+        before('create instance', async () => {
+          cpk = await CPK.create({
+            ethers,
+            signer: safeSignerBox[0],
+            networks,
+          });
+        });
+
+        shouldSupportDifferentTransactions({
+          ...ethersTestHelpers(safeSignerBox),
+          async getCPK() { return cpk; },
+          ownerIsRecognizedContract: true,
+          executor: safeOwner,
+        });
+      });
     });
   });
 }
 
-contract('CPK', ([defaultAccount]) => {
+contract('CPK', ([defaultAccount, safeOwner]) => {
+  const gnosisSafeProviderBox = [];
+  before('emulate Gnosis Safe WalletConnect provider', async () => {
+    const proxyFactory = await ProxyFactory.deployed();
+    const safeMasterCopy = await GnosisSafe.deployed();
+    const multiSend = await MultiSend.deployed();
+    const safeSetupData = safeMasterCopy.contract.methods.setup(
+      [safeOwner], 1,
+      zeroAddress, '0x',
+      DefaultCallbackHandler.address,
+      zeroAddress, '0x', zeroAddress,
+    ).encodeABI();
+    const safeCreationTx = await proxyFactory.createProxy(safeMasterCopy.address, safeSetupData);
+    const safeAddress = safeCreationTx.logs.find(({ event }) => event === 'ProxyCreation').args.proxy;
+    const safeSignature = `0x000000000000000000000000${
+      safeOwner.replace(/^0x/, '').toLowerCase()
+    }000000000000000000000000000000000000000000000000000000000000000001`;
+    const safe = await GnosisSafe.at(safeAddress);
+
+    const emulatedSafeProvider = {
+      ...web3.currentProvider,
+      wc: {
+        peerMeta: {
+          name: 'Gnosis Safe - Mock',
+        },
+      },
+      send(rpcData, callback) {
+        const {
+          id, jsonrpc, method, params,
+        } = rpcData;
+
+        if (method === 'eth_accounts') {
+          return callback(null, {
+            id, jsonrpc, result: [safeAddress],
+          });
+        }
+
+        if (method === 'eth_sendTransaction') {
+          const [{
+            from, to, gas, gasPrice, value, data, nonce,
+          }] = params;
+
+          if (from.toLowerCase() !== safeAddress.toLowerCase()) {
+            return callback(new Error(`expected to be from safe address ${safeAddress} but got ${from}`));
+          }
+
+          return web3.currentProvider.send({
+            id,
+            jsonrpc,
+            method,
+            params: [{
+              from: safeOwner,
+              to: safeAddress,
+              gas,
+              gasPrice,
+              value,
+              nonce,
+              data: safeMasterCopy.contract.methods.execTransaction(
+                to, value || 0, data, CPK.CALL,
+                0, 0, 0, zeroAddress, zeroAddress, safeSignature,
+              ).encodeABI(),
+            }],
+          }, callback);
+        }
+
+        if (method === 'eth_getTransactionCount') {
+          const [account, block] = params;
+          if (account === safeAddress) {
+            return web3.currentProvider.send({
+              id, jsonrpc, method, params: [safeOwner, block],
+            }, callback);
+          }
+        }
+
+        if (method === 'eth_estimateGas') {
+          const [{
+            from, to, gas, gasPrice, value, data, nonce,
+          }] = params;
+
+          if (from.toLowerCase() === safeAddress.toLowerCase()) {
+            return web3.currentProvider.send({
+              id,
+              jsonrpc,
+              method,
+              params: [{
+                from: safeOwner,
+                to: safeAddress,
+                gas,
+                gasPrice,
+                value,
+                nonce,
+                data: safeMasterCopy.contract.methods.execTransaction(
+                  to, value || 0, data, CPK.CALL,
+                  0, 0, 0, zeroAddress, zeroAddress, safeSignature,
+                ).encodeABI(),
+              }],
+            }, callback);
+          }
+        }
+
+        if (method === 'gs_multi_send') {
+          const callData = multiSend.contract.methods.multiSend(
+            `0x${params.map((tx) => [
+              web3.eth.abi.encodeParameter('uint8', tx.operation).slice(-2),
+              web3.eth.abi.encodeParameter('address', tx.to).slice(-40),
+              web3.eth.abi.encodeParameter('uint256', tx.value).slice(-64),
+              web3.eth.abi.encodeParameter('uint256', web3.utils.hexToBytes(tx.data).length).slice(-64),
+              tx.data.replace(/^0x/, ''),
+            ].join('')).join('')}`,
+          ).encodeABI();
+
+          return safe.execTransaction(
+            multiSend.address, 0, callData, CPK.DELEGATECALL,
+            0, 0, 0, zeroAddress, zeroAddress, safeSignature,
+            { from: safeOwner },
+          ).then((result) => callback(null, { id, jsonrpc, result }), callback);
+        }
+
+        return web3.currentProvider.send(rpcData, callback);
+      },
+    };
+
+    gnosisSafeProviderBox[0] = emulatedSafeProvider;
+  });
+
   it('should exist', () => {
     should.exist(CPK);
   });
@@ -503,6 +714,8 @@ contract('CPK', ([defaultAccount]) => {
     await CPK.create({}).should.be.rejectedWith('web3/ethers property missing from options');
   });
 
-  web3Versions.forEach((Web3) => { shouldWorkWithWeb3(Web3, defaultAccount); });
-  shouldWorkWithEthers(ethersMaj4, defaultAccount);
+  web3Versions.forEach((Web3) => {
+    shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderBox);
+  });
+  shouldWorkWithEthers(ethersMaj4, defaultAccount, safeOwner, gnosisSafeProviderBox);
 });
