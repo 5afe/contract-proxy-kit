@@ -148,7 +148,7 @@ const txObject = await cpk.execTransactions([
 The `data` field may be used to make calls to contracts from the proxy account. Suppose that `erc20` is a *web3.eth.Contract* instance for an ERC20 token for which the proxy account holds a balance, and `exchange` is a *web3.eth.Contract* instance of an exchange contract with an deposit requirement, where calling the deposit function on the exchange requires an allowance for the exchange by the depositor. Batching these transactions may be done like so:
 
 ```js
-const { promiEvent, receipt } = await cpk.execTransactions([
+const { promiEvent, hash } = await cpk.execTransactions([
   {
     operation: CPK.CALL,
     to: erc20.options.address,
