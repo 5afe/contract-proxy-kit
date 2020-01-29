@@ -18,6 +18,12 @@ const networks = Object.assign(...[
       `https://${network}.infura.io/v3/17d5bb5953564f589d48d535f573e486`,
     ),
   },
-})));
+})), {
+  development: {
+    host: 'localhost',
+    port: 8545,
+    network_id: '*',
+  },
+});
 
 module.exports = { networks };
