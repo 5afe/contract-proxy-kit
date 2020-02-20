@@ -4,7 +4,7 @@ const seed = process.env.SEED || 'myth like bonus scare over problem client liza
 const HDWalletProvider = require('@truffle/hdwallet-provider');
 
 const networks = Object.assign(...[
-  [1, 'mainnet'],
+  [1, 'mainnet', `${1e9}`],
   [3, 'ropsten'],
   [4, 'rinkeby'],
   [5, 'goerli', `${2e9}`],
