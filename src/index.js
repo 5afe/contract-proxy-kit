@@ -299,6 +299,15 @@ const CPK = class CPK {
       address.replace(/^0x/, '').toLowerCase()
     }000000000000000000000000000000000000000000000000000000000000000001`;
 
+    const toConnectedSafeTransactions = (txs) => txs.map(({
+      operation, to, value, data,
+    }) => ({
+      operation: operation.toString(),
+      to,
+      value,
+      data,
+    }));
+
     const ownerAccount = await this.getOwnerAccount();
 
     let checkSingleCall;
@@ -350,13 +359,15 @@ const CPK = class CPK {
       attemptSafeProviderMultiSendTxs = async (txs) => {
         const hash = await (
           this.web3.currentProvider.host === 'CustomProvider'
-            ? this.web3.currentProvider.send('gs_multi_send', txs)
-            : new Promise(
+            ? this.web3.currentProvider.send(
+              'gs_multi_send',
+              toConnectedSafeTransactions(txs),
+            ) : new Promise(
               (resolve, reject) => this.web3.currentProvider.send({
                 jsonrpc: '2.0',
                 id: new Date().getTime(),
                 method: 'gs_multi_send',
-                params: txs,
+                params: toConnectedSafeTransactions(txs),
               }, (err, result) => {
                 if (err) return reject(err);
                 if (result.error) return reject(result.error);
@@ -406,7 +417,7 @@ const CPK = class CPK {
       };
 
       attemptSafeProviderMultiSendTxs = async (txs) => {
-        const hash = await this.signer.provider.send('gs_multi_send', txs);
+        const hash = await this.signer.provider.send('gs_multi_send', toConnectedSafeTransactions(txs));
         return { hash };
       };
 
