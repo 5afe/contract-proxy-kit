@@ -678,6 +678,12 @@ contract('CPK', ([defaultAccount, safeOwner]) => {
         }
 
         if (method === 'gs_multi_send') {
+          params.forEach((tx) => {
+            if (typeof tx.operation !== 'string') {
+              throw new Error('expected operation to be a string');
+            }
+          });
+
           const callData = multiSend.contract.methods.multiSend(
             `0x${params.map((tx) => [
               web3.eth.abi.encodeParameter('uint8', tx.operation).slice(-2),
