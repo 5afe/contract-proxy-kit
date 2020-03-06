@@ -1,42 +1,8 @@
 const cpkFactoryAbi = require('./abis/CpkFactoryAbi.json')
 const safeAbi = require('./abis/SafeAbi.json')
 const multiSendAbi = require('./abis/MultiSendAbi.json')
-
-const defaultNetworks = {
-  // mainnet
-  1: {
-    masterCopyAddress: '0x34CfAC646f301356fAa8B21e94227e3583Fe3F5F',
-    proxyFactoryAddress: '0x0fB4340432e56c014fa96286de17222822a9281b',
-    multiSendAddress: '0xB522a9f781924eD250A11C54105E51840B138AdD',
-    fallbackHandlerAddress: '0x40A930851BD2e590Bd5A5C981b436de25742E980',
-  },
-  // rinkeby
-  4: {
-    masterCopyAddress: '0x34CfAC646f301356fAa8B21e94227e3583Fe3F5F',
-    proxyFactoryAddress: '0x336c19296d3989e9e0c2561ef21c964068657c38',
-    multiSendAddress: '0xB522a9f781924eD250A11C54105E51840B138AdD',
-    fallbackHandlerAddress: '0x40A930851BD2e590Bd5A5C981b436de25742E980',
-  },
-  // goerli
-  5: {
-    masterCopyAddress: '0x34CfAC646f301356fAa8B21e94227e3583Fe3F5F',
-    proxyFactoryAddress: '0xfC7577774887aAE7bAcdf0Fc8ce041DA0b3200f7',
-    multiSendAddress: '0xB522a9f781924eD250A11C54105E51840B138AdD',
-    fallbackHandlerAddress: '0x40A930851BD2e590Bd5A5C981b436de25742E980',
-  },
-  // kovan
-  42: {
-    masterCopyAddress: '0x34CfAC646f301356fAa8B21e94227e3583Fe3F5F',
-    proxyFactoryAddress: '0xfC7577774887aAE7bAcdf0Fc8ce041DA0b3200f7',
-    multiSendAddress: '0xB522a9f781924eD250A11C54105E51840B138AdD',
-    fallbackHandlerAddress: '0x40A930851BD2e590Bd5A5C981b436de25742E980',
-  },
-};
-
-const zeroAddress = `0x${'0'.repeat(40)}`;
-
-// keccak256(toUtf8Bytes('Contract Proxy Kit'))
-const predeterminedSaltNonce = '0xcfe33a586323e7325be6aa6ecd8b4600d232a9037e83c8ece69413b777dabe65';
+const defaultNetworks = require('./utils/networks')
+const { zeroAddress, predeterminedSaltNonce } = require('./utils/constants')
 
 const CPK = class CPK {
   static async create(opts) {
