@@ -1,0 +1,30 @@
+[
+  {
+    "type": "function",
+    "name": "proxyCreationCode",
+    "constant": true,
+    "payable": false,
+    "stateMutability": "pure",
+    "inputs": [],
+    "outputs": [{ "type": "bytes", "name": "" }]
+  },
+  {
+    "type": "function",
+    "name": "createProxyAndExecTransaction",
+    "constant": false,
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "inputs": [
+      { "type": "address", "name": "masterCopy" },
+      { "type": "uint256", "name": "saltNonce" },
+      { "type": "address", "name": "fallbackHandler" },
+      { "type": "address", "name": "to" },
+      { "type": "uint256", "name": "value" },
+      { "type": "bytes", "name": "data" },
+      { "type": "uint8", "name": "operation" }
+    ],
+    "outputs": [
+      { "type": "bool", "name": "execTransactionSuccess" }
+    ]
+  }
+]

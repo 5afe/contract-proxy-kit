@@ -1,0 +1,13 @@
+[
+  {
+    "type": "function",
+    "name": "multiSend",
+    "constant": false,
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "inputs": [
+      { "type": "bytes", "name": "transactions" }
+    ],
+    "outputs": []
+  }
+]
