@@ -20,6 +20,9 @@ const MultiSend = artifacts.require('MultiSend');
 const DefaultCallbackHandler = artifacts.require('DefaultCallbackHandler');
 const ProxyFactory = artifacts.require('ProxyFactory');
 const zeroAddress = `0x${'0'.repeat(40)}`;
+// TODO: remove requirement to put this parameter in the test cases:
+//       should estimate gas when gas is not provided to CPK
+const defaultGasLimit = '0x100000';
 
 const toConfirmationPromise = (promiEvent) => new Promise(
   (resolve, reject) => promiEvent.on('confirmation',
@@ -98,7 +101,7 @@ function shouldSupportDifferentTransactions({
         to: multiStep.address,
         value: 0,
         data: multiStep.contract.methods.doStep(1).encodeABI(),
-      }]);
+      }], { gasLimit: defaultGasLimit });
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(1);
     });
 
@@ -117,7 +120,7 @@ function shouldSupportDifferentTransactions({
           value: 0,
           data: multiStep.contract.methods.doStep(2).encodeABI(),
         },
-      ]);
+      ], { gasLimit: defaultGasLimit });
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(2);
     });
 
@@ -149,7 +152,7 @@ function shouldSupportDifferentTransactions({
           value: 0,
           data: multiStep.contract.methods.doERC20Step(2, erc20.address).encodeABI(),
         },
-      ]);
+      ], { gasLimit: defaultGasLimit });
 
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(2);
 
@@ -201,7 +204,7 @@ function shouldSupportDifferentTransactions({
             `${1e18}`,
           ).encodeABI(),
         },
-      ]);
+      ], { gasLimit: defaultGasLimit });
 
       if (cpk.address === proxyOwner) {
         fromWei(await erc20.balanceOf(cpk.address)).should.equal(99);
@@ -222,7 +225,7 @@ function shouldSupportDifferentTransactions({
         to: multiStep.address,
         value: 0,
         data: multiStep.contract.methods.doStep(2).encodeABI(),
-      }]).should.be.rejectedWith(/must do the next step/);
+      }], { gasLimit: defaultGasLimit }).should.be.rejectedWith(/must do the next step/);
 
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
       await getTransactionCount(ownerAccount)
@@ -248,7 +251,7 @@ function shouldSupportDifferentTransactions({
           value: 0,
           data: multiStep.contract.methods.doStep(3).encodeABI(),
         },
-      ]).should.be.rejectedWith(/(proxy creation and )?transaction execution expected to fail/);
+      ], { gasLimit: defaultGasLimit }).should.be.rejectedWith(/(proxy creation and )?transaction execution expected to fail/);
 
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
       await getTransactionCount(ownerAccount)
@@ -261,7 +264,7 @@ function shouldSupportDifferentTransactions({
         to: multiStep.address,
         value: 0,
         data: multiStep.contract.methods.doStep(1).encodeABI(),
-      }]));
+      }], { gasLimit: defaultGasLimit }));
     });
 
     it('can execute a single transaction with a specific gas price', async () => {
@@ -278,7 +281,7 @@ function shouldSupportDifferentTransactions({
           value: 0,
           data: multiStep.contract.methods.doStep(1).encodeABI(),
         }],
-        { gasPrice },
+        { gasPrice, gasLimit: defaultGasLimit },
       );
       const gasUsed = await getGasUsed(txObj);
 
@@ -311,7 +314,7 @@ function shouldSupportDifferentTransactions({
             data: multiStep.contract.methods.doStep(2).encodeABI(),
           },
         ],
-        { gasPrice },
+        { gasPrice, gasLimit: defaultGasLimit },
       );
       const gasUsed = await getGasUsed(txObj);
 
@@ -386,7 +389,7 @@ function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderB
             to: idPrecompile,
             value: 0,
             data: '0x',
-          }]);
+          }], { gasLimit: defaultGasLimit });
         });
 
         shouldSupportDifferentTransactions({
@@ -515,7 +518,7 @@ function shouldWorkWithEthers(ethers, defaultAccount, safeOwner, gnosisSafeProvi
             to: idPrecompile,
             value: 0,
             data: '0x',
-          }]);
+          }], { gasLimit: defaultGasLimit });
         });
 
         shouldSupportDifferentTransactions({
