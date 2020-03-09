@@ -319,10 +319,8 @@ const CPK = class CPK {
     let encodeMultiSendCalldata;
 
     if (this.apiType === 'web3') {
-      const blockGasLimit = (await this.web3.eth.getBlock(this.web3.eth.defaultBlock)).gasLimit;
       const sendOptions = {
         from: ownerAccount,
-        gas: blockGasLimit,
         ...(options || {}),
       };
       const promiEventToPromise = (promiEvent) => new Promise(
