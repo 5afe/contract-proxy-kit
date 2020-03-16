@@ -300,9 +300,8 @@ const CPK = class CPK {
     }000000000000000000000000000000000000000000000000000000000000000001`;
 
     const toConnectedSafeTransactions = (txs) => txs.map(({
-      operation, to, value, data,
+      to, value, data,
     }) => ({
-      operation: operation.toString(),
       to,
       value,
       data,
