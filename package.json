@@ -30,16 +30,16 @@
   "homepage": "https://github.com/gnosis/contract-proxy-kit#readme",
   "devDependencies": {
     "@gnosis.pm/conditional-tokens-contracts": "^0.5.4",
-    "@gnosis.pm/safe-contracts": "^1.1.0",
-    "@truffle/hdwallet-provider": "^1.0.26",
+    "@gnosis.pm/safe-contracts": "^1.1.1",
+    "@truffle/hdwallet-provider": "^1.0.33",
     "dotenv": "^8.2.0",
-    "eslint": "^6.6.0",
-    "eslint-config-airbnb-base": "^14.0.0",
-    "eslint-plugin-import": "^2.18.2",
-    "ethers-4": "npm:ethers@^4.0.39",
+    "eslint": "^6.8.0",
+    "eslint-config-airbnb-base": "^14.1.0",
+    "eslint-plugin-import": "^2.20.1",
+    "ethers-4": "npm:ethers@^4.0.45",
     "should": "^13.2.3",
-    "truffle": "^5.1.0",
-    "web3-1-2": "npm:web3@^1.2.4",
+    "truffle": "^5.1.17",
+    "web3-1-2": "npm:web3@^1.2.6",
     "web3-2-alpha": "npm:web3@^2.0.0-alpha.1"
   }
 }
