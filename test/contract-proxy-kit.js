@@ -23,10 +23,14 @@ contract('CPK', ([defaultAccount, safeOwner]) => {
     const safeMasterCopy = await GnosisSafe.deployed();
     const multiSend = await MultiSend.deployed();
     const safeSetupData = safeMasterCopy.contract.methods.setup(
-      [safeOwner], 1,
-      zeroAddress, '0x',
+      [safeOwner],
+      1,
+      zeroAddress,
+      '0x',
       DefaultCallbackHandler.address,
-      zeroAddress, '0x', zeroAddress,
+      zeroAddress,
+      '0x',
+      zeroAddress,
     ).encodeABI();
     const safeCreationTx = await proxyFactory.createProxy(safeMasterCopy.address, safeSetupData);
     const safeAddress = safeCreationTx.logs.find(({ event }) => event === 'ProxyCreation').args.proxy;
@@ -74,8 +78,16 @@ contract('CPK', ([defaultAccount, safeOwner]) => {
               value,
               nonce,
               data: safeMasterCopy.contract.methods.execTransaction(
-                to, value || 0, data, CPK.CALL,
-                0, 0, 0, zeroAddress, zeroAddress, safeSignature,
+                to,
+                value || 0,
+                data,
+                CPK.CALL,
+                0,
+                0,
+                0,
+                zeroAddress,
+                zeroAddress,
+                safeSignature,
               ).encodeABI(),
             }],
           }, callback);
@@ -108,8 +120,16 @@ contract('CPK', ([defaultAccount, safeOwner]) => {
                 value,
                 nonce,
                 data: safeMasterCopy.contract.methods.execTransaction(
-                  to, value || 0, data, CPK.CALL,
-                  0, 0, 0, zeroAddress, zeroAddress, safeSignature,
+                  to,
+                  value || 0,
+                  data,
+                  CPK.CALL,
+                  0,
+                  0,
+                  0,
+                  zeroAddress,
+                  zeroAddress,
+                  safeSignature,
                 ).encodeABI(),
               }],
             }, callback);
@@ -134,8 +154,16 @@ contract('CPK', ([defaultAccount, safeOwner]) => {
           ).encodeABI();
 
           return safe.execTransaction(
-            multiSend.address, 0, callData, CPK.DELEGATECALL,
-            0, 0, 0, zeroAddress, zeroAddress, safeSignature,
+            multiSend.address,
+            0,
+            callData,
+            CPK.DELEGATECALL,
+            0,
+            0,
+            0,
+            zeroAddress,
+            zeroAddress,
+            safeSignature,
             { from: safeOwner },
           ).then((result) => callback(null, { id, jsonrpc, result }), callback);
         }

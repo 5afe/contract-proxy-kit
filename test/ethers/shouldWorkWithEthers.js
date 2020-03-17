@@ -140,4 +140,4 @@ function shouldWorkWithEthers(ethers, defaultAccount, safeOwner, gnosisSafeProvi
   });
 }
 
-module.exports = shouldWorkWithEthers
+module.exports = shouldWorkWithEthers;

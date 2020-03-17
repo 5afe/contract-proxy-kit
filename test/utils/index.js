@@ -8,4 +8,4 @@ const toConfirmationPromise = (promiEvent) => new Promise(
 module.exports = {
   defaultGasLimit,
   toConfirmationPromise
-}
+};

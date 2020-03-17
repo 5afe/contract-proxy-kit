@@ -29,4 +29,4 @@ const defaultNetworks = {
   },
 };
 
-module.exports = defaultNetworks
+module.exports = defaultNetworks;

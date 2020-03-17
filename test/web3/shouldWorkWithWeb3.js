@@ -128,4 +128,4 @@ function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderB
   });
 }
 
-module.exports = shouldWorkWithWeb3
+module.exports = shouldWorkWithWeb3;

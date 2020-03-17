@@ -303,4 +303,4 @@ function shouldSupportDifferentTransactions({
   });
 }
 
-module.exports = shouldSupportDifferentTransactions
+module.exports = shouldSupportDifferentTransactions;
