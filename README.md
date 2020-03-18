@@ -116,7 +116,7 @@ To execute transactions using a *CPK* instance, call `execTransactions` with an 
 
 Each of the `transactions` provided as input to this function must be an *Object* with the following properties:
 
-* `operation`: Either `CPK.CALL` (0) or `CPK.DELEGATECALL` (1) to execute the transaction as either a normal call or a delegatecall.
+* `operation`: Either `CPK.CALL` (0) or `CPK.DELEGATECALL` (1) to execute the transaction as either a normal call or a delegatecall. Note: when connected to Gnosis Safe via WalletConnect, this property is ignored, and `CPK.CALL` is assumed.
 * `to`: The target address of the transaction.
 * `value`: The amount of ether to send along with this transaction.
 * `data`: The calldata to send along with the transaction.
