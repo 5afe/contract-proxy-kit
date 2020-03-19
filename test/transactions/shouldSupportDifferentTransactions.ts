@@ -12,6 +12,8 @@ interface ShouldSupportDifferentTransactionsProps {
   fromWei: any;
   getTransactionCount: any;
   getBalance: any;
+  getCode: any;
+  keccak256: any;
   testedTxObjProps: any;
   checkTxObj: any;
   waitTxReceipt: any;
@@ -28,6 +30,8 @@ export function shouldSupportDifferentTransactions({
   fromWei,
   getTransactionCount,
   getBalance,
+  getCode,
+  keccak256,
   testedTxObjProps,
   checkTxObj,
   waitTxReceipt,
@@ -290,5 +294,23 @@ export function shouldSupportDifferentTransactions({
 
       gasCosts.should.be.equal(gasPrice * gasUsed);
     });
+
+    if (!ownerIsRecognizedContract) {
+      it('deploys proxy which matches factory specs', async () => {
+        const cpkFactory = await getContracts().CPKFactory.deployed();
+        const idPrecompile = `0x${'0'.repeat(39)}4`;
+        await cpk.execTransactions([{
+          operation: CPK.Call,
+          to: idPrecompile,
+          value: 0,
+          data: '0x',
+        }]);
+        const proxyRuntimeCode = await getCode(cpk.address);
+        await cpkFactory.proxyRuntimeCode()
+          .should.eventually.equal(proxyRuntimeCode);
+        await cpkFactory.proxyRuntimeCodeHash()
+          .should.eventually.equal(keccak256(proxyRuntimeCode));
+      });
+    }
   });
 }

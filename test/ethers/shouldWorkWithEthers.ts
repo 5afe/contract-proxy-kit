@@ -65,6 +65,8 @@ export function shouldWorkWithEthers({
         signer.provider.getTransactionCount(address)
       ),
       getBalance: (address: Address): Promise<number> => signer.provider.getBalance(address),
+      getCode: (address: Address): Promise<string> => signer.provider.getCode(address),
+      keccak256: (hex: string): string => ethers.utils.keccak256(hex),
       testedTxObjProps: 'the TransactionResponse and the hash',
       checkTxObj:
         ({ transactionResponse, hash }: { transactionResponse: any; hash: string }): void => {

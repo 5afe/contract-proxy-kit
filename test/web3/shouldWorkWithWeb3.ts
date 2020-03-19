@@ -43,6 +43,8 @@ export function shouldWorkWithWeb3({
       testedTxObjProps: 'the PromiEvent for the transaction and the hash',
       getBalance: (address: Address): number => web3Box[0].eth.getBalance(address)
         .then((balance: number) => web3Box[0].utils.toBN(balance)),
+      getCode: (address: Address): Promise<string> => web3Box[0].eth.getCode(address),
+      keccak256: (hex: string): string => web3Box[0].utils.keccak256(hex),
       checkTxObj: ({ promiEvent, hash }: { promiEvent: any; hash: string }): void => {
         should.exist(promiEvent);
         should.exist(hash);

@@ -11,6 +11,14 @@ contract CPKFactory {
         return type(Proxy).creationCode;
     }
 
+    function proxyRuntimeCode() external pure returns (bytes memory) {
+        return type(Proxy).runtimeCode;
+    }
+
+    function proxyRuntimeCodeHash() external pure returns (bytes32 digest) {
+        return keccak256(type(Proxy).runtimeCode);
+    }
+
     function createProxyAndExecTransaction(
         address masterCopy,
         uint256 saltNonce,
