@@ -38,7 +38,7 @@
     "eslint-plugin-import": "^2.20.1",
     "ethers-4": "npm:ethers@^4.0.45",
     "should": "^13.2.3",
-    "truffle": "^5.1.17",
+    "truffle": "^5.1.18",
     "web3-1-2": "npm:web3@^1.2.6",
     "web3-2-alpha": "npm:web3@^2.0.0-alpha.1"
   }
