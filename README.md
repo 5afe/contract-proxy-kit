@@ -1,5 +1,7 @@
 # Contract Proxy Kit
 
+[![Build Status](https://travis-ci.org/gnosis/contract-proxy-kit.svg?branch=master)](https://travis-ci.org/gnosis/contract-proxy-kit)
+
 Enable batched transactions and contract account interactions using a unique deterministic Gnosis Safe.
 
     npm install contract-proxy-kit
