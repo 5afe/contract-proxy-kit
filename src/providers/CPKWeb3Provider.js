@@ -73,9 +73,9 @@ class CPKWeb3Provider extends CPKProvider {
     );
   }
 
-  checkSingleCall(to, value, data) {
+  checkSingleCall(from, to, value, data) {
     return this.web3.eth.call({
-      from: this.address,
+      from,
       to,
       value,
       data,

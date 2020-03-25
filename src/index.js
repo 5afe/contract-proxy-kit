@@ -104,7 +104,7 @@ const CPK = class CPK {
       } = transaction;
 
       if (operation === CPK.CALL) {
-        await this.cpkProvider.checkSingleCall(to, value, data);
+        await this.cpkProvider.checkSingleCall(this.address, to, value, data);
 
         if (this.isConnectedToSafe) {
           return this.cpkProvider.attemptSafeProviderSendTx({ to, value, data }, sendOptions);
@@ -142,7 +142,10 @@ const CPK = class CPK {
             this.masterCopyAddress,
             predeterminedSaltNonce,
             this.fallbackHandlerAddress,
-            to, value, data, operation,
+            to,
+            value,
+            data,
+            operation,
           ],
           sendOptions,
           new Error('proxy creation and transaction execution expected to fail'),

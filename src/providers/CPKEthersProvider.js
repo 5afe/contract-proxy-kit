@@ -99,9 +99,9 @@ class CPKEthersProvider extends CPKProvider {
     return contract.address;
   }
 
-  checkSingleCall(to, value, data) {
+  checkSingleCall(from, to, value, data) {
     return this.signer.provider.call({
-      from: this.address,
+      from,
       to,
       value,
       data,
@@ -137,7 +137,8 @@ class CPKEthersProvider extends CPKProvider {
           txs.map(
             (tx) => this.ethers.utils.solidityPack(
               ['uint8', 'address', 'uint256', 'uint256', 'bytes'],
-              [tx.operation,
+              [
+                tx.operation,
                 tx.to,
                 tx.value,
                 this.ethers.utils.hexDataLength(tx.data),
