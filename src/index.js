@@ -94,14 +94,15 @@ const CPK = class CPK {
     const codeAtAddress = (await this.cpkProvider.getCodeAtAddress(this.contract));
     const sendOptions = await this.cpkProvider.getSendOptions(options, ownerAccount);
 
-    if (transactions.length === 1) {
-      const transaction = transactions[0];
-      const {
-        operation,
-        to,
-        value,
-        data,
-      } = transaction;
+    let standardizedTxs = transactions.map((tx) => ({
+      value: tx.value ? tx.value : 0,
+      data: tx.data ? tx.data : '0x',
+      operation: tx.operation ? tx.operation : CPK.CALL,
+      ...tx,
+    }));
+
+    if (standardizedTxs.length === 1) {
+      const { to, value, data, operation } = standardizedTxs[0];
 
       if (operation === CPK.CALL) {
         await this.cpkProvider.checkSingleCall(this.address, to, value, data);
@@ -154,7 +155,7 @@ const CPK = class CPK {
     }
 
     if (this.isConnectedToSafe) {
-      const connectedSafeTxs = transactions.map(({
+      const connectedSafeTxs = standardizedTxs.map(({
         to, value, data,
       }) => ({
         to,
@@ -172,7 +173,7 @@ const CPK = class CPK {
         'execTransaction',
         [
           this.cpkProvider.getContractAddress(this.multiSend), 0,
-          this.cpkProvider.encodeMultiSendCalldata(this.multiSend, transactions),
+          this.cpkProvider.encodeMultiSendCalldata(this.multiSend, standardizedTxs),
           CPK.DELEGATECALL,
           0,
           0,
@@ -195,7 +196,7 @@ const CPK = class CPK {
         predeterminedSaltNonce,
         this.fallbackHandlerAddress,
         this.cpkProvider.getContractAddress(this.multiSend), 0,
-        this.cpkProvider.encodeMultiSendCalldata(this.multiSend, transactions),
+        this.cpkProvider.encodeMultiSendCalldata(this.multiSend, standardizedTxs),
         CPK.DELEGATECALL,
       ],
       sendOptions,
