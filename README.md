@@ -261,3 +261,15 @@ const { hash } = await cpk.execTransactions([
   },
 ]);
 ```
+
+## Running the tests
+
+To run the tests in a local network open the console and run `ganache-cli -d`.
+
+Open a new console in the root folder of the project and run the following commands:
+
+```
+rm -rf build/
+yarn migrate --network local
+yarn test --network local
+```
