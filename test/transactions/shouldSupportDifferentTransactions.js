@@ -74,9 +74,7 @@ function shouldSupportDifferentTransactions({
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
 
       await cpk.execTransactions([{
-        operation: CPK.CALL,
         to: multiStep.address,
-        value: 0,
         data: multiStep.contract.methods.doStep(1).encodeABI(),
       }], { gasLimit: defaultGasLimit });
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(1);
@@ -87,14 +85,10 @@ function shouldSupportDifferentTransactions({
 
       await cpk.execTransactions([
         {
-          operation: CPK.CALL,
           to: multiStep.address,
-          value: 0,
           data: multiStep.contract.methods.doStep(1).encodeABI(),
         }, {
-          operation: CPK.CALL,
           to: multiStep.address,
-          value: 0,
           data: multiStep.contract.methods.doStep(2).encodeABI(),
         },
       ], { gasLimit: defaultGasLimit });
@@ -106,27 +100,19 @@ function shouldSupportDifferentTransactions({
 
       await cpk.execTransactions([
         {
-          operation: CPK.CALL,
           to: erc20.address,
-          value: 0,
           data: erc20.contract.methods.transferFrom(proxyOwner, cpk.address, `${3e18}`).encodeABI(),
         },
         {
-          operation: CPK.CALL,
           to: erc20.address,
-          value: 0,
           data: erc20.contract.methods.approve(multiStep.address, `${3e18}`).encodeABI(),
         },
         {
-          operation: CPK.CALL,
           to: multiStep.address,
-          value: 0,
           data: multiStep.contract.methods.doStep(1).encodeABI(),
         },
         {
-          operation: CPK.CALL,
           to: multiStep.address,
-          value: 0,
           data: multiStep.contract.methods.doERC20Step(2, erc20.address).encodeABI(),
         },
       ], { gasLimit: defaultGasLimit });
@@ -148,21 +134,15 @@ function shouldSupportDifferentTransactions({
 
       await cpk.execTransactions([
         {
-          operation: CPK.CALL,
           to: erc20.address,
-          value: 0,
           data: erc20.contract.methods.transferFrom(proxyOwner, cpk.address, `${3e18}`).encodeABI(),
         },
         {
-          operation: CPK.CALL,
           to: erc20.address,
-          value: 0,
           data: erc20.contract.methods.approve(conditionalTokens.address, `${1e18}`).encodeABI(),
         },
         {
-          operation: CPK.CALL,
           to: conditionalTokens.address,
-          value: 0,
           data: conditionalTokens.contract.methods.prepareCondition(
             cpk.address,
             questionId,
@@ -170,9 +150,7 @@ function shouldSupportDifferentTransactions({
           ).encodeABI(),
         },
         {
-          operation: CPK.CALL,
           to: conditionalTokens.address,
-          value: 0,
           data: conditionalTokens.contract.methods.splitPosition(
             erc20.address,
             `0x${'0'.repeat(64)}`,
@@ -194,18 +172,15 @@ function shouldSupportDifferentTransactions({
 
     it('by default errors without transacting when single transaction would fail', async () => {
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
-      const ownerAccount = await cpk.getOwnerAccount();
-      const startingTransactionCount = await getTransactionCount(ownerAccount);
+      const startingTransactionCount = await getTransactionCount(proxyOwner);
 
       await cpk.execTransactions([{
-        operation: CPK.CALL,
         to: multiStep.address,
-        value: 0,
         data: multiStep.contract.methods.doStep(2).encodeABI(),
       }], { gasLimit: defaultGasLimit }).should.be.rejectedWith(/must do the next step/);
 
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
-      await getTransactionCount(ownerAccount)
+      await getTransactionCount(proxyOwner)
         .should.eventually.equal(startingTransactionCount);
     });
 
@@ -213,56 +188,46 @@ function shouldSupportDifferentTransactions({
       ownerIsRecognizedContract ? it.skip : it
     )('by default errors without transacting when any transaction in batch would fail', async () => {
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
-      const ownerAccount = await cpk.getOwnerAccount();
-      const startingTransactionCount = await getTransactionCount(ownerAccount);
+      const startingTransactionCount = await getTransactionCount(proxyOwner);
 
       await cpk.execTransactions([
         {
-          operation: CPK.CALL,
           to: multiStep.address,
-          value: 0,
           data: multiStep.contract.methods.doStep(1).encodeABI(),
         }, {
-          operation: CPK.CALL,
           to: multiStep.address,
-          value: 0,
           data: multiStep.contract.methods.doStep(3).encodeABI(),
         },
       ], { gasLimit: defaultGasLimit }).should.be.rejectedWith(/(proxy creation and )?transaction execution expected to fail/);
 
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
-      await getTransactionCount(ownerAccount)
+      await getTransactionCount(proxyOwner)
         .should.eventually.equal(startingTransactionCount);
     });
 
     it(`returns an object with ${testedTxObjProps} when doing a transaction`, async () => {
       checkTxObj(await cpk.execTransactions([{
-        operation: CPK.CALL,
         to: multiStep.address,
-        value: 0,
         data: multiStep.contract.methods.doStep(1).encodeABI(),
       }], { gasLimit: defaultGasLimit }));
     });
 
     it('can execute a single transaction with a specific gas price', async () => {
-      const ownerAccount = await cpk.getOwnerAccount();
-      const startingBalance = await getBalance(executor || ownerAccount);
+      const startingBalance = await getBalance(executor || proxyOwner);
 
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
 
       const gasPrice = 123;
       const txObj = await cpk.execTransactions(
         [{
-          operation: CPK.CALL,
           to: multiStep.address,
-          value: 0,
           data: multiStep.contract.methods.doStep(1).encodeABI(),
         }],
         { gasPrice, gasLimit: defaultGasLimit },
       );
       const gasUsed = await getGasUsed(txObj);
 
-      const endingBalance = await getBalance(executor || ownerAccount);
+      const endingBalance = await getBalance(executor || proxyOwner);
       const gasCosts = startingBalance.sub(endingBalance).toNumber();
 
       gasCosts.should.be.equal(gasPrice * gasUsed);
@@ -271,8 +236,7 @@ function shouldSupportDifferentTransactions({
     (
       ownerIsRecognizedContract ? it.skip : it
     )('can execute a batch transaction with a specific gas price', async () => {
-      const ownerAccount = await cpk.getOwnerAccount();
-      const startingBalance = await getBalance(executor || ownerAccount);
+      const startingBalance = await getBalance(executor || proxyOwner);
 
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
 
@@ -280,14 +244,10 @@ function shouldSupportDifferentTransactions({
       const txObj = await cpk.execTransactions(
         [
           {
-            operation: CPK.CALL,
             to: multiStep.address,
-            value: 0,
             data: multiStep.contract.methods.doStep(1).encodeABI(),
           }, {
-            operation: CPK.CALL,
             to: multiStep.address,
-            value: 0,
             data: multiStep.contract.methods.doStep(2).encodeABI(),
           },
         ],
@@ -295,7 +255,7 @@ function shouldSupportDifferentTransactions({
       );
       const gasUsed = await getGasUsed(txObj);
 
-      const endingBalance = await getBalance(executor || ownerAccount);
+      const endingBalance = await getBalance(executor || proxyOwner);
       const gasCosts = startingBalance.sub(endingBalance).toNumber();
 
       gasCosts.should.be.equal(gasPrice * gasUsed);

@@ -74,10 +74,7 @@ function shouldWorkWithEthers(ethers, defaultAccount, safeOwner, gnosisSafeProvi
         before('warm instance', async () => {
           const idPrecompile = `0x${'0'.repeat(39)}4`;
           await cpk.execTransactions([{
-            operation: CPK.CALL,
             to: idPrecompile,
-            value: 0,
-            data: '0x',
           }], { gasLimit: defaultGasLimit });
         });
 
