@@ -1,11 +1,10 @@
 const makeConditionalTokensIdHelpers = require('@gnosis.pm/conditional-tokens-contracts/utils/id-helpers');
+
 const Multistep = artifacts.require('Multistep');
 const ConditionalTokens = artifacts.require('ConditionalTokens');
 const ERC20Mintable = artifacts.require('ERC20Mintable');
 
-const CPK = require('../..');
-
-const { defaultGasLimit } = require('../utils')
+const { defaultGasLimit } = require('../utils');
 
 function shouldSupportDifferentTransactions({
   getCPK,

@@ -5,5 +5,5 @@ const predeterminedSaltNonce = '0xcfe33a586323e7325be6aa6ecd8b4600d232a9037e83c8
 
 module.exports = {
   zeroAddress,
-  predeterminedSaltNonce
+  predeterminedSaltNonce,
 };

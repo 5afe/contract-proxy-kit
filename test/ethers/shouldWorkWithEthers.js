@@ -4,8 +4,8 @@ const DefaultCallbackHandler = artifacts.require('DefaultCallbackHandler');
 const CPKFactory = artifacts.require('CPKFactory');
 
 const CPK = require('../..');
-const shouldSupportDifferentTransactions = require('../transactions/shouldSupportDifferentTransactions')
-const { defaultGasLimit, toConfirmationPromise } = require('../utils')
+const shouldSupportDifferentTransactions = require('../transactions/shouldSupportDifferentTransactions');
+const { defaultGasLimit, toConfirmationPromise } = require('../utils');
 
 function shouldWorkWithEthers(ethers, defaultAccount, safeOwner, gnosisSafeProviderBox) {
   describe(`with ethers version ${ethers.version}`, () => {
@@ -14,7 +14,7 @@ function shouldWorkWithEthers(ethers, defaultAccount, safeOwner, gnosisSafeProvi
 
     const ethersTestHelpers = (signerBox) => ({
       checkAddressChecksum: (address) => ethers.utils.getAddress(address) === address,
-      sendTransaction: ({ from, ...txObj }) => signerBox[0].sendTransaction(txObj),
+      sendTransaction: ({ from, ...txObj }) => signerBox[0].sendTransaction(txObj), // eslint-disable-line
       randomHexWord: () => ethers.utils.hexlify(ethers.utils.randomBytes(32)),
       fromWei: (amount) => Number(ethers.utils.formatUnits(amount.toString(), 'ether')),
       getTransactionCount: signer.provider.getTransactionCount.bind(signer.provider),

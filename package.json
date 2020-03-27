@@ -5,7 +5,9 @@
   "main": "src/index.js",
   "scripts": {
     "migrate": "truffle migrate",
-    "test": "truffle test"
+    "test": "truffle test",
+    "lint:check": "eslint './src/**/*.{js,jsx}' './test/**/*.{js,jsx}'",
+    "lint:fix": "yarn lint:check --fix"
   },
   "repository": {
     "type": "git",

@@ -6,5 +6,6 @@ module.exports = {
     artifacts: 'readonly',
     contract: 'readonly',
     web3: 'readonly',
+    should: 'readonly',
   },
 };
