@@ -264,12 +264,18 @@ const { hash } = await cpk.execTransactions([
 
 ## Running the tests
 
-To run the tests in a local network open the console and run `ganache-cli -d`.
+To run the tests locally execute the following command in the root folder of the project:
 
-Open a new console in the root folder of the project and run the following commands:
+```
+yarn test
+```
+
+To run the tests in a public network or an existing Ganache instance open the console in the root folder of the project and run the following commands:
 
 ```
 rm -rf build/
-yarn migrate --network local
-yarn test --network local
+yarn migrate --network <NETWORK_NAME>
+yarn test --network <NETWORK_NAME>
 ```
+
+where `<NETWORK_NAME>` is any of the networks in `truffle-config.js`.

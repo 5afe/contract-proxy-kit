@@ -3,7 +3,7 @@ module.exports = (deployer, network) => {
 
   ['Migrations', 'CPKFactory'].forEach(deploy);
 
-  if (network === 'local') {
+  if (network === 'test' || network === 'local') {
     ['MultiSend', 'DefaultCallbackHandler', 'GnosisSafe', 'ProxyFactory'].forEach(deploy);
   }
 };
