@@ -4,8 +4,8 @@ const DefaultCallbackHandler = artifacts.require('DefaultCallbackHandler');
 const CPKFactory = artifacts.require('CPKFactory');
 
 const CPK = require('../..');
-const shouldSupportDifferentTransactions = require('../transactions/shouldSupportDifferentTransactions')
-const { defaultGasLimit, toConfirmationPromise } = require('../utils')
+const shouldSupportDifferentTransactions = require('../transactions/shouldSupportDifferentTransactions');
+const { defaultGasLimit, toConfirmationPromise } = require('../utils');
 
 function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderBox) {
   describe(`with Web3 version ${(new Web3()).version}`, () => {
@@ -65,10 +65,7 @@ function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderB
         before('warm instance', async () => {
           const idPrecompile = `0x${'0'.repeat(39)}4`;
           await cpk.execTransactions([{
-            operation: CPK.CALL,
             to: idPrecompile,
-            value: 0,
-            data: '0x',
           }], { gasLimit: defaultGasLimit });
         });
 
@@ -90,7 +87,7 @@ function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderB
               value: `${2e18}`,
               gasLimit: '0x5b8d80',
             });
-      
+
             return CPK.create({
               web3: ueb3,
               networks,
@@ -99,7 +96,7 @@ function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderB
           },
         });
       });
-      
+
       describe('with mock WalletConnected Gnosis Safe provider', () => {
         const safeWeb3Box = [];
 
@@ -123,7 +120,6 @@ function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderB
           executor: safeOwner,
         });
       });
-
     });
   });
 }

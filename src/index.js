@@ -62,7 +62,7 @@ const CPK = class CPK {
       ownerAccount,
       masterCopyAddress: network.masterCopyAddress,
       proxyFactoryAddress: network.proxyFactoryAddress,
-      multiSendAddress: network.multiSendAddress
+      multiSendAddress: network.multiSendAddress,
     });
 
     this.multiSend = initializedCpkProvider.multiSend;
@@ -82,7 +82,7 @@ const CPK = class CPK {
   }
 
   get address() {
-    return this.cpkProvider.getContractAddress(this.contract);
+    return this.cpkProvider.constructor.getContractAddress(this.contract);
   }
 
   async execTransactions(transactions, options) {
@@ -91,17 +91,20 @@ const CPK = class CPK {
     }000000000000000000000000000000000000000000000000000000000000000001`;
 
     const ownerAccount = await this.getOwnerAccount();
-    const codeAtAddress = (await this.cpkProvider.getCodeAtAddress(this.contract));
-    const sendOptions = await this.cpkProvider.getSendOptions(options, ownerAccount);
+    const codeAtAddress = await this.cpkProvider.getCodeAtAddress(this.contract);
+    const sendOptions = await this.cpkProvider.constructor.getSendOptions(options, ownerAccount);
 
-    if (transactions.length === 1) {
-      const transaction = transactions[0];
+    const standardizedTxs = transactions.map((tx) => ({
+      value: tx.value ? tx.value : 0,
+      data: tx.data ? tx.data : '0x',
+      operation: tx.operation ? tx.operation : CPK.CALL,
+      ...tx,
+    }));
+
+    if (standardizedTxs.length === 1) {
       const {
-        operation,
-        to,
-        value,
-        data,
-      } = transaction;
+        to, value, data, operation,
+      } = standardizedTxs[0];
 
       if (operation === CPK.CALL) {
         await this.cpkProvider.checkSingleCall(this.address, to, value, data);
@@ -113,7 +116,7 @@ const CPK = class CPK {
 
       if (!this.isConnectedToSafe) {
         if (codeAtAddress !== '0x') {
-          return this.cpkProvider.attemptTransaction(
+          return this.cpkProvider.constructor.attemptTransaction(
             this.contract,
             this.viewContract,
             'execTransaction',
@@ -134,7 +137,7 @@ const CPK = class CPK {
           );
         }
 
-        return this.cpkProvider.attemptTransaction(
+        return this.cpkProvider.constructor.attemptTransaction(
           this.proxyFactory,
           this.viewProxyFactory,
           'createProxyAndExecTransaction',
@@ -154,7 +157,7 @@ const CPK = class CPK {
     }
 
     if (this.isConnectedToSafe) {
-      const connectedSafeTxs = transactions.map(({
+      const connectedSafeTxs = standardizedTxs.map(({
         to, value, data,
       }) => ({
         to,
@@ -166,13 +169,14 @@ const CPK = class CPK {
     }
 
     if (codeAtAddress !== '0x') {
-      return this.cpkProvider.attemptTransaction(
+      return this.cpkProvider.constructor.attemptTransaction(
         this.contract,
         this.viewContract,
         'execTransaction',
         [
-          this.cpkProvider.getContractAddress(this.multiSend), 0,
-          this.cpkProvider.encodeMultiSendCalldata(this.multiSend, transactions),
+          this.cpkProvider.constructor.getContractAddress(this.multiSend),
+          0,
+          this.cpkProvider.encodeMultiSendCalldata(this.multiSend, standardizedTxs),
           CPK.DELEGATECALL,
           0,
           0,
@@ -186,7 +190,7 @@ const CPK = class CPK {
       );
     }
 
-    return this.cpkProvider.attemptTransaction(
+    return this.cpkProvider.constructor.attemptTransaction(
       this.proxyFactory,
       this.viewProxyFactory,
       'createProxyAndExecTransaction',
@@ -194,8 +198,9 @@ const CPK = class CPK {
         this.masterCopyAddress,
         predeterminedSaltNonce,
         this.fallbackHandlerAddress,
-        this.cpkProvider.getContractAddress(this.multiSend), 0,
-        this.cpkProvider.encodeMultiSendCalldata(this.multiSend, transactions),
+        this.cpkProvider.constructor.getContractAddress(this.multiSend),
+        0,
+        this.cpkProvider.encodeMultiSendCalldata(this.multiSend, standardizedTxs),
         CPK.DELEGATECALL,
       ],
       sendOptions,

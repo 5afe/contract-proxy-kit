@@ -118,10 +118,10 @@ To execute transactions using a *CPK* instance, call `execTransactions` with an 
 
 Each of the `transactions` provided as input to this function must be an *Object* with the following properties:
 
-* `operation`: Either `CPK.CALL` (0) or `CPK.DELEGATECALL` (1) to execute the transaction as either a normal call or a delegatecall. Note: when connected to Gnosis Safe via WalletConnect, this property is ignored, and `CPK.CALL` is assumed.
+* `operation`: Either `CPK.CALL` (0) or `CPK.DELEGATECALL` (1) to execute the transaction as either a normal call or a delegatecall. Note: when connected to Gnosis Safe via WalletConnect, this property is ignored, and `CPK.CALL` is assumed. Optional property, `CPK.CALL` is the default value.
 * `to`: The target address of the transaction.
-* `value`: The amount of ether to send along with this transaction.
-* `data`: The calldata to send along with the transaction.
+* `value`: The amount of ether to send along with this transaction. Optional property, `0` is the default value.
+* `data`: The calldata to send along with the transaction. Optional property, `0x` is the default value.
 
 If any of the transactions would revert, this function will reject instead, and nothing will be executed.
 
@@ -131,16 +131,16 @@ For example, if the proxy account holds some ether, it may batch send ether to m
 const cpk = await CPK.create(/* ... */);
 const txObject = await cpk.execTransactions([
   {
-    operation: CPK.CALL,
+    operation: CPK.CALL, // Not needed because this is the default value.
+    data: '0x', // Not needed because this is the default value.
     to: '0x90f8bf6a479f320ead074411a4b0e7944ea8c9c1',
     value: `${1e18}`,
-    data: '0x',
   },
   {
-    operation: CPK.CALL,
+    operation: CPK.CALL, // Not needed because this is the default value.
+    data: '0x', // Not needed because this is the default value.
     to: '0xffcf8fdee72ac11b5c542428b35eef5769c409f0',
     value: `${1e18}`,
-    data: '0x',
   },
 ]);
 ```
@@ -152,18 +152,14 @@ The `data` field may be used to make calls to contracts from the proxy account. 
 ```js
 const { promiEvent, hash } = await cpk.execTransactions([
   {
-    operation: CPK.CALL,
     to: erc20.options.address,
-    value: 0,
     data: erc20.methods.approve(
       exchange.options.address,
       `${1e18}`,
     ).encodeABI(),
   },
   {
-    operation: CPK.CALL,
     to: exchange.options.address,
-    value: 0,
     data: exchange.methods.deposit(
       erc20.options.address,
       `${1e18}`,
@@ -178,18 +174,14 @@ Suppose instead `erc20` and `exchange` are Truffle contract abstraction instance
 ```js
 const { promiEvent, hash } = await cpk.execTransactions([
   {
-    operation: CPK.CALL,
     to: erc20.address,
-    value: 0,
     data: erc20.contract.methods.approve(
       exchange.address,
       `${1e18}`,
     ).encodeABI(),
   },
   {
-    operation: CPK.CALL,
     to: exchange.address,
-    value: 0,
     data: exchange.contract.methods.deposit(
       erc20.address,
       `${1e18}`,
@@ -206,18 +198,14 @@ Similarly to the example in the previous section, suppose that `erc20` is a *eth
 ```js
 const { transactionResponse, hash } = await cpk.execTransactions([
   {
-    operation: CPK.CALL,
     to: erc20.address,
-    value: 0,
     data: erc20.interface.functions.approve.encode(
       exchange.address,
       `${1e18}`,
     ),
   },
   {
-    operation: CPK.CALL,
     to: exchange.address,
-    value: 0,
     data: exchange.interface.functions.deposit.encode(
       erc20.address,
       `${1e18}`,
@@ -234,16 +222,12 @@ An additional optional parameter may be passed to `execTransactions` to override
 const txObject = await cpk.execTransactions(
   [
     {
-      operation: CPK.CALL,
       to: '0x90f8bf6a479f320ead074411a4b0e7944ea8c9c1',
       value: `${1e18}`,
-      data: '0x',
     },
     {
-      operation: CPK.CALL,
       to: '0xffcf8fdee72ac11b5c542428b35eef5769c409f0',
       value: `${1e18}`,
-      data: '0x',
     },
   ],
   { gasPrice: `${3e9}` },
@@ -268,16 +252,30 @@ When WalletConnected to Gnosis Safe, `execTransactions` will use the Safe's nati
 ```js
 const { hash } = await cpk.execTransactions([
   {
-    operation: CPK.CALL,
     to: '0x90f8bf6a479f320ead074411a4b0e7944ea8c9c1',
     value: `${1e18}`,
-    data: '0x',
   },
   {
-    operation: CPK.CALL,
     to: '0xffcf8fdee72ac11b5c542428b35eef5769c409f0',
     value: `${1e18}`,
-    data: '0x',
   },
 ]);
 ```
+
+## Running the tests
+
+To run the tests locally execute the following command in the root folder of the project:
+
+```
+yarn test
+```
+
+To run the tests in a public network or an existing Ganache instance open the console in the root folder of the project and run the following commands:
+
+```
+rm -rf build/
+yarn migrate --network <NETWORK_NAME>
+yarn test --network <NETWORK_NAME>
+```
+
+where `<NETWORK_NAME>` is any of the networks in `truffle-config.js`.

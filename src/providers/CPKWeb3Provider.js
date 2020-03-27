@@ -10,7 +10,9 @@ class CPKWeb3Provider extends CPKProvider {
     this.web3 = web3;
   }
 
-  async init({ isConnectedToSafe, ownerAccount, masterCopyAddress, proxyFactoryAddress, multiSendAddress }) {
+  async init({
+    isConnectedToSafe, ownerAccount, masterCopyAddress, proxyFactoryAddress, multiSendAddress,
+  }) {
     const multiSend = new this.web3.eth.Contract(multiSendAbi, multiSendAddress);
     let contract;
     let proxyFactory;
@@ -40,8 +42,8 @@ class CPKWeb3Provider extends CPKProvider {
     return {
       multiSend,
       contract,
-      proxyFactory
-    }
+      proxyFactory,
+    };
   }
 
   getProvider() {
@@ -57,14 +59,14 @@ class CPKWeb3Provider extends CPKProvider {
   }
 
   async getCodeAtAddress(contract) {
-    return await this.web3.eth.getCode(this.getContractAddress(contract));
+    return this.web3.eth.getCode(this.constructor.getContractAddress(contract));
   }
 
-  getContractAddress(contract) {
+  static getContractAddress(contract) {
     return contract.options.address;
   }
 
-  promiEventToPromise(promiEvent, sendOptions) {
+  static promiEventToPromise(promiEvent, sendOptions) {
     return new Promise(
       (resolve, reject) => promiEvent.once(
         'transactionHash',
@@ -82,7 +84,7 @@ class CPKWeb3Provider extends CPKProvider {
     });
   }
 
-  async attemptTransaction(contract, viewContract, methodName, params, sendOptions, err) {
+  static async attemptTransaction(contract, viewContract, methodName, params, sendOptions, err) {
     if (!(await contract.methods[methodName](...params).call(sendOptions))) throw err;
 
     const promiEvent = contract.methods[methodName](...params).send(sendOptions);
@@ -95,7 +97,7 @@ class CPKWeb3Provider extends CPKProvider {
       ...txObj,
       ...sendOptions,
     });
-    return this.promiEventToPromise(promiEvent, sendOptions);
+    return this.constructor.promiEventToPromise(promiEvent, sendOptions);
   }
 
   async attemptSafeProviderMultiSendTxs(txs) {
@@ -132,7 +134,7 @@ class CPKWeb3Provider extends CPKProvider {
     ).encodeABI();
   }
 
-  getSendOptions(options, ownerAccount) {
+  static getSendOptions(options, ownerAccount) {
     return {
       from: ownerAccount,
       ...(options || {}),

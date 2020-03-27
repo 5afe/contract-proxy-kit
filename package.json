@@ -4,7 +4,10 @@
   "description": "Enable batched transactions and contract account interactions using a unique deterministic Gnosis Safe.",
   "main": "src/index.js",
   "scripts": {
-    "test": "truffle test"
+    "migrate": "truffle migrate",
+    "test": "truffle test",
+    "lint:check": "eslint './src/**/*.{js,jsx}' './test/**/*.{js,jsx}'",
+    "lint:fix": "yarn lint:check --fix"
   },
   "repository": {
     "type": "git",

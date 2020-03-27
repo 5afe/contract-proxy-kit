@@ -19,7 +19,7 @@ const networks = Object.assign(...[
     ),
   },
 })), {
-  private: {
+  local: {
     host: 'localhost',
     port: 8545,
     network_id: '*',

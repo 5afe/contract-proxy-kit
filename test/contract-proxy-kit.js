@@ -2,6 +2,7 @@ const should = require('should');
 const { ethers: ethersMaj4 } = require('ethers-4');
 const Web3Maj1Min2 = require('web3-1-2');
 const Web3Maj2Alpha = require('web3-2-alpha');
+
 const web3Versions = [Web3Maj1Min2, Web3Maj2Alpha];
 
 const GnosisSafe = artifacts.require('GnosisSafe');
@@ -11,9 +12,9 @@ const ProxyFactory = artifacts.require('ProxyFactory');
 
 const CPK = require('..');
 
-const { zeroAddress } = require('../src/utils/constants')
-const shouldWorkWithWeb3 = require('./web3/shouldWorkWithWeb3')
-const shouldWorkWithEthers = require('./ethers/shouldWorkWithEthers')
+const { zeroAddress } = require('../src/utils/constants');
+const shouldWorkWithWeb3 = require('./web3/shouldWorkWithWeb3');
+const shouldWorkWithEthers = require('./ethers/shouldWorkWithEthers');
 
 contract('CPK', ([defaultAccount, safeOwner]) => {
   const gnosisSafeProviderBox = [];

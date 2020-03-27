@@ -14,16 +14,18 @@ class CPKEthersProvider extends CPKProvider {
     this.signer = signer;
   }
 
-  async init({ isConnectedToSafe, ownerAccount, masterCopyAddress, proxyFactoryAddress, multiSendAddress }) {
+  async init({
+    isConnectedToSafe, ownerAccount, masterCopyAddress, proxyFactoryAddress, multiSendAddress,
+  }) {
     const abiToViewAbi = (abi) => abi.map(({
-      constant,
-      stateMutability,
+      constant, // eslint-disable-line
+      stateMutability, // eslint-disable-line
       ...rest
     }) => Object.assign(rest, {
       constant: true,
       stateMutability: 'view',
     }));
-    
+
     const multiSend = new this.ethers.Contract(multiSendAddress, multiSendAbi, this.signer);
     let contract;
     let viewContract;
@@ -75,12 +77,13 @@ class CPKEthersProvider extends CPKProvider {
       contract,
       viewContract,
       proxyFactory,
-      viewProxyFactory
-    }
+      viewProxyFactory,
+    };
   }
 
   getProvider() {
-    return this.signer.provider.provider || this.signer.provider._web3Provider; // eslint-disable-line no-underscore-dangle
+    // eslint-disable-next-line no-underscore-dangle
+    return this.signer.provider.provider || this.signer.provider._web3Provider;
   }
 
   async getNetworkId() {
@@ -92,10 +95,10 @@ class CPKEthersProvider extends CPKProvider {
   }
 
   async getCodeAtAddress(contract) {
-    return await this.signer.provider.getCode(this.getContractAddress(contract));
+    return this.signer.provider.getCode(this.constructor.getContractAddress(contract));
   }
 
-  getContractAddress(contract) {
+  static getContractAddress(contract) {
     return contract.address;
   }
 
@@ -108,7 +111,7 @@ class CPKEthersProvider extends CPKProvider {
     });
   }
 
-  async attemptTransaction(contract, viewContract, methodName, params, options, err) {
+  static async attemptTransaction(contract, viewContract, methodName, params, options, err) {
     if (!(await viewContract.functions[methodName](...params))) throw err;
     const transactionResponse = await contract.functions[methodName](
       ...params,
@@ -142,7 +145,7 @@ class CPKEthersProvider extends CPKProvider {
                 tx.to,
                 tx.value,
                 this.ethers.utils.hexDataLength(tx.data),
-                tx.data
+                tx.data,
               ],
             ),
           ),
@@ -151,7 +154,8 @@ class CPKEthersProvider extends CPKProvider {
     ]);
   }
 
-  getSendOptions(options, ownerAccount) {
+  // eslint-disable-next-line
+  static getSendOptions(options, ownerAccount) {
     return options;
   }
 }
