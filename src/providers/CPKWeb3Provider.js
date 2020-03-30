@@ -122,13 +122,15 @@ class CPKWeb3Provider extends CPKProvider {
     return { hash };
   }
 
-  encodeMultiSendCalldata(multiSend, txs) {
+  static encodeMultiSendCallData({ web3, transactions, multiSendAddress }) {
+    const multiSend = new web3.eth.Contract(multiSendAbi, multiSendAddress);
+
     return multiSend.methods.multiSend(
-      `0x${txs.map((tx) => [
-        this.web3.eth.abi.encodeParameter('uint8', tx.operation).slice(-2),
-        this.web3.eth.abi.encodeParameter('address', tx.to).slice(-40),
-        this.web3.eth.abi.encodeParameter('uint256', tx.value).slice(-64),
-        this.web3.eth.abi.encodeParameter('uint256', this.web3.utils.hexToBytes(tx.data).length).slice(-64),
+      `0x${transactions.map((tx) => [
+        web3.eth.abi.encodeParameter('uint8', tx.operation).slice(-2),
+        web3.eth.abi.encodeParameter('address', tx.to).slice(-40),
+        web3.eth.abi.encodeParameter('uint256', tx.value).slice(-64),
+        web3.eth.abi.encodeParameter('uint256', web3.utils.hexToBytes(tx.data).length).slice(-64),
         tx.data.replace(/^0x/, ''),
       ].join('')).join('')}`,
     ).encodeABI();

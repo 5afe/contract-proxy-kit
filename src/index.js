@@ -172,8 +172,14 @@ const CPK = class CPK {
         [
           this.cpkProvider.constructor.getContractAddress(this.multiSend),
           0,
-          this.cpkProvider.encodeMultiSendCalldata(this.multiSend, standardizedTxs),
-          CPK.DELEGATECALL,
+          this.cpkProvider.constructor.encodeMultiSendCallData({
+            web3: this.cpkProvider.web3,
+            ethers: this.cpkProvider.ethers,
+            signer: this.cpkProvider.signer,
+            multiSendAddress: this.cpkProvider.constructor.getContractAddress(this.multiSend),
+            transactions: standardizedTxs
+          }),
+          DELEGATE_CALL,
           0,
           0,
           0,
@@ -196,12 +202,43 @@ const CPK = class CPK {
         this.fallbackHandlerAddress,
         this.cpkProvider.constructor.getContractAddress(this.multiSend),
         0,
-        this.cpkProvider.encodeMultiSendCalldata(this.multiSend, standardizedTxs),
-        CPK.DELEGATECALL,
+        this.cpkProvider.constructor.encodeMultiSendCallData({
+          web3: this.cpkProvider.web3,
+          ethers: this.cpkProvider.ethers,
+          signer: this.cpkProvider.signer,
+          multiSendAddress: this.cpkProvider.constructor.getContractAddress(this.multiSend),
+          transactions: standardizedTxs
+        }),
+        DELEGATE_CALL,
       ],
       sendOptions,
       new Error('proxy creation and transaction execution expected to fail'),
     );
+  }
+
+  static async encodeMultiSendCallData({ web3, ethers, signer, multiSendAddress, transactions }) {
+    const standardizedTxs = standarizeTransactions(transactions);
+    let multiSendAddr = multiSendAddress
+
+    if (!multiSendAddress) {
+      let networkId
+      if (web3) {
+        networkId = await web3.eth.net.getId();
+      } else if (ethers && signer) {
+        networkId = (await signer.provider.getNetwork()).chainId;
+      } else throw new Error('web3/ethers property missing');
+      const network = defaultNetworks[networkId]
+      if (!network) {
+        throw Error(`unrecognized network ID ${networkId}`);
+      }
+      multiSendAddr = network.multiSendAddress;
+    }
+
+    if (web3) {
+      return CPKWeb3Provider.encodeMultiSendCallData({ web3, multiSendAddress: multiSendAddr, transactions: standardizedTxs });
+    } else if (ethers && signer) {
+      return CPKEthersProvider.encodeMultiSendCallData({ ethers, signer, multiSendAddress: multiSendAddr, transactions: standardizedTxs });
+    } else throw new Error('web3/ethers property missing from options');
   }
 };
 

@@ -133,18 +133,20 @@ class CPKEthersProvider extends CPKProvider {
     return { hash };
   }
 
-  encodeMultiSendCalldata(multiSend, txs) {
+  static encodeMultiSendCallData({ ethers, signer, transactions, multiSendAddress }) {
+    const multiSend = new ethers.Contract(multiSendAddress, multiSendAbi, signer);
+
     return multiSend.interface.functions.multiSend.encode([
-      this.ethers.utils.hexlify(
-        this.ethers.utils.concat(
-          txs.map(
-            (tx) => this.ethers.utils.solidityPack(
+      ethers.utils.hexlify(
+        ethers.utils.concat(
+          transactions.map(
+            (tx) => ethers.utils.solidityPack(
               ['uint8', 'address', 'uint256', 'uint256', 'bytes'],
               [
                 tx.operation,
                 tx.to,
                 tx.value,
-                this.ethers.utils.hexDataLength(tx.data),
+                ethers.utils.hexDataLength(tx.data),
                 tx.data,
               ],
             ),
