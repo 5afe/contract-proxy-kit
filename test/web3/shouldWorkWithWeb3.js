@@ -2,6 +2,7 @@ const GnosisSafe = artifacts.require('GnosisSafe');
 const MultiSend = artifacts.require('MultiSend');
 const DefaultCallbackHandler = artifacts.require('DefaultCallbackHandler');
 const CPKFactory = artifacts.require('CPKFactory');
+const Multistep = artifacts.require('Multistep');
 
 const CPK = require('../..');
 const shouldSupportDifferentTransactions = require('../transactions/shouldSupportDifferentTransactions');
@@ -33,8 +34,29 @@ function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderB
 
     const ueb3TestHelpers = testHelperMaker([ueb3]);
 
+    let multiStep;
+
+    before('deploy mock contracts and get network', async () => {
+      multiStep = await Multistep.new();
+    });
+
     it('should not produce instances when web3 not connected to a recognized network', async () => {
       await CPK.create({ web3: ueb3 }).should.be.rejectedWith(/unrecognized network ID \d+/);
+    });
+
+    it('should not encode multiSend call data without custom multiSend address when web3 not connected to a recognized network', async () => {
+      const transactions = [{
+        to: multiStep.address,
+        data: multiStep.contract.methods.doStep(1).encodeABI(),
+      }, {
+        to: multiStep.address,
+        data: multiStep.contract.methods.doStep(2).encodeABI(),
+      }];
+
+      await CPK.encodeMultiSendCallData({
+        web3: ueb3,
+        transactions
+      }).should.be.rejectedWith(/unrecognized network ID \d+/);
     });
 
     describe('with valid networks configuration', () => {
@@ -53,6 +75,25 @@ function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderB
 
       it('can produce instances', async () => {
         should.exist(await CPK.create({ web3: ueb3, networks }));
+      });
+
+      it('can encode multiSend call data with custom multiSend address', async () => {
+        const multiStepAddress = multiStep.address.slice(2).toLowerCase()
+        const transactions = [{
+          to: multiStep.address,
+          data: multiStep.contract.methods.doStep(1).encodeABI(),
+        }, {
+          to: multiStep.address,
+          data: multiStep.contract.methods.doStep(2).encodeABI(),
+        }];
+
+        const dataHash = await CPK.encodeMultiSendCallData({
+          web3: ueb3,
+          multiSendAddress: networks[await ueb3.eth.net.getId()].multiSendAddress,
+          transactions
+        });
+  
+        dataHash.should.be.equal(`0x8d80ff0a000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000f200${multiStepAddress}00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000024c01cf093000000000000000000000000000000000000000000000000000000000000000100${multiStepAddress}00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000024c01cf09300000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000`);
       });
 
       describe('with warm instance', () => {

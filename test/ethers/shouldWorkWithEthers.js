@@ -2,6 +2,7 @@ const GnosisSafe = artifacts.require('GnosisSafe');
 const MultiSend = artifacts.require('MultiSend');
 const DefaultCallbackHandler = artifacts.require('DefaultCallbackHandler');
 const CPKFactory = artifacts.require('CPKFactory');
+const Multistep = artifacts.require('Multistep');
 
 const CPK = require('../..');
 const shouldSupportDifferentTransactions = require('../transactions/shouldSupportDifferentTransactions');
@@ -29,12 +30,34 @@ function shouldWorkWithEthers(ethers, defaultAccount, safeOwner, gnosisSafeProvi
       },
     });
 
+    let multiStep;
+
+    before('deploy mock contracts', async () => {
+      multiStep = await Multistep.new();
+    });
+
     it('should not produce instances when signer is missing', async () => {
       await CPK.create({ ethers }).should.be.rejectedWith('missing signer required for ethers');
     });
 
     it('should not produce instances when ethers not connected to a recognized network', async () => {
       await CPK.create({ ethers, signer }).should.be.rejectedWith(/unrecognized network ID \d+/);
+    });
+
+    it('should not encode multiSend call data without custom multiSend address when ethers not connected to a recognized network', async () => {
+      const transactions = [{
+        to: multiStep.address,
+        data: multiStep.contract.methods.doStep(1).encodeABI(),
+      }, {
+        to: multiStep.address,
+        data: multiStep.contract.methods.doStep(2).encodeABI(),
+      }];
+
+      await CPK.encodeMultiSendCallData({
+        ethers,
+        signer,
+        transactions
+      }).should.be.rejectedWith(/unrecognized network ID \d+/);
     });
 
     describe('with valid networks configuration', () => {
@@ -53,6 +76,26 @@ function shouldWorkWithEthers(ethers, defaultAccount, safeOwner, gnosisSafeProvi
 
       it('can produce instances', async () => {
         should.exist(await CPK.create({ ethers, signer, networks }));
+      });
+
+      it('can encode multiSend call data with custom multiSend address', async () => {
+        const multiStepAddress = multiStep.address.slice(2).toLowerCase()
+        const transactions = [{
+          to: multiStep.address,
+          data: multiStep.contract.methods.doStep(1).encodeABI(),
+        }, {
+          to: multiStep.address,
+          data: multiStep.contract.methods.doStep(2).encodeABI(),
+        }];
+
+        const dataHash = await CPK.encodeMultiSendCallData({
+          ethers,
+          signer,
+          multiSendAddress: networks[(await signer.provider.getNetwork()).chainId].multiSendAddress,
+          transactions
+        });
+  
+        dataHash.should.be.equal(`0x8d80ff0a000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000f200${multiStepAddress}00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000024c01cf093000000000000000000000000000000000000000000000000000000000000000100${multiStepAddress}00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000024c01cf09300000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000`);
       });
 
       describe('with warm instance', () => {
