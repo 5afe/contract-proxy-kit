@@ -7,7 +7,7 @@ const multiSendAbi = require('../abis/MultiSendAbi.json');
 class CPKEthersProvider extends CPKProvider {
   constructor({ ethers, signer }) {
     super();
-    if (signer == null) {
+    if (!signer) {
       throw new Error('missing signer required for ethers');
     }
     this.ethers = ethers;
@@ -115,7 +115,7 @@ class CPKEthersProvider extends CPKProvider {
     if (!(await viewContract.functions[methodName](...params))) throw err;
     const transactionResponse = await contract.functions[methodName](
       ...params,
-      ...(options == null ? [] : [options]),
+      ...(!options ? [] : [options]),
     );
     return { transactionResponse, hash: transactionResponse.hash };
   }
