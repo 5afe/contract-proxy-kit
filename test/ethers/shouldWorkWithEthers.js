@@ -44,22 +44,6 @@ function shouldWorkWithEthers(ethers, defaultAccount, safeOwner, gnosisSafeProvi
       await CPK.create({ ethers, signer }).should.be.rejectedWith(/unrecognized network ID \d+/);
     });
 
-    it('should not encode multiSend call data without custom multiSend address when ethers not connected to a recognized network', async () => {
-      const transactions = [{
-        to: multiStep.address,
-        data: multiStep.contract.methods.doStep(1).encodeABI(),
-      }, {
-        to: multiStep.address,
-        data: multiStep.contract.methods.doStep(2).encodeABI(),
-      }];
-
-      await CPK.encodeMultiSendCallData({
-        ethers,
-        signer,
-        transactions,
-      }).should.be.rejectedWith(/unrecognized network ID \d+/);
-    });
-
     describe('with valid networks configuration', () => {
       let networks;
 
@@ -78,7 +62,7 @@ function shouldWorkWithEthers(ethers, defaultAccount, safeOwner, gnosisSafeProvi
         should.exist(await CPK.create({ ethers, signer, networks }));
       });
 
-      it('can encode multiSend call data with custom multiSend address', async () => {
+      it('can encode multiSend call data', async () => {
         const multiStepAddress = multiStep.address.slice(2).toLowerCase();
         const transactions = [{
           to: multiStep.address,
@@ -91,7 +75,6 @@ function shouldWorkWithEthers(ethers, defaultAccount, safeOwner, gnosisSafeProvi
         const dataHash = await CPK.encodeMultiSendCallData({
           ethers,
           signer,
-          multiSendAddress: networks[(await signer.provider.getNetwork()).chainId].multiSendAddress,
           transactions,
         });
 

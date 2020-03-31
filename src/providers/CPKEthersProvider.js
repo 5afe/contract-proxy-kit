@@ -1,5 +1,5 @@
 const CPKProvider = require('./CPKProvider');
-const { predeterminedSaltNonce } = require('../utils/constants');
+const { zeroAddress, predeterminedSaltNonce } = require('../utils/constants');
 const cpkFactoryAbi = require('../abis/CpkFactoryAbi.json');
 const safeAbi = require('../abis/SafeAbi.json');
 const multiSendAbi = require('../abis/MultiSendAbi.json');
@@ -133,10 +133,8 @@ class CPKEthersProvider extends CPKProvider {
     return { hash };
   }
 
-  static encodeMultiSendCallData({
-    ethers, signer, transactions, multiSendAddress,
-  }) {
-    const multiSend = new ethers.Contract(multiSendAddress, multiSendAbi, signer);
+  static encodeMultiSendCallData({ ethers, signer, transactions }) {
+    const multiSend = new ethers.Contract(zeroAddress, multiSendAbi, signer);
 
     return multiSend.interface.functions.multiSend.encode([
       ethers.utils.hexlify(

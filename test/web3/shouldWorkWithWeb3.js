@@ -44,21 +44,6 @@ function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderB
       await CPK.create({ web3: ueb3 }).should.be.rejectedWith(/unrecognized network ID \d+/);
     });
 
-    it('should not encode multiSend call data without custom multiSend address when web3 not connected to a recognized network', async () => {
-      const transactions = [{
-        to: multiStep.address,
-        data: multiStep.contract.methods.doStep(1).encodeABI(),
-      }, {
-        to: multiStep.address,
-        data: multiStep.contract.methods.doStep(2).encodeABI(),
-      }];
-
-      await CPK.encodeMultiSendCallData({
-        web3: ueb3,
-        transactions,
-      }).should.be.rejectedWith(/unrecognized network ID \d+/);
-    });
-
     describe('with valid networks configuration', () => {
       let networks;
 
@@ -89,7 +74,6 @@ function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderB
 
         const dataHash = await CPK.encodeMultiSendCallData({
           web3: ueb3,
-          multiSendAddress: networks[await ueb3.eth.net.getId()].multiSendAddress,
           transactions,
         });
 

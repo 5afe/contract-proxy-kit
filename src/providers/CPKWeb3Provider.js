@@ -122,8 +122,8 @@ class CPKWeb3Provider extends CPKProvider {
     return { hash };
   }
 
-  static encodeMultiSendCallData({ web3, transactions, multiSendAddress }) {
-    const multiSend = new web3.eth.Contract(multiSendAbi, multiSendAddress);
+  static encodeMultiSendCallData({ web3, transactions }) {
+    const multiSend = new web3.eth.Contract(multiSendAbi);
 
     return multiSend.methods.multiSend(
       `0x${transactions.map((tx) => [
