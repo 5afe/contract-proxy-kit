@@ -1,5 +1,7 @@
 const defaultNetworks = require('./utils/networks');
-const { zeroAddress, predeterminedSaltNonce, CALL, DELEGATE_CALL } = require('./utils/constants');
+const {
+  zeroAddress, predeterminedSaltNonce, CALL, DELEGATE_CALL,
+} = require('./utils/constants');
 const { standarizeTransactions } = require('./utils/transactions');
 
 const CPKWeb3Provider = require('./providers/CPKWeb3Provider');
@@ -177,7 +179,7 @@ const CPK = class CPK {
             ethers: this.cpkProvider.ethers,
             signer: this.cpkProvider.signer,
             multiSendAddress: this.cpkProvider.constructor.getContractAddress(this.multiSend),
-            transactions: standardizedTxs
+            transactions: standardizedTxs,
           }),
           DELEGATE_CALL,
           0,
@@ -207,7 +209,7 @@ const CPK = class CPK {
           ethers: this.cpkProvider.ethers,
           signer: this.cpkProvider.signer,
           multiSendAddress: this.cpkProvider.constructor.getContractAddress(this.multiSend),
-          transactions: standardizedTxs
+          transactions: standardizedTxs,
         }),
         DELEGATE_CALL,
       ],
@@ -216,18 +218,20 @@ const CPK = class CPK {
     );
   }
 
-  static async encodeMultiSendCallData({ web3, ethers, signer, multiSendAddress, transactions }) {
+  static async encodeMultiSendCallData({
+    web3, ethers, signer, multiSendAddress, transactions,
+  }) {
     const standardizedTxs = standarizeTransactions(transactions);
-    let multiSendAddr = multiSendAddress
+    let multiSendAddr = multiSendAddress;
 
     if (!multiSendAddress) {
-      let networkId
+      let networkId;
       if (web3) {
         networkId = await web3.eth.net.getId();
       } else if (ethers && signer) {
         networkId = (await signer.provider.getNetwork()).chainId;
       } else throw new Error('web3/ethers property missing');
-      const network = defaultNetworks[networkId]
+      const network = defaultNetworks[networkId];
       if (!network) {
         throw Error(`unrecognized network ID ${networkId}`);
       }
@@ -235,10 +239,14 @@ const CPK = class CPK {
     }
 
     if (web3) {
-      return CPKWeb3Provider.encodeMultiSendCallData({ web3, multiSendAddress: multiSendAddr, transactions: standardizedTxs });
-    } else if (ethers && signer) {
-      return CPKEthersProvider.encodeMultiSendCallData({ ethers, signer, multiSendAddress: multiSendAddr, transactions: standardizedTxs });
-    } else throw new Error('web3/ethers property missing from options');
+      return CPKWeb3Provider.encodeMultiSendCallData({
+        web3, multiSendAddress: multiSendAddr, transactions: standardizedTxs,
+      });
+    } if (ethers && signer) {
+      return CPKEthersProvider.encodeMultiSendCallData({
+        ethers, signer, multiSendAddress: multiSendAddr, transactions: standardizedTxs,
+      });
+    } throw new Error('web3/ethers property missing from options');
   }
 };
 

@@ -55,7 +55,7 @@ function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderB
 
       await CPK.encodeMultiSendCallData({
         web3: ueb3,
-        transactions
+        transactions,
       }).should.be.rejectedWith(/unrecognized network ID \d+/);
     });
 
@@ -78,7 +78,7 @@ function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderB
       });
 
       it('can encode multiSend call data with custom multiSend address', async () => {
-        const multiStepAddress = multiStep.address.slice(2).toLowerCase()
+        const multiStepAddress = multiStep.address.slice(2).toLowerCase();
         const transactions = [{
           to: multiStep.address,
           data: multiStep.contract.methods.doStep(1).encodeABI(),
@@ -90,9 +90,9 @@ function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderB
         const dataHash = await CPK.encodeMultiSendCallData({
           web3: ueb3,
           multiSendAddress: networks[await ueb3.eth.net.getId()].multiSendAddress,
-          transactions
+          transactions,
         });
-  
+
         dataHash.should.be.equal(`0x8d80ff0a000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000f200${multiStepAddress}00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000024c01cf093000000000000000000000000000000000000000000000000000000000000000100${multiStepAddress}00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000024c01cf09300000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000`);
       });
 

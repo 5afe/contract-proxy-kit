@@ -133,7 +133,9 @@ class CPKEthersProvider extends CPKProvider {
     return { hash };
   }
 
-  static encodeMultiSendCallData({ ethers, signer, transactions, multiSendAddress }) {
+  static encodeMultiSendCallData({
+    ethers, signer, transactions, multiSendAddress,
+  }) {
     const multiSend = new ethers.Contract(multiSendAddress, multiSendAbi, signer);
 
     return multiSend.interface.functions.multiSend.encode([
