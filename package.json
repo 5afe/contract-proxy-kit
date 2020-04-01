@@ -44,5 +44,8 @@
     "truffle": "^5.1.20",
     "web3-1-2": "npm:web3@^1.2.6",
     "web3-2-alpha": "npm:web3@^2.0.0-alpha.1"
+  },
+  "dependencies": {
+    "bignumber.js": "^9.0.0"
   }
 }
