@@ -36,7 +36,7 @@ class CPKEthersProvider implements CPKProvider {
   async init({
     isConnectedToSafe, ownerAccount, masterCopyAddress, proxyFactoryAddress, multiSendAddress,
   }: CPKProviderInit): Promise<CPKProviderInitResult> {
-    const abiToViewAbi = (abi: any): object => abi.map(({
+    const abiToViewAbi = (abi: any): object[] => abi.map(({
       constant, // eslint-disable-line
       stateMutability, // eslint-disable-line
       ...rest
@@ -45,30 +45,18 @@ class CPKEthersProvider implements CPKProvider {
       stateMutability: 'view',
     }));
 
-    const multiSend = new this.ethers.Contract(multiSendAddress, multiSendAbi, this.signer);
+    const multiSend = this.getContract(multiSendAbi, multiSendAddress);
     let contract;
     let viewContract;
     let proxyFactory;
     let viewProxyFactory;
 
     if (isConnectedToSafe) {
-      contract = new this.ethers.Contract(ownerAccount, safeAbi, this.signer);
-      viewContract = new this.ethers.Contract(
-        ownerAccount,
-        abiToViewAbi(safeAbi),
-        this.signer,
-      );
+      contract = this.getContract(safeAbi, ownerAccount);
+      viewContract = this.getContract(abiToViewAbi(safeAbi), ownerAccount);
     } else {
-      proxyFactory = new this.ethers.Contract(
-        proxyFactoryAddress,
-        cpkFactoryAbi,
-        this.signer,
-      );
-      viewProxyFactory = new this.ethers.Contract(
-        proxyFactoryAddress,
-        abiToViewAbi(cpkFactoryAbi),
-        this.signer,
-      );
+      proxyFactory = this.getContract(cpkFactoryAbi, proxyFactoryAddress);
+      viewProxyFactory = this.getContract(abiToViewAbi(cpkFactoryAbi), proxyFactoryAddress);
 
       const create2Salt = this.ethers.utils.keccak256(this.ethers.utils.defaultAbiCoder.encode(
         ['address', 'uint256'],
@@ -87,8 +75,8 @@ class CPKEthersProvider implements CPKProvider {
         ]).slice(-40),
       );
 
-      contract = new this.ethers.Contract(address, safeAbi, this.signer);
-      viewContract = new this.ethers.Contract(address, abiToViewAbi(safeAbi), this.signer);
+      contract = this.getContract(safeAbi, address);
+      viewContract = this.getContract(abiToViewAbi(safeAbi), address);
     }
 
     return {
@@ -117,11 +105,21 @@ class CPKEthersProvider implements CPKProvider {
     return this.signer.provider.getCode(this.getContractAddress(contract));
   }
 
+  getContract(abi: Array<object>, address: string): any {
+    const contract = new this.ethers.Contract(address, abi, this.signer);
+    return contract;
+  }
+
   getContractAddress(contract: any): string {
     return contract.address;
   }
 
-  checkSingleCall(from: string, to: string, value: number | string, data: string): Promise<any> {
+  checkSingleCall({ from, to, value, data }: {
+    from: string;
+    to: string;
+    value: number | string;
+    data: string;
+  }): Promise<any> {
     return this.signer.provider.call({
       from,
       to,
@@ -165,7 +163,7 @@ class CPKEthersProvider implements CPKProvider {
   }
 
   encodeMultiSendCallData(transactions: NonStandardTransaction[]): string {
-    const multiSend = new this.ethers.Contract(zeroAddress, multiSendAbi, this.signer);
+    const multiSend = this.getContract(multiSendAbi, zeroAddress);
     const standardizedTxs = standardizeTransactions(transactions);
 
     return multiSend.interface.functions.multiSend.encode([

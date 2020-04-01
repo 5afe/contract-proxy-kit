@@ -1,5 +1,5 @@
 import CPKProvider, { CPKProviderInit, CPKProviderInitResult, TransactionResult } from './CPKProvider';
-import { predeterminedSaltNonce } from '../utils/constants';
+import { predeterminedSaltNonce, zeroAddress } from '../utils/constants';
 import {
   standardizeTransactions,
   NonStandardTransaction,
@@ -31,20 +31,20 @@ class CPKWeb3Provider implements CPKProvider {
   async init({
     isConnectedToSafe, ownerAccount, masterCopyAddress, proxyFactoryAddress, multiSendAddress,
   }: CPKProviderInit): Promise<CPKProviderInitResult> {
-    const multiSend = new this.web3.eth.Contract(multiSendAbi, multiSendAddress);
+    const multiSend = this.getContract(multiSendAbi, multiSendAddress);
     let contract;
     let proxyFactory;
 
     if (isConnectedToSafe) {
-      contract = new this.web3.eth.Contract(safeAbi, ownerAccount);
+      contract = this.getContract(safeAbi, ownerAccount);
     } else {
-      proxyFactory = new this.web3.eth.Contract(cpkFactoryAbi, proxyFactoryAddress);
+      proxyFactory = this.getContract(cpkFactoryAbi, proxyFactoryAddress);
       const create2Salt = this.web3.utils.keccak256(this.web3.eth.abi.encodeParameters(
         ['address', 'uint256'],
         [ownerAccount, predeterminedSaltNonce],
       ));
 
-      contract = new this.web3.eth.Contract(safeAbi, this.web3.utils.toChecksumAddress(
+      contract = this.getContract(safeAbi, this.web3.utils.toChecksumAddress(
         this.web3.utils.soliditySha3(
           '0xff',
           { t: 'address', v: proxyFactory.options.address },
@@ -80,6 +80,11 @@ class CPKWeb3Provider implements CPKProvider {
     return this.web3.eth.getCode(this.getContractAddress(contract));
   }
 
+  getContract(abi: Array<object>, address: string): any {
+    const contract = new this.web3.eth.Contract(abi, address);
+    return contract;
+  }
+
   getContractAddress(contract: any): string {
     return contract.options.address;
   }
@@ -93,7 +98,12 @@ class CPKWeb3Provider implements CPKProvider {
     );
   }
 
-  checkSingleCall(from: string, to: string, value: number | string, data: string): Promise<any> {
+  checkSingleCall({ from, to, value, data }: {
+    from: string;
+    to: string;
+    value: number | string;
+    data: string;
+  }): Promise<any> {
     return this.web3.eth.call({
       from,
       to,
@@ -153,7 +163,7 @@ class CPKWeb3Provider implements CPKProvider {
   }
 
   encodeMultiSendCallData(transactions: NonStandardTransaction[]): string {
-    const multiSend = new this.web3.eth.Contract(multiSendAbi);
+    const multiSend = this.getContract(multiSendAbi, zeroAddress);
     const standardizedTxs = standardizeTransactions(transactions);
 
     return multiSend.methods.multiSend(

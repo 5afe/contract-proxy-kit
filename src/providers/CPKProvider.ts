@@ -37,9 +37,16 @@ interface CPKProvider {
 
   getCodeAtAddress(contract: any): Promise<string>;
 
+  getContract(abi: Array<object>, address: string): any;
+
   getContractAddress(contract: any): string;
 
-  checkSingleCall(from: string, to: string, value: number | string, data: string): Promise<any>;
+  checkSingleCall(opts: {
+    from: string;
+    to: string;
+    value: number | string;
+    data: string;
+  }): Promise<any>;
 
   attemptTransaction(
     contract: any,
