@@ -3,6 +3,7 @@ const {
   zeroAddress, predeterminedSaltNonce, CALL, DELEGATE_CALL,
 } = require('./utils/constants');
 const { standardizeTransactions } = require('./utils/transactions');
+const { estimateSafeTxGas } = require('./utils');
 
 const CPK = class CPK {
   static async create(opts) {
@@ -94,7 +95,12 @@ const CPK = class CPK {
       } = standardizeTransactions(transactions)[0];
 
       if (operation === CPK.CALL) {
-        await this.cpkProvider.checkSingleCall(this.address, to, value, data);
+        await this.cpkProvider.checkSingleCall({
+          from: this.address,
+          to,
+          value,
+          data,
+        });
 
         if (this.isConnectedToSafe) {
           return this.cpkProvider.attemptSafeProviderSendTx({ to, value, data }, sendOptions);
@@ -103,6 +109,15 @@ const CPK = class CPK {
 
       if (!this.isConnectedToSafe) {
         if (codeAtAddress !== '0x') {
+          const safeTxGas = await estimateSafeTxGas(
+            this.cpkProvider,
+            this.address,
+            data,
+            to,
+            value,
+            operation,
+          );
+
           return this.cpkProvider.constructor.attemptTransaction(
             this.contract,
             this.viewContract,
@@ -112,7 +127,7 @@ const CPK = class CPK {
               value,
               data,
               operation,
-              0,
+              safeTxGas,
               0,
               0,
               zeroAddress,
@@ -157,16 +172,30 @@ const CPK = class CPK {
     }
 
     if (codeAtAddress !== '0x') {
+      const to = this.cpkProvider.constructor.getContractAddress(this.multiSend);
+      const value = 0;
+      const data = this.cpkProvider.encodeMultiSendCallData(transactions);
+      const operation = CPK.DELEGATECALL;
+
+      const safeTxGas = await estimateSafeTxGas(
+        this.cpkProvider,
+        this.address,
+        data,
+        to,
+        value,
+        operation,
+      );
+
       return this.cpkProvider.constructor.attemptTransaction(
         this.contract,
         this.viewContract,
         'execTransaction',
         [
-          this.cpkProvider.constructor.getContractAddress(this.multiSend),
-          0,
-          this.cpkProvider.encodeMultiSendCallData(transactions),
-          CPK.DELEGATECALL,
-          0,
+          to,
+          value,
+          data,
+          operation,
+          safeTxGas,
           0,
           0,
           zeroAddress,

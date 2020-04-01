@@ -30,30 +30,18 @@ class CPKEthersProvider extends CPKProvider {
       stateMutability: 'view',
     }));
 
-    const multiSend = new this.ethers.Contract(multiSendAddress, multiSendAbi, this.signer);
+    const multiSend = this.getContract(multiSendAbi, multiSendAddress);
     let contract;
     let viewContract;
     let proxyFactory;
     let viewProxyFactory;
 
     if (isConnectedToSafe) {
-      contract = new this.ethers.Contract(ownerAccount, safeAbi, this.signer);
-      viewContract = new this.ethers.Contract(
-        ownerAccount,
-        abiToViewAbi(safeAbi),
-        this.signer,
-      );
+      contract = this.getContract(safeAbi, ownerAccount);
+      viewContract = this.getContract(abiToViewAbi(safeAbi), ownerAccount);
     } else {
-      proxyFactory = new this.ethers.Contract(
-        proxyFactoryAddress,
-        cpkFactoryAbi,
-        this.signer,
-      );
-      viewProxyFactory = new this.ethers.Contract(
-        proxyFactoryAddress,
-        abiToViewAbi(cpkFactoryAbi),
-        this.signer,
-      );
+      proxyFactory = this.getContract(cpkFactoryAbi, proxyFactoryAddress);
+      viewProxyFactory = this.getContract(abiToViewAbi(cpkFactoryAbi), proxyFactoryAddress);
 
       const create2Salt = this.ethers.utils.keccak256(this.ethers.utils.defaultAbiCoder.encode(
         ['address', 'uint256'],
@@ -72,8 +60,8 @@ class CPKEthersProvider extends CPKProvider {
         ]).slice(-40),
       );
 
-      contract = new this.ethers.Contract(address, safeAbi, this.signer);
-      viewContract = new this.ethers.Contract(address, abiToViewAbi(safeAbi), this.signer);
+      contract = this.getContract(safeAbi, address);
+      viewContract = this.getContract(abiToViewAbi(safeAbi), address);
     }
 
     return {
@@ -102,11 +90,18 @@ class CPKEthersProvider extends CPKProvider {
     return this.signer.provider.getCode(this.constructor.getContractAddress(contract));
   }
 
+  getContract(abi, address) {
+    const contract = new this.ethers.Contract(address, abi, this.signer);
+    return contract;
+  }
+
   static getContractAddress(contract) {
     return contract.address;
   }
 
-  checkSingleCall(from, to, value, data) {
+  checkSingleCall({
+    from, to, value, data,
+  }) {
     return this.signer.provider.call({
       from,
       to,
@@ -138,7 +133,7 @@ class CPKEthersProvider extends CPKProvider {
   }
 
   encodeMultiSendCallData(transactions) {
-    const multiSend = new this.ethers.Contract(zeroAddress, multiSendAbi, this.signer);
+    const multiSend = this.getContract(multiSendAbi, zeroAddress);
     const standardizedTxs = standardizeTransactions(transactions);
 
     return multiSend.interface.functions.multiSend.encode([
