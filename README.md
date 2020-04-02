@@ -279,3 +279,36 @@ yarn test --network <NETWORK_NAME>
 ```
 
 where `<NETWORK_NAME>` is any of the networks in `truffle-config.js`.
+
+## In-depth Guide
+
+The Contract Proxy Kit operates primarily using the following technologies:
+
+* Deterministic account creation using the `create2` opcode
+* Gnosis Safe contracts
+* A `delegatecall`-able `MultiSend` contract
+* Its own `CPKFactory` contract
+
+### Using `create2`
+
+The original `create` operation uses the deploying account's address and an autoincrementing nonce to determine the address of the deployed contract. Because users of a factory do not have direct control of a public factory contract's nonce, there is no way to guarantee a user an address with a factory when other users can trigger the creation of new instances and the order of transactions gets determined when blocks are confirmed without using a mapping in storage.
+
+`create2` allows a public factory to strongly associate accounts with their proxies without storage. Moreover, this association may be established without any transactions. The address of a contract deployed with `create2` depends only on the deployer's address, the deployment bytecode, and the chosen salt. By keeping the deployment bytecode the same and hashing account addresses into the chosen salt, the factory contract can guarantee contract addresses for accounts.
+
+### Gnosis Safe
+
+The [Gnosis Safe](https://docs.gnosis.io/safe/) contracts have been formally verified, and offer many features beyond just batch transactions. Since they are primarily used via proxies, deployment of instances are relatively lightweight. Other features of the Safe, such as contract module installation and multi-factor authentication, may also make it into the CPK in the future.
+
+### Batching Transactions
+
+Transactions are batched with the use of the `MultiSend` contract, which takes a concatenated sequence of transactions and executes the transactions one by one. If any of the transactions revert, the entire batch reverts.
+
+In order to perform these transactions as the Safe, the `MultiSend` contract gets used with the `delegatecall` mode of `execTransaction`.
+
+### `CPKFactory`
+
+Because of the unique requirements of the contract proxy kit, the canonical Gnosis Safe proxy factory isn't used. Instead, a custom proxy factory contract called the `CPKFactory` is used.
+
+The `CPKFactory` contract allows a user to construct Safe instances and perform an `execTransaction` immediately on that instance. These instances have addresses which can deterministically be generated from the user's address, as they are created with `create2` with parameters which vary only by the user's address, and a user-supplied `saltNonce`.
+
+The `CPKFactory` initializes the constructed Safe instances to be a one out of one signature Safe, as well as registers a default fallback handler on them, in order for the Safes to be receive ERC-721 and ERC-1155 tokens by default. The instances starts out being owned by the factory, which relays the first transaction to be executed to the newly created Safe, and after the transaction, sets the owner of the Safe to be the user creating the Safe.
