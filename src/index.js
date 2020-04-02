@@ -1,12 +1,15 @@
 const defaultNetworks = require('./utils/networks');
-const { zeroAddress, predeterminedSaltNonce } = require('./utils/constants');
+const {
+  zeroAddress, predeterminedSaltNonce, CALL, DELEGATE_CALL,
+} = require('./utils/constants');
+const { standarizeTransactions } = require('./utils/transactions');
 
 const CPKWeb3Provider = require('./providers/CPKWeb3Provider');
 const CPKEthersProvider = require('./providers/CPKEthersProvider');
 
 const CPK = class CPK {
   static async create(opts) {
-    if (opts == null) throw new Error('missing options');
+    if (!opts) throw new Error('missing options');
     const cpk = new CPK(opts);
     await cpk.init();
     return cpk;
@@ -19,10 +22,10 @@ const CPK = class CPK {
     ownerAccount,
     networks,
   }) {
-    if (web3 != null) {
+    if (web3) {
       this.cpkProvider = new CPKWeb3Provider({ web3 });
-    } else if (ethers != null) {
-      if (signer == null) {
+    } else if (ethers) {
+      if (!signer) {
         throw new Error('missing signer required for ethers');
       }
       this.cpkProvider = new CPKEthersProvider({ ethers, signer });
@@ -36,11 +39,11 @@ const CPK = class CPK {
   }
 
   async init() {
-    const networkID = await this.cpkProvider.getNetworkId();
-    const network = this.networks[networkID];
+    const networkId = await this.cpkProvider.getNetworkId();
+    const network = this.networks[networkId];
 
-    if (network == null) {
-      throw Error(`unrecognized network ID ${networkID}`);
+    if (!network) {
+      throw Error(`unrecognized network ID ${networkId}`);
     }
 
     this.masterCopyAddress = network.masterCopyAddress;
@@ -94,12 +97,7 @@ const CPK = class CPK {
     const codeAtAddress = await this.cpkProvider.getCodeAtAddress(this.contract);
     const sendOptions = await this.cpkProvider.constructor.getSendOptions(options, ownerAccount);
 
-    const standardizedTxs = transactions.map((tx) => ({
-      value: tx.value ? tx.value : 0,
-      data: tx.data ? tx.data : '0x',
-      operation: tx.operation ? tx.operation : CPK.CALL,
-      ...tx,
-    }));
+    const standardizedTxs = standarizeTransactions(transactions);
 
     if (standardizedTxs.length === 1) {
       const {
@@ -209,7 +207,7 @@ const CPK = class CPK {
   }
 };
 
-CPK.CALL = 0;
-CPK.DELEGATECALL = 1;
+CPK.CALL = CALL;
+CPK.DELEGATECALL = DELEGATE_CALL;
 
 module.exports = CPK;
