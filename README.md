@@ -270,12 +270,10 @@ To run the tests locally execute the following command in the root folder of the
 yarn test
 ```
 
-To run the tests in a public network or an existing Ganache instance open the console in the root folder of the project and run the following commands:
+To run the tests against a local Ganache instance open the console in the root folder of the project and run the following commands:
 
 ```
 rm -rf build/
-yarn migrate --network <NETWORK_NAME>
-yarn test --network <NETWORK_NAME>
+yarn migrate --network local
+yarn test --network local
 ```
-
-where `<NETWORK_NAME>` is any of the networks in `truffle-config.js`.
