@@ -313,6 +313,18 @@ In order to perform these transactions as the Safe, the `MultiSend` contract get
 
 Because of the unique requirements of the contract proxy kit, the canonical Gnosis Safe proxy factory isn't used. Instead, a custom proxy factory contract called the `CPKFactory` is used.
 
-The `CPKFactory` contract allows a user to construct Safe instances and perform an `execTransaction` immediately on that instance. These instances have addresses which can deterministically be generated from the user's address, as they are created with `create2` with parameters which vary only by the user's address, and a user-supplied `saltNonce`.
+The `CPKFactory` contract allows a user to construct Safe instances and perform an `execTransaction` immediately on that instance. These instances have addresses which can deterministically be generated from the user's address, as they are created with `create2` with parameters which vary only by the user's address, and a `saltNonce`.
+
+In this package, the `saltNonce` is set to the *bytes32* value of `0xcfe33a586323e7325be6aa6ecd8b4600d232a9037e83c8ece69413b777dabe65`. This value is derived by the expression: `keccak256(toUtf8Bytes('Contract Proxy Kit'))`.
 
 The `CPKFactory` initializes the constructed Safe instances to be a one out of one signature Safe, as well as registers a default fallback handler on them, in order for the Safes to be receive ERC-721 and ERC-1155 tokens by default. The instances starts out being owned by the factory, which relays the first transaction to be executed to the newly created Safe, and after the transaction, sets the owner of the Safe to be the user creating the Safe.
+
+When constructing the proxy instance, the deployment bytecode for an [ERC DelegateProxy](https://eips.ethereum.org/EIPS/eip-897) pointing at a Gnosis Safe master copy is figured out. The `create2` salt is also calculated with the expression:
+
+```solidity
+bytes32 salt = keccak256(abi.encode(msg.sender, saltNonce));
+```
+
+where `msg.sender` is the user creating the proxy. The resulting proxy has an address which depends on the user address, the `saltNonce`, the `CPKFactory` address, and Safe master copy used, and the proxy creation bytecode.
+
+To aid with figuring out the proxy address, the `CPKFactory` contract announces the proxy creation bytecode it uses via an accessor `proxyCreationCode`.
