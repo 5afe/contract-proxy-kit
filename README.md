@@ -305,13 +305,13 @@ The [Gnosis Safe](https://docs.gnosis.io/safe/) contracts have been formally ver
 
 ### Batching Transactions
 
-Transactions are batched with the use of the `MultiSend` contract, which takes a concatenated sequence of transactions and executes the transactions one by one. If any of the transactions revert, the entire batch reverts.
+Transactions are batched with the use of the [`MultiSend` contract](https://github.com/gnosis/safe-contracts/blob/development/contracts/libraries/MultiSend.sol), which takes a concatenated sequence of transactions and executes the transactions one by one. If any of the transactions revert, the entire batch reverts.
 
 In order to perform these transactions as the Safe, the `MultiSend` contract gets used with the `delegatecall` mode of `execTransaction`.
 
 ### `CPKFactory`
 
-Because of the unique requirements of the contract proxy kit, the canonical Gnosis Safe proxy factory isn't used. Instead, a custom proxy factory contract called the `CPKFactory` is used.
+Because of the unique requirements of the contract proxy kit, the [canonical Gnosis Safe proxy factory](https://github.com/gnosis/safe-contracts/blob/development/contracts/proxies/GnosisSafeProxyFactory.sol) isn't used. Instead, a custom proxy factory contract called the `CPKFactory` is used.
 
 The `CPKFactory` contract allows a user to construct Safe instances and perform an `execTransaction` immediately on that instance. These instances have addresses which can deterministically be generated from the user's address, as they are created with `create2` with parameters which vary only by the user's address, and a `saltNonce`.
 
