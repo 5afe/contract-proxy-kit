@@ -4,9 +4,6 @@ const {
 } = require('./utils/constants');
 const { standarizeTransactions } = require('./utils/transactions');
 
-const CPKWeb3Provider = require('./providers/CPKWeb3Provider');
-const CPKEthersProvider = require('./providers/CPKEthersProvider');
-
 const CPK = class CPK {
   static async create(opts) {
     if (!opts) throw new Error('missing options');
@@ -16,20 +13,14 @@ const CPK = class CPK {
   }
 
   constructor({
-    web3,
-    ethers,
-    signer,
+    cpkProvider,
     ownerAccount,
     networks,
   }) {
-    if (web3) {
-      this.cpkProvider = new CPKWeb3Provider({ web3 });
-    } else if (ethers) {
-      if (!signer) {
-        throw new Error('missing signer required for ethers');
-      }
-      this.cpkProvider = new CPKEthersProvider({ ethers, signer });
-    } else throw new Error('web3/ethers property missing from options');
+    if (!cpkProvider) {
+      throw new Error('cpkProvider property missing from options');
+    }
+    this.cpkProvider = cpkProvider;
 
     this.setOwnerAccount(ownerAccount);
     this.networks = {
@@ -43,7 +34,7 @@ const CPK = class CPK {
     const network = this.networks[networkId];
 
     if (!network) {
-      throw Error(`unrecognized network ID ${networkId}`);
+      throw new Error(`unrecognized network ID ${networkId}`);
     }
 
     this.masterCopyAddress = network.masterCopyAddress;

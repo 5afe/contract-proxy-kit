@@ -7,6 +7,9 @@ const multiSendAbi = require('../abis/MultiSendAbi.json');
 class CPKWeb3Provider extends CPKProvider {
   constructor({ web3 }) {
     super();
+    if (!web3) {
+      throw new Error('web3 property missing from options');
+    }
     this.web3 = web3;
   }
 

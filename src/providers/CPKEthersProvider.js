@@ -7,8 +7,11 @@ const multiSendAbi = require('../abis/MultiSendAbi.json');
 class CPKEthersProvider extends CPKProvider {
   constructor({ ethers, signer }) {
     super();
+    if (!ethers) {
+      throw new Error('ethers property missing from options');
+    }
     if (!signer) {
-      throw new Error('missing signer required for ethers');
+      throw new Error('signer property missing from options');
     }
     this.ethers = ethers;
     this.signer = signer;
