@@ -24,6 +24,10 @@ const CPK = require('contract-proxy-kit')
 
 To create a *CPK* instance, use the static method `CPK.create`. This method accepts an options object as a parameter, and will result in a promise which resolves to a *CPK* instance if successful and rejects with an error otherwise.
 
+This will not deploy a contract on any networks. Rather, the deployment of a proxy gets batched into the first set of transactions when calling [CPK#execTransaction](#cpkexectransactions).
+
+In order to obtain the proxy address, use the property [CPK#address](#cpkaddress). This address is deterministically derived from the owner address, and accessing the property does not require the proxy to be deployed.
+
 #### Using with web3.js
 
 To use *CPK* with web3.js, supply `CPK.create` with a *Web3* instance as the value of the `web3` key. For example:
@@ -99,7 +103,7 @@ Once created, the `address` property on a *CPK* instance will provide the proxy'
 '0xdb6F36fC4e07eAfCAba1D0056609A76C91c5A1bC'
 ```
 
-This address is calculated even if the proxy has not been deployed yet, and it is deterministically generated from the proxy owner address.
+This address is calculated even if the proxy has not been deployed yet, and it is deterministically generated from the proxy owner address. This means that for any given owner, the same proxy owner address will always be generated.
 
 #### Support for WalletConnected Gnosis Safe
 
