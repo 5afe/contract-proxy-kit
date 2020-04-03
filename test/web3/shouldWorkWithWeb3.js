@@ -4,6 +4,7 @@ const DefaultCallbackHandler = artifacts.require('DefaultCallbackHandler');
 const CPKFactory = artifacts.require('CPKFactory');
 
 const CPK = require('../..');
+const CPKWeb3Provider = require('../../src/providers/CPKWeb3Provider');
 const shouldSupportDifferentTransactions = require('../transactions/shouldSupportDifferentTransactions');
 const { defaultGasLimit, toConfirmationPromise } = require('../utils');
 
@@ -33,8 +34,13 @@ function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderB
 
     const ueb3TestHelpers = testHelperMaker([ueb3]);
 
-    it('should not produce instances when web3 not connected to a recognized network', async () => {
-      await CPK.create({ web3: ueb3 }).should.be.rejectedWith(/unrecognized network ID \d+/);
+    it('should not produce cpkProvider instances when web3 not provided', async () => {
+      (() => new CPKWeb3Provider({})).should.throw('web3 property missing from options');
+    });
+
+    it('should not produce CPK instances when web3 not connected to a recognized network', async () => {
+      const cpkProvider = new CPKWeb3Provider({ web3: ueb3 });
+      await CPK.create({ cpkProvider }).should.be.rejectedWith(/unrecognized network ID \d+/);
     });
 
     describe('with valid networks configuration', () => {
@@ -52,14 +58,17 @@ function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderB
       });
 
       it('can produce instances', async () => {
-        should.exist(await CPK.create({ web3: ueb3, networks }));
+        const cpkProvider = new CPKWeb3Provider({ web3: ueb3 });
+        should.exist(cpkProvider);
+        should.exist(await CPK.create({ cpkProvider, networks }));
       });
 
       describe('with warm instance', () => {
         let cpk;
 
         before('create instance', async () => {
-          cpk = await CPK.create({ web3: ueb3, networks });
+          const cpkProvider = new CPKWeb3Provider({ web3: ueb3 });
+          cpk = await CPK.create({ cpkProvider, networks });
         });
 
         before('warm instance', async () => {
@@ -88,8 +97,9 @@ function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderB
               gasLimit: '0x5b8d80',
             });
 
+            const cpkProvider = new CPKWeb3Provider({ web3: ueb3 });
             return CPK.create({
-              web3: ueb3,
+              cpkProvider,
               networks,
               ownerAccount: newAccount.address,
             });
@@ -107,10 +117,8 @@ function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderB
         let cpk;
 
         before('create instance', async () => {
-          cpk = await CPK.create({
-            web3: safeWeb3Box[0],
-            networks,
-          });
+          const cpkProvider = new CPKWeb3Provider({ web3: safeWeb3Box[0] });
+          cpk = await CPK.create({ cpkProvider, networks });
         });
 
         shouldSupportDifferentTransactions({

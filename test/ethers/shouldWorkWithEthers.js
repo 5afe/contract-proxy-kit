@@ -4,6 +4,7 @@ const DefaultCallbackHandler = artifacts.require('DefaultCallbackHandler');
 const CPKFactory = artifacts.require('CPKFactory');
 
 const CPK = require('../..');
+const CPKEthersProvider = require('../../src/providers/CPKEthersProvider');
 const shouldSupportDifferentTransactions = require('../transactions/shouldSupportDifferentTransactions');
 const { defaultGasLimit, toConfirmationPromise } = require('../utils');
 
@@ -29,12 +30,17 @@ function shouldWorkWithEthers(ethers, defaultAccount, safeOwner, gnosisSafeProvi
       },
     });
 
-    it('should not produce instances when signer is missing', async () => {
-      await CPK.create({ ethers }).should.be.rejectedWith('missing signer required for ethers');
+    it('should not produce cpkProvider instances when ethers not provided', async () => {
+      (() => new CPKEthersProvider({ signer })).should.throw('ethers property missing from options');
     });
 
-    it('should not produce instances when ethers not connected to a recognized network', async () => {
-      await CPK.create({ ethers, signer }).should.be.rejectedWith(/unrecognized network ID \d+/);
+    it('should not produce cpkProvider instances when signer not provided', async () => {
+      (() => new CPKEthersProvider({ ethers })).should.throw('signer property missing from options');
+    });
+
+    it('should not produce CPK instances when ethers not connected to a recognized network', async () => {
+      const cpkProvider = new CPKEthersProvider({ ethers, signer });
+      await CPK.create({ cpkProvider }).should.be.rejectedWith(/unrecognized network ID \d+/);
     });
 
     describe('with valid networks configuration', () => {
@@ -52,7 +58,9 @@ function shouldWorkWithEthers(ethers, defaultAccount, safeOwner, gnosisSafeProvi
       });
 
       it('can produce instances', async () => {
-        should.exist(await CPK.create({ ethers, signer, networks }));
+        const cpkProvider = new CPKEthersProvider({ ethers, signer });
+        should.exist(cpkProvider);
+        should.exist(await CPK.create({ cpkProvider, networks }));
       });
 
       describe('with warm instance', () => {
@@ -68,7 +76,8 @@ function shouldWorkWithEthers(ethers, defaultAccount, safeOwner, gnosisSafeProvi
         });
 
         before('create instance', async () => {
-          cpk = await CPK.create({ ethers, signer, networks });
+          const cpkProvider = new CPKEthersProvider({ ethers, signer });
+          cpk = await CPK.create({ cpkProvider, networks });
         });
 
         before('warm instance', async () => {
@@ -99,11 +108,8 @@ function shouldWorkWithEthers(ethers, defaultAccount, safeOwner, gnosisSafeProvi
               gasLimit: '0x5b8d80',
             }));
 
-            return CPK.create({
-              ethers,
-              signer: freshSignerBox[0],
-              networks,
-            });
+            const cpkProvider = new CPKEthersProvider({ ethers, signer: freshSignerBox[0] });
+            return CPK.create({ cpkProvider, networks });
           },
         });
       });
@@ -119,11 +125,8 @@ function shouldWorkWithEthers(ethers, defaultAccount, safeOwner, gnosisSafeProvi
         let cpk;
 
         before('create instance', async () => {
-          cpk = await CPK.create({
-            ethers,
-            signer: safeSignerBox[0],
-            networks,
-          });
+          const cpkProvider = new CPKEthersProvider({ ethers, signer: safeSignerBox[0] });
+          cpk = await CPK.create({ cpkProvider, networks });
         });
 
         shouldSupportDifferentTransactions({
