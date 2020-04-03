@@ -24,6 +24,10 @@ const CPK = require('contract-proxy-kit')
 
 To create a *CPK* instance, use the static method `CPK.create`. This method accepts an options object as a parameter, and will result in a promise which resolves to a *CPK* instance if successful and rejects with an error otherwise.
 
+This will not deploy a contract on any networks. Rather, the deployment of a proxy gets batched into the first set of transactions when calling [CPK#execTransaction](#cpkexectransactions).
+
+In order to obtain the proxy address, use the property [CPK#address](#cpkaddress). This address is deterministically derived from the owner address, and accessing the property does not require the proxy to be deployed.
+
 #### Using with web3.js
 
 To use *CPK* with web3.js, supply `CPK.create` with a *Web3* instance as the value of the `web3` key. For example:
@@ -99,7 +103,7 @@ Once created, the `address` property on a *CPK* instance will provide the proxy'
 '0xdb6F36fC4e07eAfCAba1D0056609A76C91c5A1bC'
 ```
 
-This address is calculated even if the proxy has not been deployed yet, and it is deterministically generated from the proxy owner address.
+This address is calculated even if the proxy has not been deployed yet, and it is deterministically generated from the proxy owner address. This means that for any given owner, the same proxy owner address will always be generated.
 
 #### Support for WalletConnected Gnosis Safe
 
@@ -279,3 +283,48 @@ yarn test --network <NETWORK_NAME>
 ```
 
 where `<NETWORK_NAME>` is any of the networks in `truffle-config.js`.
+
+## In-depth Guide
+
+The Contract Proxy Kit operates primarily using the following technologies:
+
+* Deterministic account creation using the `create2` opcode
+* Gnosis Safe contracts
+* A `delegatecall`-able `MultiSend` contract
+* Its own `CPKFactory` contract
+
+### Using `create2`
+
+The original `create` operation uses the deploying account's address and an autoincrementing nonce to determine the address of the deployed contract. Because users of a factory do not have direct control of a public factory contract's nonce, there is no way to guarantee a user an address with a factory when other users can trigger the creation of new instances and the order of transactions gets determined when blocks are confirmed without using a mapping in storage.
+
+`create2` allows a public factory to strongly associate accounts with their proxies without storage. Moreover, this association may be established without any transactions. The address of a contract deployed with `create2` depends only on the deployer's address, the deployment bytecode, and the chosen salt. By keeping the deployment bytecode the same and hashing account addresses into the chosen salt, the factory contract can guarantee contract addresses for accounts.
+
+### Gnosis Safe
+
+The [Gnosis Safe](https://docs.gnosis.io/safe/) contracts have been formally verified, and offer many features beyond just batch transactions. Since they are primarily used via proxies, deployment of instances are relatively lightweight. Other features of the Safe, such as contract module installation and multi-factor authentication, may also make it into the CPK in the future.
+
+### Batching Transactions
+
+Transactions are batched with the use of the [`MultiSend` contract](https://github.com/gnosis/safe-contracts/blob/development/contracts/libraries/MultiSend.sol), which takes a concatenated sequence of transactions and executes the transactions one by one. If any of the transactions revert, the entire batch reverts.
+
+In order to perform these transactions as the Safe, the `MultiSend` contract gets used with the `delegatecall` mode of `execTransaction`.
+
+### `CPKFactory`
+
+Because of the unique requirements of the contract proxy kit, the [canonical Gnosis Safe proxy factory](https://github.com/gnosis/safe-contracts/blob/development/contracts/proxies/GnosisSafeProxyFactory.sol) isn't used. Instead, a custom proxy factory contract called the `CPKFactory` is used.
+
+The `CPKFactory` contract allows a user to construct Safe instances and perform an `execTransaction` immediately on that instance. These instances have addresses which can deterministically be generated from the user's address, as they are created with `create2` with parameters which vary only by the user's address, and a `saltNonce`.
+
+In this package, the `saltNonce` is set to the *bytes32* value of `0xcfe33a586323e7325be6aa6ecd8b4600d232a9037e83c8ece69413b777dabe65`. This value is derived by the expression: `keccak256(toUtf8Bytes('Contract Proxy Kit'))`.
+
+The `CPKFactory` initializes the constructed Safe instances to be a one out of one signature Safe, as well as registers a default fallback handler on them, in order for the Safes to be receive ERC-721 and ERC-1155 tokens by default. The instances starts out being owned by the factory, which relays the first transaction to be executed to the newly created Safe, and after the transaction, sets the owner of the Safe to be the user creating the Safe.
+
+When constructing the proxy instance, the deployment bytecode for an [ERC DelegateProxy](https://eips.ethereum.org/EIPS/eip-897) pointing at a Gnosis Safe master copy is figured out. The `create2` salt is also calculated with the expression:
+
+```solidity
+bytes32 salt = keccak256(abi.encode(msg.sender, saltNonce));
+```
+
+where `msg.sender` is the user creating the proxy. The resulting proxy has an address which depends on the user address, the `saltNonce`, the `CPKFactory` address, and Safe master copy used, and the proxy creation bytecode.
+
+To aid with figuring out the proxy address, the `CPKFactory` contract announces the proxy creation bytecode it uses via an accessor `proxyCreationCode`.
