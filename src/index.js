@@ -2,7 +2,7 @@ const defaultNetworks = require('./utils/networks');
 const {
   zeroAddress, predeterminedSaltNonce, CALL, DELEGATE_CALL,
 } = require('./utils/constants');
-const { standarizeTransactions } = require('./utils/transactions');
+const { standardizeTransactions } = require('./utils/transactions');
 
 const CPK = class CPK {
   static async create(opts) {
@@ -88,12 +88,10 @@ const CPK = class CPK {
     const codeAtAddress = await this.cpkProvider.getCodeAtAddress(this.contract);
     const sendOptions = await this.cpkProvider.constructor.getSendOptions(options, ownerAccount);
 
-    const standardizedTxs = standarizeTransactions(transactions);
-
-    if (standardizedTxs.length === 1) {
+    if (transactions.length === 1) {
       const {
         to, value, data, operation,
-      } = standardizedTxs[0];
+      } = standardizeTransactions(transactions)[0];
 
       if (operation === CPK.CALL) {
         await this.cpkProvider.checkSingleCall(this.address, to, value, data);
@@ -146,6 +144,7 @@ const CPK = class CPK {
     }
 
     if (this.isConnectedToSafe) {
+      const standardizedTxs = standardizeTransactions(transactions);
       const connectedSafeTxs = standardizedTxs.map(({
         to, value, data,
       }) => ({
@@ -165,7 +164,7 @@ const CPK = class CPK {
         [
           this.cpkProvider.constructor.getContractAddress(this.multiSend),
           0,
-          this.cpkProvider.encodeMultiSendCalldata(this.multiSend, standardizedTxs),
+          this.cpkProvider.encodeMultiSendCallData(transactions),
           CPK.DELEGATECALL,
           0,
           0,
@@ -189,7 +188,7 @@ const CPK = class CPK {
         this.fallbackHandlerAddress,
         this.cpkProvider.constructor.getContractAddress(this.multiSend),
         0,
-        this.cpkProvider.encodeMultiSendCalldata(this.multiSend, standardizedTxs),
+        this.cpkProvider.encodeMultiSendCallData(transactions),
         CPK.DELEGATECALL,
       ],
       sendOptions,

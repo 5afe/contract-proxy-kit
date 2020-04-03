@@ -2,6 +2,7 @@ const GnosisSafe = artifacts.require('GnosisSafe');
 const MultiSend = artifacts.require('MultiSend');
 const DefaultCallbackHandler = artifacts.require('DefaultCallbackHandler');
 const CPKFactory = artifacts.require('CPKFactory');
+const Multistep = artifacts.require('Multistep');
 
 const CPK = require('../..');
 const CPKEthersProvider = require('../../src/providers/CPKEthersProvider');
@@ -28,6 +29,12 @@ function shouldWorkWithEthers(ethers, defaultAccount, safeOwner, gnosisSafeProvi
         should.exist(transactionResponse);
         should.exist(hash);
       },
+    });
+
+    let multiStep;
+
+    before('deploy mock contracts', async () => {
+      multiStep = await Multistep.new();
     });
 
     it('should not produce cpkProvider instances when ethers not provided', async () => {
@@ -61,6 +68,22 @@ function shouldWorkWithEthers(ethers, defaultAccount, safeOwner, gnosisSafeProvi
         const cpkProvider = new CPKEthersProvider({ ethers, signer });
         should.exist(cpkProvider);
         should.exist(await CPK.create({ cpkProvider, networks }));
+      });
+
+      it('can encode multiSend call data', async () => {
+        const transactions = [{
+          to: multiStep.address,
+          data: multiStep.contract.methods.doStep(1).encodeABI(),
+        }, {
+          to: multiStep.address,
+          data: multiStep.contract.methods.doStep(2).encodeABI(),
+        }];
+
+        const cpkProvider = new CPKEthersProvider({ ethers, signer });
+        const dataHash = cpkProvider.encodeMultiSendCallData(transactions);
+
+        const multiStepAddress = multiStep.address.slice(2).toLowerCase();
+        dataHash.should.be.equal(`0x8d80ff0a000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000f200${multiStepAddress}00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000024c01cf093000000000000000000000000000000000000000000000000000000000000000100${multiStepAddress}00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000024c01cf09300000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000`);
       });
 
       describe('with warm instance', () => {
