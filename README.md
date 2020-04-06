@@ -118,7 +118,7 @@ const ownerAccount = await cpk.getOwnerAccount()
 cpk.address === ownerAccount // this will be true in that case
 ```
 
-*CPK* will use the Safe's native support for batching transactions, and will not an additional proxy contract account.
+*CPK* will use the Safe's native support for batching transactions, and will not create an additional proxy contract account.
 
 ### CPK#execTransactions
 
