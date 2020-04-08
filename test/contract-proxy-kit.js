@@ -180,12 +180,12 @@ contract('CPK', ([defaultAccount, safeOwner]) => {
     should.exist(CPK);
   });
 
-  it('should not produce instances when options are missing', async () => {
+  it('should not produce CPK instances when options are missing', async () => {
     await CPK.create().should.be.rejectedWith('missing options');
   });
 
-  it('should not produce instances when web3/ethers not provided', async () => {
-    await CPK.create({}).should.be.rejectedWith('web3/ethers property missing from options');
+  it('should not produce CPK instances when cpkProvider not provided', async () => {
+    await CPK.create({}).should.be.rejectedWith('cpkProvider property missing from options');
   });
 
   web3Versions.forEach((Web3) => {

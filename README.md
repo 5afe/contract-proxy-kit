@@ -36,13 +36,15 @@ To use *CPK* with web3.js, supply `CPK.create` with a *Web3* instance as the val
 const Web3 = require('web3');
 const web3 = new Web3(/*...*/);
 
-const cpk = await CPK.create({ web3 });
+const cpkProvider = new CpkWeb3Provider({ web3 });
+
+const cpk = await CPK.create({ cpkProvider });
 ```
 
 The proxy owner will be inferred by first trying `web3.eth.defaultAccount`, and then trying to select the 0th account from `web3.eth.getAccounts`. However, an owner account may also be explicitly set with the `ownerAccount` key:
 
 ```js
-const cpk = await CPK.create({ web3, ownerAccount: '0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1' });
+const cpk = await CPK.create({ cpkProvider, ownerAccount: '0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1' });
 ```
 
 #### Using with ethers.js
@@ -54,7 +56,9 @@ const { ethers } = require('ethers');
 const provider = ethers.getDefaultProvider('homestead');
 const wallet = ethers.Wallet.createRandom().connect(provider);
 
-const cpk = await CPK.create({ ethers, signer: wallet });
+const cpkProvider = new CpkEthersProvider({ ethers, signer: wallet });
+
+const cpk = await CPK.create({ cpkProvider });
 ```
 
 The proxy owner will be the account associated with the signer.
@@ -274,15 +278,13 @@ To run the tests locally execute the following command in the root folder of the
 yarn test
 ```
 
-To run the tests in a public network or an existing Ganache instance open the console in the root folder of the project and run the following commands:
+To run the tests against a local Ganache instance open the console in the root folder of the project and run the following commands:
 
 ```
 rm -rf build/
-yarn migrate --network <NETWORK_NAME>
-yarn test --network <NETWORK_NAME>
+yarn migrate --network local
+yarn test --network local
 ```
-
-where `<NETWORK_NAME>` is any of the networks in `truffle-config.js`.
 
 ## In-depth Guide
 

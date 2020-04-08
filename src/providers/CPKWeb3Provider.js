@@ -1,5 +1,6 @@
 const CPKProvider = require('./CPKProvider');
 const { predeterminedSaltNonce } = require('../utils/constants');
+const { standardizeTransactions } = require('../utils/transactions');
 const cpkFactoryAbi = require('../abis/CpkFactoryAbi.json');
 const safeAbi = require('../abis/SafeAbi.json');
 const multiSendAbi = require('../abis/MultiSendAbi.json');
@@ -7,6 +8,9 @@ const multiSendAbi = require('../abis/MultiSendAbi.json');
 class CPKWeb3Provider extends CPKProvider {
   constructor({ web3 }) {
     super();
+    if (!web3) {
+      throw new Error('web3 property missing from options');
+    }
     this.web3 = web3;
   }
 
@@ -122,9 +126,12 @@ class CPKWeb3Provider extends CPKProvider {
     return { hash };
   }
 
-  encodeMultiSendCalldata(multiSend, txs) {
+  encodeMultiSendCallData(transactions) {
+    const multiSend = new this.web3.eth.Contract(multiSendAbi);
+    const standardizedTxs = standardizeTransactions(transactions);
+
     return multiSend.methods.multiSend(
-      `0x${txs.map((tx) => [
+      `0x${standardizedTxs.map((tx) => [
         this.web3.eth.abi.encodeParameter('uint8', tx.operation).slice(-2),
         this.web3.eth.abi.encodeParameter('address', tx.to).slice(-40),
         this.web3.eth.abi.encodeParameter('uint256', tx.value).slice(-64),

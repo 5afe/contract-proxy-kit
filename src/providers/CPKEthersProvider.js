@@ -1,5 +1,6 @@
 const CPKProvider = require('./CPKProvider');
-const { predeterminedSaltNonce } = require('../utils/constants');
+const { zeroAddress, predeterminedSaltNonce } = require('../utils/constants');
+const { standardizeTransactions } = require('../utils/transactions');
 const cpkFactoryAbi = require('../abis/CpkFactoryAbi.json');
 const safeAbi = require('../abis/SafeAbi.json');
 const multiSendAbi = require('../abis/MultiSendAbi.json');
@@ -7,8 +8,11 @@ const multiSendAbi = require('../abis/MultiSendAbi.json');
 class CPKEthersProvider extends CPKProvider {
   constructor({ ethers, signer }) {
     super();
-    if (signer == null) {
-      throw new Error('missing signer required for ethers');
+    if (!ethers) {
+      throw new Error('ethers property missing from options');
+    }
+    if (!signer) {
+      throw new Error('signer property missing from options');
     }
     this.ethers = ethers;
     this.signer = signer;
@@ -115,7 +119,7 @@ class CPKEthersProvider extends CPKProvider {
     if (!(await viewContract.functions[methodName](...params))) throw err;
     const transactionResponse = await contract.functions[methodName](
       ...params,
-      ...(options == null ? [] : [options]),
+      ...(!options ? [] : [options]),
     );
     return { transactionResponse, hash: transactionResponse.hash };
   }
@@ -133,11 +137,14 @@ class CPKEthersProvider extends CPKProvider {
     return { hash };
   }
 
-  encodeMultiSendCalldata(multiSend, txs) {
+  encodeMultiSendCallData(transactions) {
+    const multiSend = new this.ethers.Contract(zeroAddress, multiSendAbi, this.signer);
+    const standardizedTxs = standardizeTransactions(transactions);
+
     return multiSend.interface.functions.multiSend.encode([
       this.ethers.utils.hexlify(
         this.ethers.utils.concat(
-          txs.map(
+          standardizedTxs.map(
             (tx) => this.ethers.utils.solidityPack(
               ['uint8', 'address', 'uint256', 'uint256', 'bytes'],
               [

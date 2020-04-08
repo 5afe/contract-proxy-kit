@@ -1,32 +1,26 @@
 const defaultNetworks = require('./utils/networks');
-const { zeroAddress, predeterminedSaltNonce } = require('./utils/constants');
-
-const CPKWeb3Provider = require('./providers/CPKWeb3Provider');
-const CPKEthersProvider = require('./providers/CPKEthersProvider');
+const {
+  zeroAddress, predeterminedSaltNonce, CALL, DELEGATE_CALL,
+} = require('./utils/constants');
+const { standardizeTransactions } = require('./utils/transactions');
 
 const CPK = class CPK {
   static async create(opts) {
-    if (opts == null) throw new Error('missing options');
+    if (!opts) throw new Error('missing options');
     const cpk = new CPK(opts);
     await cpk.init();
     return cpk;
   }
 
   constructor({
-    web3,
-    ethers,
-    signer,
+    cpkProvider,
     ownerAccount,
     networks,
   }) {
-    if (web3 != null) {
-      this.cpkProvider = new CPKWeb3Provider({ web3 });
-    } else if (ethers != null) {
-      if (signer == null) {
-        throw new Error('missing signer required for ethers');
-      }
-      this.cpkProvider = new CPKEthersProvider({ ethers, signer });
-    } else throw new Error('web3/ethers property missing from options');
+    if (!cpkProvider) {
+      throw new Error('cpkProvider property missing from options');
+    }
+    this.cpkProvider = cpkProvider;
 
     this.setOwnerAccount(ownerAccount);
     this.networks = {
@@ -36,11 +30,11 @@ const CPK = class CPK {
   }
 
   async init() {
-    const networkID = await this.cpkProvider.getNetworkId();
-    const network = this.networks[networkID];
+    const networkId = await this.cpkProvider.getNetworkId();
+    const network = this.networks[networkId];
 
-    if (network == null) {
-      throw Error(`unrecognized network ID ${networkID}`);
+    if (!network) {
+      throw new Error(`unrecognized network ID ${networkId}`);
     }
 
     this.masterCopyAddress = network.masterCopyAddress;
@@ -94,17 +88,10 @@ const CPK = class CPK {
     const codeAtAddress = await this.cpkProvider.getCodeAtAddress(this.contract);
     const sendOptions = await this.cpkProvider.constructor.getSendOptions(options, ownerAccount);
 
-    const standardizedTxs = transactions.map((tx) => ({
-      value: tx.value ? tx.value : 0,
-      data: tx.data ? tx.data : '0x',
-      operation: tx.operation ? tx.operation : CPK.CALL,
-      ...tx,
-    }));
-
-    if (standardizedTxs.length === 1) {
+    if (transactions.length === 1) {
       const {
         to, value, data, operation,
-      } = standardizedTxs[0];
+      } = standardizeTransactions(transactions)[0];
 
       if (operation === CPK.CALL) {
         await this.cpkProvider.checkSingleCall(this.address, to, value, data);
@@ -157,6 +144,7 @@ const CPK = class CPK {
     }
 
     if (this.isConnectedToSafe) {
+      const standardizedTxs = standardizeTransactions(transactions);
       const connectedSafeTxs = standardizedTxs.map(({
         to, value, data,
       }) => ({
@@ -176,7 +164,7 @@ const CPK = class CPK {
         [
           this.cpkProvider.constructor.getContractAddress(this.multiSend),
           0,
-          this.cpkProvider.encodeMultiSendCalldata(this.multiSend, standardizedTxs),
+          this.cpkProvider.encodeMultiSendCallData(transactions),
           CPK.DELEGATECALL,
           0,
           0,
@@ -200,7 +188,7 @@ const CPK = class CPK {
         this.fallbackHandlerAddress,
         this.cpkProvider.constructor.getContractAddress(this.multiSend),
         0,
-        this.cpkProvider.encodeMultiSendCalldata(this.multiSend, standardizedTxs),
+        this.cpkProvider.encodeMultiSendCallData(transactions),
         CPK.DELEGATECALL,
       ],
       sendOptions,
@@ -209,7 +197,7 @@ const CPK = class CPK {
   }
 };
 
-CPK.CALL = 0;
-CPK.DELEGATECALL = 1;
+CPK.CALL = CALL;
+CPK.DELEGATECALL = DELEGATE_CALL;
 
 module.exports = CPK;
