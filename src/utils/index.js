@@ -22,7 +22,7 @@ const estimateBaseGas = async (
   value,
   data,
   operation,
-  txGasEstimate,
+  safeTxGas,
   gasToken,
   refundReceiver,
   signatureCount,
@@ -40,7 +40,7 @@ const estimateBaseGas = async (
       value,
       data,
       operation,
-      txGasEstimate,
+      safeTxGas,
       0,
       gasPrice,
       gasToken,
@@ -64,11 +64,11 @@ const estimateSafeTxGas = async (
   value,
   operation,
 ) => {
-  let txGasEstimate;
+  let safeTxGas;
   let additionalGas = 10000;
   const txGasToken = zeroAddress;
   const refundReceiver = zeroAddress;
-  
+
   const gasPrice = await cpkProvider.getGasPrice();
   const nonce = await cpkProvider.getSafeNonce(safeAddress);
   const estimateData = cpkProvider.encodeAttemptTransaction(
@@ -88,10 +88,11 @@ const estimateSafeTxGas = async (
       to: safeAddress,
       data: estimateData,
     });
-    txGasEstimate = new BigNumber(estimateResponse.substring(138), 16);
+
+    safeTxGas = new BigNumber(estimateResponse.substring(138), 16);
 
     // Add 10k else we will fail in case of nested calls
-    txGasEstimate = txGasEstimate.toNumber() + additionalGas;
+    safeTxGas = safeTxGas.toNumber() + additionalGas;
   } catch (error) {
     console.error('Error calculating tx gas estimation', error);
   }
@@ -102,7 +103,7 @@ const estimateSafeTxGas = async (
     value,
     data,
     operation,
-    txGasEstimate,
+    safeTxGas,
     txGasToken,
     refundReceiver,
     signatureCount,
@@ -117,7 +118,7 @@ const estimateSafeTxGas = async (
         to: safeAddress,
         from: safeAddress,
         data: estimateData,
-        gasLimit: txGasEstimate + baseGasEstimate + 32000,
+        gasLimit: safeTxGas + baseGasEstimate + 32000,
       });
 
       if (estimateResponse !== '0x') {
@@ -126,11 +127,11 @@ const estimateSafeTxGas = async (
     } catch (error) {
       console.error('Error calculating tx gas estimation', error);
     }
-    txGasEstimate += additionalGas;
+    safeTxGas += additionalGas;
     additionalGas *= 2;
   }
 
-  return { safeTxGas: txGasEstimate, baseGas: baseGasEstimate };
+  return { safeTxGas, baseGas: baseGasEstimate };
 };
 
 module.exports = { estimateSafeTxGas };
