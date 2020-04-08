@@ -85,6 +85,8 @@ const CPK = class CPK {
       address.replace(/^0x/, '').toLowerCase()
     }000000000000000000000000000000000000000000000000000000000000000001`;
 
+    const signatureCount = 1;
+
     const ownerAccount = await this.getOwnerAccount();
     const codeAtAddress = await this.cpkProvider.getCodeAtAddress(this.contract);
     const sendOptions = await this.cpkProvider.constructor.getSendOptions(options, ownerAccount);
@@ -109,16 +111,17 @@ const CPK = class CPK {
 
       if (!this.isConnectedToSafe) {
         if (codeAtAddress !== '0x') {
-          const safeTxGas = await estimateSafeTxGas(
+          const { safeTxGas, baseGas } = await estimateSafeTxGas(
             this.cpkProvider,
             this.address,
+            signatureCount,
             data,
             to,
             value,
             operation,
           );
 
-          return this.cpkProvider.constructor.attemptTransaction(
+          return this.cpkProvider.attemptTransaction(
             this.contract,
             this.viewContract,
             'execTransaction',
@@ -128,7 +131,7 @@ const CPK = class CPK {
               data,
               operation,
               safeTxGas,
-              0,
+              baseGas,
               0,
               zeroAddress,
               zeroAddress,
@@ -139,7 +142,7 @@ const CPK = class CPK {
           );
         }
 
-        return this.cpkProvider.constructor.attemptTransaction(
+        return this.cpkProvider.attemptTransaction(
           this.proxyFactory,
           this.viewProxyFactory,
           'createProxyAndExecTransaction',
@@ -177,16 +180,17 @@ const CPK = class CPK {
       const data = this.cpkProvider.encodeMultiSendCallData(transactions);
       const operation = CPK.DELEGATECALL;
 
-      const safeTxGas = await estimateSafeTxGas(
+      const { safeTxGas, baseGas } = await estimateSafeTxGas(
         this.cpkProvider,
         this.address,
+        signatureCount,
         data,
         to,
         value,
         operation,
       );
 
-      return this.cpkProvider.constructor.attemptTransaction(
+      return this.cpkProvider.attemptTransaction(
         this.contract,
         this.viewContract,
         'execTransaction',
@@ -196,7 +200,7 @@ const CPK = class CPK {
           data,
           operation,
           safeTxGas,
-          0,
+          baseGas,
           0,
           zeroAddress,
           zeroAddress,
@@ -207,7 +211,7 @@ const CPK = class CPK {
       );
     }
 
-    return this.cpkProvider.constructor.attemptTransaction(
+    return this.cpkProvider.attemptTransaction(
       this.proxyFactory,
       this.viewProxyFactory,
       'createProxyAndExecTransaction',

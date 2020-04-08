@@ -103,6 +103,12 @@ class CPKWeb3Provider extends CPKProvider {
     return this.promiEventToPromise(promiEvent, sendOptions);
   }
 
+  encodeAttemptTransaction(contractAbi, methodName, params) {
+    const contract = this.getContract(contractAbi);
+    const payload = contract.methods[methodName](...params).encodeABI();
+    return payload;
+  }
+
   attemptSafeProviderSendTx(txObj, sendOptions) {
     const promiEvent = this.web3.eth.sendTransaction({
       ...txObj,
@@ -153,6 +159,15 @@ class CPKWeb3Provider extends CPKProvider {
       from: ownerAccount,
       ...(options || {}),
     };
+  }
+
+  getGasPrice() {
+    return this.web3.eth.getGasPrice();
+  }
+
+  getSafeNonce(safeAddress) {
+    const safeContract = this.getContract(safeAbi, safeAddress);
+    return safeContract.methods.nonce().call();
   }
 }
 

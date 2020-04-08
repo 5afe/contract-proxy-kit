@@ -119,6 +119,12 @@ class CPKEthersProvider extends CPKProvider {
     return { transactionResponse, hash: transactionResponse.hash };
   }
 
+  encodeAttemptTransaction(contractAbi, methodName, params) {
+    const iface = new this.ethers.utils.Interface(contractAbi);
+    const payload = iface.functions[methodName].encode(params);
+    return payload;
+  }
+
   async attemptSafeProviderSendTx(txObj, options) {
     const transactionResponse = await this.signer.sendTransaction({
       ...txObj,
@@ -159,6 +165,17 @@ class CPKEthersProvider extends CPKProvider {
   // eslint-disable-next-line
   static getSendOptions(options, ownerAccount) {
     return options;
+  }
+
+  async getGasPrice() {
+    const gasPrice = await this.signer.provider.getGasPrice();
+    return gasPrice.toNumber();
+  }
+
+  async getSafeNonce(safeAddress) {
+    const safeContract = this.getContract(safeAbi, safeAddress);
+    const nonce = (await safeContract.nonce()).toNumber();
+    return nonce;
   }
 }
 
