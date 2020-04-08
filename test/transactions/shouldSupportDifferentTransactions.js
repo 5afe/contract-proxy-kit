@@ -183,9 +183,9 @@ function shouldSupportDifferentTransactions({
         .should.eventually.equal(startingTransactionCount);
     });
 
-    //(
+    // (
     //  ownerIsRecognizedContract ? it.skip : it
-    //)('by default errors without transacting when any transaction in batch would fail', async () => {
+    // )('by default errors without transacting when any transaction in batch would fail', async () => {
     it.skip('by default errors without transacting when any transaction in batch would fail', async () => {
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
       const startingTransactionCount = await getTransactionCount(proxyOwner);
