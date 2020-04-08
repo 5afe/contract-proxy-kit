@@ -127,6 +127,12 @@ class CPKWeb3Provider implements CPKProvider {
     return CPKWeb3Provider.promiEventToPromise(promiEvent, sendOptions);
   }
 
+  encodeAttemptTransaction(contractAbi: object[], methodName: string, params: any[]): string {
+    const contract = this.getContract(contractAbi, zeroAddress);
+    const payload = contract.methods[methodName](...params).encodeABI();
+    return payload;
+  }
+
   async attemptSafeProviderSendTx(
     txObj: SafeProviderSendTransaction,
     sendOptions: object
@@ -182,6 +188,15 @@ class CPKWeb3Provider implements CPKProvider {
       from: ownerAccount,
       ...(options || {}),
     };
+  }
+
+  getGasPrice() {
+    return this.web3.eth.getGasPrice();
+  }
+
+  getSafeNonce(safeAddress:string) {
+    const safeContract = this.getContract(safeAbi, safeAddress);
+    return safeContract.methods.nonce().call();
   }
 }
 
