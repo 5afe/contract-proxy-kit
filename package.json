@@ -6,7 +6,7 @@
   "scripts": {
     "migrate": "truffle migrate",
     "test-norpc": "truffle test",
-    "test": "run(){ run-with-testrpc -l 20000000 --noVMErrorsOnRPCResponse \"truffle test $@\"; }; run",
+    "test": "run(){ run-with-testrpc -l 20000000 --noVMErrorsOnRPCResponse \"truffle test --network local $@\"; }; run",
     "lint:check": "eslint './src/**/*.{js,jsx}' './test/**/*.{js,jsx}'",
     "lint:fix": "yarn lint:check --fix"
   },
