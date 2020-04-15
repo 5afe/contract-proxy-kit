@@ -1,3 +1,25 @@
+import { NonStandardTransaction, SafeProviderSendTransaction } from '../utils/transactions';
+
+export interface CPKProviderInit {
+  isConnectedToSafe: boolean;
+  ownerAccount: string;
+  masterCopyAddress: string;
+  proxyFactoryAddress: string;
+  multiSendAddress: string;
+}
+
+export interface CPKProviderInitResult {
+  multiSend: any;
+  contract: any;
+  viewContract?: any;
+  proxyFactory: any;
+  viewProxyFactory?: any;
+}
+
+export interface TransactionResult {
+  hash: string;
+}
+
 abstract class CPKProvider {
   constructor() {
     if (this.constructor === CPKProvider) {
@@ -5,39 +27,49 @@ abstract class CPKProvider {
     }
   }
 
-  static getContractAddress(contract) {
-    throw new Error('Not implemented.');
-  }
-  
-  abstract attemptTransaction(contract, viewContract, methodName, params, sendOptions, err);
-  
-  abstract getSendOptions(options, ownerAccount);
+  abstract getContractAddress(contract: any): string
     
-  abstract init({
+  abstract getSendOptions(options: object, ownerAccount: string): object;
+    
+  abstract async init({
     isConnectedToSafe,
     ownerAccount,
     masterCopyAddress,
     proxyFactoryAddress,
     multiSendAddress
-  });
+  }: CPKProviderInit): Promise<CPKProviderInitResult>;
 
-  abstract getProvider();
+  abstract getProvider(): any;
 
-  abstract getNetworkId();
+  abstract async getNetworkId(): Promise<number>;
 
-  abstract getOwnerAccount();
+  abstract getOwnerAccount(): Promise<string>;
 
-  abstract getCodeAtAddress(contract);
+  abstract async getCodeAtAddress(contract: any): Promise<string>;
 
   // abstract getContract(abi, address);
 
-  abstract checkSingleCall(from, to, value, data);
+  abstract checkSingleCall(from: string, to: string, value: number, data: string): Promise<any>;
 
-  abstract attemptSafeProviderSendTx(tx, options);
+  abstract async attemptTransaction(
+    contract: any,
+    viewContract: any,
+    methodName: string,
+    params: Array<any>,
+    sendOptions: object,
+    err: Error
+  ): Promise<TransactionResult>;
 
-  abstract attemptSafeProviderMultiSendTxs(transactions);
+  abstract async attemptSafeProviderSendTx(
+    tx: SafeProviderSendTransaction,
+    options: object
+  ): Promise<TransactionResult>;
 
-  abstract encodeMultiSendCallData(transactions);
+  abstract async attemptSafeProviderMultiSendTxs(
+    transactions: SafeProviderSendTransaction[]
+  ): Promise<{ hash: string }>;
+
+  abstract encodeMultiSendCallData(transactions: NonStandardTransaction[]): string;
 
   // abstract encodeAttemptTransaction(contractAbi, methodName, params);
 

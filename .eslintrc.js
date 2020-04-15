@@ -19,9 +19,6 @@ module.exports = {
   ],
   root: true,
   rules: {
-    'import/no-extraneous-dependencies': ['error', {
-      'devDependencies': ['truffle-config.js', 'test/**']
-    }],
     'quotes': ['error', 'single'],
     'indent': ['error', 2],
     'max-len': ['error', {

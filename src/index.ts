@@ -1,24 +1,31 @@
 import { OperationType, zeroAddress, predeterminedSaltNonce } from './utils/constants';
-import { defaultNetworks } from './utils/networks';
-import { standardizeTransactions } from './utils/transactions';
+import { defaultNetworks, NetworksConfig } from './utils/networks';
+import { standardizeTransactions, SafeProviderSendTransaction, NonStandardTransaction } from './utils/transactions';
+import CPKProvider from './providers/CPKProvider';
+
+interface CPKConfig {
+  cpkProvider: CPKProvider;
+  ownerAccount?: string;
+  networks?: NetworksConfig;
+}
 
 class CPK {
   static CALL = OperationType.CALL;
   static DELEGATE_CALL = OperationType.DELEGATE_CALL;
 
-  cpkProvider;
-  ownerAccount;
-  networks;
-  multiSend;
-  contract;
-  viewContract;
-  proxyFactory;
-  viewProxyFactory;
-  masterCopyAddress;
-  fallbackHandlerAddress;
-  isConnectedToSafe;
+  cpkProvider: CPKProvider;
+  ownerAccount?: string;
+  networks: NetworksConfig;
+  multiSend: any;
+  contract: any;
+  viewContract: any;
+  proxyFactory: any;
+  viewProxyFactory: any;
+  masterCopyAddress?: string;
+  fallbackHandlerAddress?: string;
+  isConnectedToSafe = false;
   
-  static async create(opts) {
+  static async create(opts: CPKConfig): Promise<CPK> {
     if (!opts) throw new Error('missing options');
     const cpk = new CPK(opts);
     await cpk.init();
@@ -29,7 +36,7 @@ class CPK {
     cpkProvider,
     ownerAccount,
     networks,
-  }) {
+  }: CPKConfig) {
     if (!cpkProvider) {
       throw new Error('cpkProvider property missing from options');
     }
@@ -42,7 +49,7 @@ class CPK {
     };
   }
 
-  async init() {
+  async init(): Promise<void> {
     const networkId = await this.cpkProvider.getNetworkId();
     const network = this.networks[networkId];
 
@@ -79,21 +86,24 @@ class CPK {
     this.viewProxyFactory = initializedCpkProvider.viewProxyFactory;
   }
 
-  async getOwnerAccount() {
-    if (this.ownerAccount != null) return this.ownerAccount;
+  async getOwnerAccount(): Promise<string> {
+    if (this.ownerAccount) return this.ownerAccount;
     return this.cpkProvider.getOwnerAccount();
   }
 
-  setOwnerAccount(ownerAccount) {
+  setOwnerAccount(ownerAccount: string | undefined): void {
     this.ownerAccount = ownerAccount;
   }
 
-  get address() {
-    return this.cpkProvider.constructor.getContractAddress(this.contract);
+  get address(): string {
+    return this.cpkProvider.getContractAddress(this.contract);
   }
 
-  async execTransactions(transactions, options) {
-    const signatureForAddress = (address) => `0x000000000000000000000000${
+  async execTransactions(
+    transactions: NonStandardTransaction[],
+    options: object
+  ): Promise<any> {
+    const signatureForAddress = (address: string): string => `0x000000000000000000000000${
       address.replace(/^0x/, '').toLowerCase()
     }000000000000000000000000000000000000000000000000000000000000000001`;
 
@@ -158,12 +168,12 @@ class CPK {
 
     if (this.isConnectedToSafe) {
       const standardizedTxs = standardizeTransactions(transactions);
-      const connectedSafeTxs = standardizedTxs.map(({
+      const connectedSafeTxs: SafeProviderSendTransaction[] = standardizedTxs.map(({
         to, value, data,
       }) => ({
+        data,
         to,
         value,
-        data,
       }));
 
       return this.cpkProvider.attemptSafeProviderMultiSendTxs(connectedSafeTxs);
@@ -175,7 +185,7 @@ class CPK {
         this.viewContract,
         'execTransaction',
         [
-          this.cpkProvider.constructor.getContractAddress(this.multiSend),
+          this.cpkProvider.getContractAddress(this.multiSend),
           0,
           this.cpkProvider.encodeMultiSendCallData(transactions),
           CPK.DELEGATE_CALL,
@@ -199,7 +209,7 @@ class CPK {
         this.masterCopyAddress,
         predeterminedSaltNonce,
         this.fallbackHandlerAddress,
-        this.cpkProvider.constructor.getContractAddress(this.multiSend),
+        this.cpkProvider.getContractAddress(this.multiSend),
         0,
         this.cpkProvider.encodeMultiSendCallData(transactions),
         CPK.DELEGATE_CALL,

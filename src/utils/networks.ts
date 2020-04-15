@@ -1,4 +1,15 @@
-export const defaultNetworks = {
+interface NetworkConfigEntry {
+  masterCopyAddress: string;
+  proxyFactoryAddress: string;
+  multiSendAddress: string;
+  fallbackHandlerAddress: string;
+}
+
+export interface NetworksConfig {
+  [id: string]: NetworkConfigEntry;
+}
+
+export const defaultNetworks: NetworksConfig = {
   // mainnet
   1: {
     masterCopyAddress: '0xaE32496491b53841efb51829d6f886387708F99B',
