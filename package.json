@@ -2,11 +2,11 @@
   "name": "contract-proxy-kit",
   "version": "1.1.1",
   "description": "Enable batched transactions and contract account interactions using a unique deterministic Gnosis Safe.",
-  "main": "src/index.js",
+  "main": "src/index.ts",
   "scripts": {
     "migrate": "truffle migrate",
     "test": "truffle test",
-    "lint:check": "eslint './src/**/*.{js,jsx}' './test/**/*.{js,jsx}'",
+    "lint:check": "eslint './src/**/*.{js,ts}'",
     "lint:fix": "yarn lint:check --fix"
   },
   "repository": {
@@ -35,13 +35,15 @@
     "@gnosis.pm/conditional-tokens-contracts": "^0.5.4",
     "@gnosis.pm/safe-contracts": "^1.1.1",
     "@truffle/hdwallet-provider": "^1.0.34",
+    "@typescript-eslint/eslint-plugin": "^2.28.0",
+    "@typescript-eslint/parser": "^2.28.0",
     "dotenv": "^8.2.0",
     "eslint": "^6.8.0",
-    "eslint-config-airbnb-base": "^14.1.0",
-    "eslint-plugin-import": "^2.20.2",
     "ethers-4": "npm:ethers@^4.0.45",
     "should": "^13.2.3",
     "truffle": "^5.1.20",
+    "ts-node": "^8.8.2",
+    "typescript": "^3.8.3",
     "web3-1-2": "npm:web3@^1.2.6",
     "web3-2-alpha": "npm:web3@^2.0.0-alpha.1"
   }
