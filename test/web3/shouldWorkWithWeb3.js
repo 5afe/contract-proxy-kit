@@ -1,13 +1,13 @@
+import CPK from '../../src';
+import CPKWeb3Provider from '../../src/providers/CPKWeb3Provider';
+import shouldSupportDifferentTransactions from '../transactions/shouldSupportDifferentTransactions';
+import { defaultGasLimit, toConfirmationPromise } from '../utils';
+
 const GnosisSafe = artifacts.require('GnosisSafe');
 const MultiSend = artifacts.require('MultiSend');
 const DefaultCallbackHandler = artifacts.require('DefaultCallbackHandler');
 const CPKFactory = artifacts.require('CPKFactory');
 const Multistep = artifacts.require('Multistep');
-
-const CPK = require('../..');
-const CPKWeb3Provider = require('../../src/providers/CPKWeb3Provider');
-const shouldSupportDifferentTransactions = require('../transactions/shouldSupportDifferentTransactions');
-const { defaultGasLimit, toConfirmationPromise } = require('../utils');
 
 function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderBox) {
   describe(`with Web3 version ${(new Web3()).version}`, () => {

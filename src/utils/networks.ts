@@ -1,4 +1,4 @@
-const defaultNetworks = {
+export const defaultNetworks = {
   // mainnet
   1: {
     masterCopyAddress: '0xaE32496491b53841efb51829d6f886387708F99B',
@@ -28,5 +28,3 @@ const defaultNetworks = {
     fallbackHandlerAddress: '0x40A930851BD2e590Bd5A5C981b436de25742E980',
   },
 };
-
-module.exports = defaultNetworks;

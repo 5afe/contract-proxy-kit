@@ -1,11 +1,14 @@
-const CPKProvider = require('./CPKProvider');
-const { zeroAddress, predeterminedSaltNonce } = require('../utils/constants');
-const { standardizeTransactions } = require('../utils/transactions');
-const cpkFactoryAbi = require('../abis/CpkFactoryAbi.json');
-const safeAbi = require('../abis/SafeAbi.json');
-const multiSendAbi = require('../abis/MultiSendAbi.json');
+import CPKProvider from './CPKProvider';
+import { zeroAddress, predeterminedSaltNonce } from '../utils/constants';
+import { standardizeTransactions } from '../utils/transactions';
+import cpkFactoryAbi from '../abis/CpkFactoryAbi.json';
+import safeAbi from '../abis/SafeAbi.json';
+import multiSendAbi from '../abis/MultiSendAbi.json';
 
 class CPKEthersProvider extends CPKProvider {
+  ethers;
+  signer;
+
   constructor({ ethers, signer }) {
     super();
     if (!ethers) {
@@ -99,7 +102,7 @@ class CPKEthersProvider extends CPKProvider {
   }
 
   async getCodeAtAddress(contract) {
-    return this.signer.provider.getCode(this.constructor.getContractAddress(contract));
+    return this.signer.provider.getCode(CPKEthersProvider.getContractAddress(contract));
   }
 
   static getContractAddress(contract) {
@@ -115,7 +118,7 @@ class CPKEthersProvider extends CPKProvider {
     });
   }
 
-  static async attemptTransaction(contract, viewContract, methodName, params, options, err) {
+  async attemptTransaction(contract, viewContract, methodName, params, options, err) {
     if (!(await viewContract.functions[methodName](...params))) throw err;
     const transactionResponse = await contract.functions[methodName](
       ...params,
@@ -162,9 +165,9 @@ class CPKEthersProvider extends CPKProvider {
   }
 
   // eslint-disable-next-line
-  static getSendOptions(options, ownerAccount) {
+  getSendOptions(options, ownerAccount) {
     return options;
   }
 }
 
-module.exports = CPKEthersProvider;
+export default CPKEthersProvider;

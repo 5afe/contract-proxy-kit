@@ -1,11 +1,13 @@
-const CPKProvider = require('./CPKProvider');
-const { predeterminedSaltNonce } = require('../utils/constants');
-const { standardizeTransactions } = require('../utils/transactions');
-const cpkFactoryAbi = require('../abis/CpkFactoryAbi.json');
-const safeAbi = require('../abis/SafeAbi.json');
-const multiSendAbi = require('../abis/MultiSendAbi.json');
+import CPKProvider from './CPKProvider';
+import { predeterminedSaltNonce } from '../utils/constants';
+import { standardizeTransactions } from '../utils/transactions';
+import cpkFactoryAbi from '../abis/CpkFactoryAbi.json';
+import safeAbi from '../abis/SafeAbi.json';
+import multiSendAbi from '../abis/MultiSendAbi.json';
 
 class CPKWeb3Provider extends CPKProvider {
+  web3;
+
   constructor({ web3 }) {
     super();
     if (!web3) {
@@ -63,7 +65,7 @@ class CPKWeb3Provider extends CPKProvider {
   }
 
   async getCodeAtAddress(contract) {
-    return this.web3.eth.getCode(this.constructor.getContractAddress(contract));
+    return this.web3.eth.getCode(CPKWeb3Provider.getContractAddress(contract));
   }
 
   static getContractAddress(contract) {
@@ -88,12 +90,12 @@ class CPKWeb3Provider extends CPKProvider {
     });
   }
 
-  static async attemptTransaction(contract, viewContract, methodName, params, sendOptions, err) {
+  async attemptTransaction(contract, viewContract, methodName, params, sendOptions, err) {
     if (!(await contract.methods[methodName](...params).call(sendOptions))) throw err;
 
     const promiEvent = contract.methods[methodName](...params).send(sendOptions);
 
-    return this.promiEventToPromise(promiEvent, sendOptions);
+    return CPKWeb3Provider.promiEventToPromise(promiEvent, sendOptions);
   }
 
   attemptSafeProviderSendTx(txObj, sendOptions) {
@@ -101,7 +103,7 @@ class CPKWeb3Provider extends CPKProvider {
       ...txObj,
       ...sendOptions,
     });
-    return this.constructor.promiEventToPromise(promiEvent, sendOptions);
+    return CPKWeb3Provider.promiEventToPromise(promiEvent, sendOptions);
   }
 
   async attemptSafeProviderMultiSendTxs(txs) {
@@ -141,7 +143,7 @@ class CPKWeb3Provider extends CPKProvider {
     ).encodeABI();
   }
 
-  static getSendOptions(options, ownerAccount) {
+  getSendOptions(options, ownerAccount) {
     return {
       from: ownerAccount,
       ...(options || {}),
@@ -149,4 +151,4 @@ class CPKWeb3Provider extends CPKProvider {
   }
 }
 
-module.exports = CPKWeb3Provider;
+export default CPKWeb3Provider;

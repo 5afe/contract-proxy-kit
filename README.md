@@ -11,7 +11,7 @@ Enable batched transactions and contract account interactions using a unique det
 The Contract Proxy Kit package exposes a *CPK* class:
 
 ```js
-const CPK = require('contract-proxy-kit')
+import CPK from 'contract-proxy-kit'
 ```
 
 *CPK* requires either [web3.js](https://web3js.readthedocs.io) or [ethers.js](https://docs.ethers.io/ethers.js/html/) to function. Currently the following versions are supported:
@@ -33,7 +33,7 @@ In order to obtain the proxy address, use the property [CPK#address](#cpkaddress
 To use *CPK* with web3.js, supply `CPK.create` with a *Web3* instance as the value of the `web3` key. For example:
 
 ```js
-const Web3 = require('web3');
+import Web3 from 'web3';
 const web3 = new Web3(/*...*/);
 
 const cpkProvider = new CpkWeb3Provider({ web3 });
@@ -52,7 +52,7 @@ const cpk = await CPK.create({ cpkProvider, ownerAccount: '0x90F8bf6A479f320ead0
 To use *CPK* with ethers.js, supply `CPK.create` with the `ethers` object and an ethers.js *Signer* which has an active *Provider* connection. For example:
 
 ```js
-const { ethers } = require('ethers');
+import { ethers } from 'ethers');
 const provider = ethers.getDefaultProvider('homestead');
 const wallet = ethers.Wallet.createRandom().connect(provider);
 
@@ -126,7 +126,7 @@ To execute transactions using a *CPK* instance, call `execTransactions` with an 
 
 Each of the `transactions` provided as input to this function must be an *Object* with the following properties:
 
-* `operation`: Either `CPK.CALL` (0) or `CPK.DELEGATECALL` (1) to execute the transaction as either a normal call or a delegatecall. Note: when connected to Gnosis Safe via WalletConnect, this property is ignored, and `CPK.CALL` is assumed. Optional property, `CPK.CALL` is the default value.
+* `operation`: Either `CPK.CALL` (0) or `CPK.DELEGATE_CALL` (1) to execute the transaction as either a normal call or a delegatecall. Note: when connected to Gnosis Safe via WalletConnect, this property is ignored, and `CPK.CALL` is assumed. Optional property, `CPK.CALL` is the default value.
 * `to`: The target address of the transaction.
 * `value`: The amount of ether to send along with this transaction. Optional property, `0` is the default value.
 * `data`: The calldata to send along with the transaction. Optional property, `0x` is the default value.

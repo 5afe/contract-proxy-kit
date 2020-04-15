@@ -1,17 +1,30 @@
-const defaultNetworks = require('./utils/networks');
-const {
-  zeroAddress, predeterminedSaltNonce, CALL, DELEGATE_CALL,
-} = require('./utils/constants');
-const { standardizeTransactions } = require('./utils/transactions');
+import { OperationType, zeroAddress, predeterminedSaltNonce } from './utils/constants';
+import { defaultNetworks } from './utils/networks';
+import { standardizeTransactions } from './utils/transactions';
 
-const CPK = class CPK {
+class CPK {
+  static CALL = OperationType.CALL;
+  static DELEGATE_CALL = OperationType.DELEGATE_CALL;
+
+  cpkProvider;
+  ownerAccount;
+  networks;
+  multiSend;
+  contract;
+  viewContract;
+  proxyFactory;
+  viewProxyFactory;
+  masterCopyAddress;
+  fallbackHandlerAddress;
+  isConnectedToSafe;
+  
   static async create(opts) {
     if (!opts) throw new Error('missing options');
     const cpk = new CPK(opts);
     await cpk.init();
     return cpk;
   }
-
+  
   constructor({
     cpkProvider,
     ownerAccount,
@@ -21,7 +34,7 @@ const CPK = class CPK {
       throw new Error('cpkProvider property missing from options');
     }
     this.cpkProvider = cpkProvider;
-
+    
     this.setOwnerAccount(ownerAccount);
     this.networks = {
       ...defaultNetworks,
@@ -86,7 +99,7 @@ const CPK = class CPK {
 
     const ownerAccount = await this.getOwnerAccount();
     const codeAtAddress = await this.cpkProvider.getCodeAtAddress(this.contract);
-    const sendOptions = await this.cpkProvider.constructor.getSendOptions(options, ownerAccount);
+    const sendOptions = await this.cpkProvider.getSendOptions(options, ownerAccount);
 
     if (transactions.length === 1) {
       const {
@@ -103,7 +116,7 @@ const CPK = class CPK {
 
       if (!this.isConnectedToSafe) {
         if (codeAtAddress !== '0x') {
-          return this.cpkProvider.constructor.attemptTransaction(
+          return this.cpkProvider.attemptTransaction(
             this.contract,
             this.viewContract,
             'execTransaction',
@@ -124,7 +137,7 @@ const CPK = class CPK {
           );
         }
 
-        return this.cpkProvider.constructor.attemptTransaction(
+        return this.cpkProvider.attemptTransaction(
           this.proxyFactory,
           this.viewProxyFactory,
           'createProxyAndExecTransaction',
@@ -157,7 +170,7 @@ const CPK = class CPK {
     }
 
     if (codeAtAddress !== '0x') {
-      return this.cpkProvider.constructor.attemptTransaction(
+      return this.cpkProvider.attemptTransaction(
         this.contract,
         this.viewContract,
         'execTransaction',
@@ -165,7 +178,7 @@ const CPK = class CPK {
           this.cpkProvider.constructor.getContractAddress(this.multiSend),
           0,
           this.cpkProvider.encodeMultiSendCallData(transactions),
-          CPK.DELEGATECALL,
+          CPK.DELEGATE_CALL,
           0,
           0,
           0,
@@ -178,7 +191,7 @@ const CPK = class CPK {
       );
     }
 
-    return this.cpkProvider.constructor.attemptTransaction(
+    return this.cpkProvider.attemptTransaction(
       this.proxyFactory,
       this.viewProxyFactory,
       'createProxyAndExecTransaction',
@@ -189,15 +202,12 @@ const CPK = class CPK {
         this.cpkProvider.constructor.getContractAddress(this.multiSend),
         0,
         this.cpkProvider.encodeMultiSendCallData(transactions),
-        CPK.DELEGATECALL,
+        CPK.DELEGATE_CALL,
       ],
       sendOptions,
       new Error('proxy creation and transaction execution expected to fail'),
     );
   }
-};
+}
 
-CPK.CALL = CALL;
-CPK.DELEGATECALL = DELEGATE_CALL;
-
-module.exports = CPK;
+export default CPK;
