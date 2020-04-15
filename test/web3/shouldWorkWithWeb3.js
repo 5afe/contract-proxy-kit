@@ -98,7 +98,7 @@ function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderB
           const idPrecompile = `0x${'0'.repeat(39)}4`;
           await cpk.execTransactions([{
             to: idPrecompile,
-          }], { gasLimit: defaultGasLimit });
+          }]);
         });
 
         shouldSupportDifferentTransactions({

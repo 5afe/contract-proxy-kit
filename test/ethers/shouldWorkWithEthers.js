@@ -107,7 +107,7 @@ function shouldWorkWithEthers(ethers, defaultAccount, safeOwner, gnosisSafeProvi
           const idPrecompile = `0x${'0'.repeat(39)}4`;
           await cpk.execTransactions([{
             to: idPrecompile,
-          }], { gasLimit: defaultGasLimit });
+          }]);
         });
 
         shouldSupportDifferentTransactions({
