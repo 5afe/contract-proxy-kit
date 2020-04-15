@@ -6,7 +6,7 @@ const baseGasValue = (hexValue) => {
   switch (hexValue) {
   case '0x': return 0;
   case '00': return 4;
-  default: return 68;
+  default: return 16;
   }
 };
 
