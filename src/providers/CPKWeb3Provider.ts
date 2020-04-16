@@ -122,7 +122,10 @@ class CPKWeb3Provider implements CPKProvider {
   ): Promise<Web3TransactionResult> {
     if (!(await contract.methods[methodName](...params).call(sendOptions))) throw err;
 
-    const promiEvent = contract.methods[methodName](...params).send(sendOptions);
+    const txObject = contract.methods[methodName](...params);
+    const gasLimit = sendOptions.gasLimit || await txObject.estimateGas(sendOptions)
+    const actualSendOptions = { gasLimit, ...sendOptions };
+    const promiEvent = txObject.send(actualSendOptions);
 
     return CPKWeb3Provider.promiEventToPromise(promiEvent, sendOptions);
   }
