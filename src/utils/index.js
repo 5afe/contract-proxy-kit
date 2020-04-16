@@ -82,20 +82,16 @@ const estimateSafeTxGas = async (
     ],
   );
 
-  try {
-    const estimateResponse = await cpkProvider.checkSingleCall({
-      from: safeAddress,
-      to: safeAddress,
-      data: estimateData,
-    });
+  const estimateResponse = await cpkProvider.checkSingleCall({
+    from: safeAddress,
+    to: safeAddress,
+    data: estimateData,
+  });
 
-    safeTxGas = new BigNumber(estimateResponse.substring(138), 16);
+  safeTxGas = new BigNumber(estimateResponse.substring(138), 16);
 
-    // Add 10k else we will fail in case of nested calls
-    safeTxGas = safeTxGas.toNumber() + additionalGas;
-  } catch (error) {
-    console.error('Error calculating tx gas estimation', error);
-  }
+  // Add 10k else we will fail in case of nested calls
+  safeTxGas = safeTxGas.toNumber() + additionalGas;
 
   const baseGasEstimate = await estimateBaseGas(
     cpkProvider,
@@ -112,21 +108,18 @@ const estimateSafeTxGas = async (
   );
 
   for (let i = 0; i < 100; i += 1) {
-    try {
-      // eslint-disable-next-line no-await-in-loop
-      const estimateResponse = await cpkProvider.checkSingleCall({
-        to: safeAddress,
-        from: safeAddress,
-        data: estimateData,
-        gasLimit: safeTxGas + baseGasEstimate + 32000,
-      });
+    // eslint-disable-next-line no-await-in-loop
+    const estimateResponse = await cpkProvider.checkSingleCall({
+      to: safeAddress,
+      from: safeAddress,
+      data: estimateData,
+      gasLimit: safeTxGas + baseGasEstimate + 32000,
+    });
 
-      if (estimateResponse !== '0x') {
-        break;
-      }
-    } catch (error) {
-      console.error('Error calculating tx gas estimation', error);
+    if (estimateResponse !== '0x') {
+      break;
     }
+
     safeTxGas += additionalGas;
     additionalGas *= 2;
   }
