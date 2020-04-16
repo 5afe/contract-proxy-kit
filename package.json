@@ -7,7 +7,8 @@
     "migrate": "truffle migrate",
     "test": "truffle test",
     "lint:check": "eslint './src/**/*.{js,ts}'",
-    "lint:fix": "yarn lint:check --fix"
+    "lint:fix": "yarn lint:check --fix",
+    "build": "tsc"
   },
   "repository": {
     "type": "git",
