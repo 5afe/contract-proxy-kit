@@ -108,8 +108,6 @@ class CPK {
       address.replace(/^0x/, '').toLowerCase()
     }000000000000000000000000000000000000000000000000000000000000000001`;
 
-    const signatureCount = 1;
-
     const ownerAccount = await this.getOwnerAccount();
     const codeAtAddress = await this.cpkProvider.getCodeAtAddress(this.contract);
     const sendOptions = await this.cpkProvider.getSendOptions(options, ownerAccount);
@@ -137,7 +135,6 @@ class CPK {
           const { safeTxGas, baseGas } = await estimateSafeTxGas(
             this.cpkProvider,
             this.address,
-            signatureCount,
             data,
             to,
             value,
@@ -206,7 +203,6 @@ class CPK {
       const { safeTxGas, baseGas } = await estimateSafeTxGas(
         this.cpkProvider,
         this.address,
-        signatureCount,
         data,
         to,
         value,
