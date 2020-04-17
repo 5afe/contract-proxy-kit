@@ -1,4 +1,3 @@
-const { BigNumber } = require('bignumber.js');
 const safeAbi = require('../abis/SafeAbi.json');
 const { zeroAddress } = require('./constants');
 
@@ -88,10 +87,10 @@ const estimateSafeTxGas = async (
     data: estimateData,
   });
 
-  safeTxGas = new BigNumber(estimateResponse.substring(138), 16);
+  safeTxGas = parseInt(estimateResponse.substring(138), 16);
 
   // Add 10k else we will fail in case of nested calls
-  safeTxGas = safeTxGas.toNumber() + additionalGas;
+  safeTxGas += additionalGas;
 
   const baseGasEstimate = await estimateBaseGas(
     cpkProvider,
