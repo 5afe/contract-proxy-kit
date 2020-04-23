@@ -18,12 +18,11 @@ interface EthersTransactionResult extends TransactionResult {
   transactionResponse: object;
 }
 
-class CPKEthersProvider extends CPKProvider {
+class CPKEthersProvider implements CPKProvider {
   ethers: any;
   signer: any;
 
   constructor({ ethers, signer }: CPKEthersProviderConfig) {
-    super();
     if (!ethers) {
       throw new Error('ethers property missing from options');
     }

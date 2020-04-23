@@ -18,11 +18,10 @@ interface Web3TransactionResult extends TransactionResult {
   promiEvent: Promise<any>;
 }
 
-class CPKWeb3Provider extends CPKProvider {
+class CPKWeb3Provider implements CPKProvider {
   web3: any;
 
   constructor({ web3 }: CPKWeb3ProviderConfig) {
-    super();
     if (!web3) {
       throw new Error('web3 property missing from options');
     }
