@@ -2,6 +2,8 @@
 
 [![Build Status](https://travis-ci.org/gnosis/contract-proxy-kit.svg?branch=master)](https://travis-ci.org/gnosis/contract-proxy-kit)
 
+**Warning:** This documentation is for the 2.x series development version of the contract proxy kit. For documentation on the current stable 1.x series, go [here](https://github.com/gnosis/contract-proxy-kit/tree/v1.1.1#contract-proxy-kit).
+
 Enable batched transactions and contract account interactions using a unique deterministic Gnosis Safe.
 
     npm install contract-proxy-kit
