@@ -91,7 +91,7 @@ class CPK {
     return this.cpkProvider.getOwnerAccount();
   }
 
-  setOwnerAccount(ownerAccount: string | undefined): void {
+  setOwnerAccount(ownerAccount?: string): void {
     this.ownerAccount = ownerAccount;
   }
 
