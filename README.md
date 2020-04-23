@@ -128,7 +128,7 @@ To execute transactions using a *CPK* instance, call `execTransactions` with an 
 
 Each of the `transactions` provided as input to this function must be an *Object* with the following properties:
 
-* `operation`: Either `CPK.CALL` (0) or `CPK.DELEGATE_CALL` (1) to execute the transaction as either a normal call or a delegatecall. Note: when connected to Gnosis Safe via WalletConnect, this property is ignored, and `CPK.CALL` is assumed. Optional property, `CPK.CALL` is the default value.
+* `operation`: Either `CPK.Call` (0) or `CPK.DelegateCall` (1) to execute the transaction as either a normal call or a delegatecall. Note: when connected to Gnosis Safe via WalletConnect, this property is ignored, and `CPK.Call` is assumed. Optional property, `CPK.Call` is the default value.
 * `to`: The target address of the transaction.
 * `value`: The amount of ether to send along with this transaction. Optional property, `0` is the default value.
 * `data`: The calldata to send along with the transaction. Optional property, `0x` is the default value.
@@ -141,13 +141,13 @@ For example, if the proxy account holds some ether, it may batch send ether to m
 const cpk = await CPK.create(/* ... */);
 const txObject = await cpk.execTransactions([
   {
-    operation: CPK.CALL, // Not needed because this is the default value.
+    operation: CPK.Call, // Not needed because this is the default value.
     data: '0x', // Not needed because this is the default value.
     to: '0x90f8bf6a479f320ead074411a4b0e7944ea8c9c1',
     value: `${1e18}`,
   },
   {
-    operation: CPK.CALL, // Not needed because this is the default value.
+    operation: CPK.Call, // Not needed because this is the default value.
     data: '0x', // Not needed because this is the default value.
     to: '0xffcf8fdee72ac11b5c542428b35eef5769c409f0',
     value: `${1e18}`,

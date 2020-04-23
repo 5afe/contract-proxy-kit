@@ -80,7 +80,7 @@ contract('CPK', ([defaultAccount, safeOwner]) => {
                 to,
                 value || 0,
                 data,
-                CPK.CALL,
+                CPK.Call,
                 0,
                 0,
                 0,
@@ -122,7 +122,7 @@ contract('CPK', ([defaultAccount, safeOwner]) => {
                   to,
                   value || 0,
                   data,
-                  CPK.CALL,
+                  CPK.Call,
                   0,
                   0,
                   0,
@@ -144,7 +144,7 @@ contract('CPK', ([defaultAccount, safeOwner]) => {
 
           const callData = multiSend.contract.methods.multiSend(
             `0x${params.map((tx) => [
-              web3.eth.abi.encodeParameter('uint8', CPK.CALL).slice(-2),
+              web3.eth.abi.encodeParameter('uint8', CPK.Call).slice(-2),
               web3.eth.abi.encodeParameter('address', tx.to).slice(-40),
               web3.eth.abi.encodeParameter('uint256', tx.value).slice(-64),
               web3.eth.abi.encodeParameter('uint256', web3.utils.hexToBytes(tx.data).length).slice(-64),
@@ -156,7 +156,7 @@ contract('CPK', ([defaultAccount, safeOwner]) => {
             multiSend.address,
             0,
             callData,
-            CPK.DELEGATE_CALL,
+            CPK.DelegateCall,
             0,
             0,
             0,

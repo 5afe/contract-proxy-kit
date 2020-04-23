@@ -10,8 +10,8 @@ interface CPKConfig {
 }
 
 class CPK {
-  static CALL = OperationType.CALL;
-  static DELEGATE_CALL = OperationType.DELEGATE_CALL;
+  static Call = OperationType.Call;
+  static DelegateCall = OperationType.DelegateCall;
 
   cpkProvider: CPKProvider;
   ownerAccount?: string;
@@ -116,7 +116,7 @@ class CPK {
         to, value, data, operation,
       } = standardizeTransactions(transactions)[0];
 
-      if (operation === CPK.CALL) {
+      if (operation === CPK.Call) {
         await this.cpkProvider.checkSingleCall(this.address, to, value, data);
 
         if (this.isConnectedToSafe) {
@@ -188,7 +188,7 @@ class CPK {
           this.cpkProvider.getContractAddress(this.multiSend),
           0,
           this.cpkProvider.encodeMultiSendCallData(transactions),
-          CPK.DELEGATE_CALL,
+          CPK.Call,
           0,
           0,
           0,
@@ -212,7 +212,7 @@ class CPK {
         this.cpkProvider.getContractAddress(this.multiSend),
         0,
         this.cpkProvider.encodeMultiSendCallData(transactions),
-        CPK.DELEGATE_CALL,
+        CPK.DelegateCall,
       ],
       sendOptions,
       new Error('proxy creation and transaction execution expected to fail'),

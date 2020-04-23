@@ -1,11 +1,11 @@
 export enum OperationType {
-  CALL, // 0
-  DELEGATE_CALL // 1
+  Call, // 0
+  DelegateCall // 1
 }
 
 export const zeroAddress = `0x${'0'.repeat(40)}`;
 
-export const defaultTxOperation = OperationType.CALL;
+export const defaultTxOperation = OperationType.Call;
 export const defaultTxValue = 0;
 export const defaultTxData = '0x';
 
