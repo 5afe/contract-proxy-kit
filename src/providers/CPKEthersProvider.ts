@@ -157,18 +157,30 @@ class CPKEthersProvider implements CPKProvider {
     }
   }
 
-  async attemptTransaction(
+  async checkMethod(
     contract: any,
     viewContract: any,
     methodName: string,
     params: Array<any>,
-    options: object,
-    err: Error
-  ): Promise<EthersTransactionResult> {
+    sendOptions: {
+      gasLimit?: number | string;
+    },
+    err: Error,
+  ): Promise<void> {
     if (!(await viewContract.functions[methodName](...params))) throw err;
+  }
+
+  async execMethod(
+    contract: any,
+    methodName: string,
+    params: Array<any>,
+    sendOptions: {
+      gasLimit?: number | string;
+    }
+  ): Promise<EthersTransactionResult> {
     const transactionResponse = await contract.functions[methodName](
       ...params,
-      ...(!options ? [] : [options]),
+      ...(!sendOptions ? [] : [sendOptions]),
     );
     return { transactionResponse, hash: transactionResponse.hash };
   }

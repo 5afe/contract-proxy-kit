@@ -1,7 +1,7 @@
 import CPK from '../../src';
 import CPKEthersProvider from '../../src/providers/CPKEthersProvider';
 import shouldSupportDifferentTransactions from '../transactions/shouldSupportDifferentTransactions';
-import { defaultGasLimit, toConfirmationPromise } from '../utils';
+import { toConfirmationPromise } from '../utils';
 
 const GnosisSafe = artifacts.require('GnosisSafe');
 const MultiSend = artifacts.require('MultiSend');

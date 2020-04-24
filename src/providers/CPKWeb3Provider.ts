@@ -171,7 +171,7 @@ class CPKWeb3Provider implements CPKProvider {
     }
   }
 
-  async attemptTransaction(
+  async checkMethod(
     contract: any,
     viewContract: any,
     methodName: string,
@@ -179,9 +179,19 @@ class CPKWeb3Provider implements CPKProvider {
     sendOptions: {
       gasLimit?: number | string;
     },
-    err: Error
-  ): Promise<Web3TransactionResult> {
+    err: Error,
+  ): Promise<void> {
     if (!(await contract.methods[methodName](...params).call(sendOptions))) throw err;
+  }
+
+  async execMethod(
+    contract: any,
+    methodName: string,
+    params: Array<any>,
+    sendOptions: {
+      gasLimit?: number | string;
+    }
+  ): Promise<Web3TransactionResult> {
 
     const txObject = contract.methods[methodName](...params);
     const gasLimit = sendOptions.gasLimit || await txObject.estimateGas(sendOptions);

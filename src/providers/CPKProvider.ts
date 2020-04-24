@@ -56,14 +56,25 @@ interface CPKProvider {
     gasLimit?: number | string;
   }): Promise<string>;
 
-  attemptTransaction(
+  checkMethod(
     contract: any,
     viewContract: any,
     methodName: string,
     params: Array<any>,
-    sendOptions: object,
-    err: Error
-  ): Promise<TransactionResult>;
+    sendOptions: {
+      gasLimit?: number | string;
+    },
+    err: Error,
+  ): Promise<void>;
+
+  execMethod(
+    contract: any,
+    methodName: string,
+    params: Array<any>,
+    sendOptions: {
+      gasLimit?: number | string;
+    }
+  ): Promise<EthersTransactionResult>;
 
   encodeAttemptTransaction(contractAbi: object[], methodName: string, params: any[]): string;
 

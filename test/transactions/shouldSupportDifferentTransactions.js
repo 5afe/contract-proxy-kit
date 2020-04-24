@@ -175,7 +175,7 @@ function shouldSupportDifferentTransactions({
       await cpk.execTransactions([{
         to: multiStep.address,
         data: multiStep.contract.methods.doStep(2).encodeABI(),
-      }]).should.be.rejectedWith(/must do the next step/);
+      }]).should.be.rejectedWith(/must do the next step|(proxy creation and )?transaction execution expected to fail/);
 
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
       await getTransactionCount(proxyOwner)
@@ -196,7 +196,7 @@ function shouldSupportDifferentTransactions({
           to: multiStep.address,
           data: multiStep.contract.methods.doStep(3).encodeABI(),
         },
-      ]).should.be.rejectedWith(/(proxy creation and )?transaction execution expected to fail/);
+      ]).should.be.rejectedWith(/(proxy creation and )?batch transaction execution expected to fail/);
 
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
       await getTransactionCount(proxyOwner)

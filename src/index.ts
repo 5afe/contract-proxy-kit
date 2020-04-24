@@ -132,6 +132,26 @@ class CPK {
 
       if (!this.isConnectedToSafe) {
         if (codeAtAddress !== '0x') {
+          await this.cpkProvider.checkMethod(
+            this.contract,
+            this.viewContract,
+            'execTransaction',
+            [
+              to,
+              value,
+              data,
+              operation,
+              0,
+              0,
+              0,
+              zeroAddress,
+              zeroAddress,
+              signatureForAddress(ownerAccount),
+            ],
+            sendOptions,
+            new Error('transaction execution expected to fail'),
+          );
+
           const { safeTxGas, baseGas } = await estimateSafeTxGas(
             this.cpkProvider,
             this.address,
@@ -141,9 +161,8 @@ class CPK {
             operation,
           );
 
-          return this.cpkProvider.attemptTransaction(
+          return this.cpkProvider.execMethod(
             this.contract,
-            this.viewContract,
             'execTransaction',
             [
               to,
@@ -158,11 +177,10 @@ class CPK {
               signatureForAddress(ownerAccount),
             ],
             sendOptions,
-            new Error('transaction execution expected to fail'),
           );
         }
 
-        return this.cpkProvider.attemptTransaction(
+        await this.cpkProvider.checkMethod(
           this.proxyFactory,
           this.viewProxyFactory,
           'createProxyAndExecTransaction',
@@ -177,6 +195,21 @@ class CPK {
           ],
           sendOptions,
           new Error('proxy creation and transaction execution expected to fail'),
+        );
+
+        return this.cpkProvider.execMethod(
+          this.proxyFactory,
+          'createProxyAndExecTransaction',
+          [
+            this.masterCopyAddress,
+            predeterminedSaltNonce,
+            this.fallbackHandlerAddress,
+            to,
+            value,
+            data,
+            operation,
+          ],
+          sendOptions,
         );
       }
     }
@@ -200,6 +233,26 @@ class CPK {
       const data = this.cpkProvider.encodeMultiSendCallData(transactions);
       const operation = CPK.DelegateCall;
 
+      await this.cpkProvider.checkMethod(
+        this.contract,
+        this.viewContract,
+        'execTransaction',
+        [
+          to,
+          value,
+          data,
+          operation,
+          0,
+          0,
+          0,
+          zeroAddress,
+          zeroAddress,
+          signatureForAddress(ownerAccount),
+        ],
+        sendOptions,
+        new Error('batch transaction execution expected to fail'),
+      );
+
       const { safeTxGas, baseGas } = await estimateSafeTxGas(
         this.cpkProvider,
         this.address,
@@ -209,9 +262,8 @@ class CPK {
         operation,
       );
 
-      return this.cpkProvider.attemptTransaction(
+      return this.cpkProvider.execMethod(
         this.contract,
-        this.viewContract,
         'execTransaction',
         [
           to,
@@ -226,11 +278,10 @@ class CPK {
           signatureForAddress(ownerAccount),
         ],
         sendOptions,
-        new Error('transaction execution expected to fail'),
       );
     }
 
-    return this.cpkProvider.attemptTransaction(
+    await this.cpkProvider.checkMethod(
       this.proxyFactory,
       this.viewProxyFactory,
       'createProxyAndExecTransaction',
@@ -244,7 +295,22 @@ class CPK {
         CPK.DelegateCall,
       ],
       sendOptions,
-      new Error('proxy creation and transaction execution expected to fail'),
+      new Error('proxy creation and batch transaction execution expected to fail'),
+    );
+
+    return this.cpkProvider.execMethod(
+      this.proxyFactory,
+      'createProxyAndExecTransaction',
+      [
+        this.masterCopyAddress,
+        predeterminedSaltNonce,
+        this.fallbackHandlerAddress,
+        this.cpkProvider.getContractAddress(this.multiSend),
+        0,
+        this.cpkProvider.encodeMultiSendCallData(transactions),
+        CPK.DelegateCall,
+      ],
+      sendOptions,
     );
   }
 }
