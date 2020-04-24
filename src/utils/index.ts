@@ -1,13 +1,18 @@
-const safeAbi = require('../abis/SafeAbi.json');
+import safeAbi from '../abis/SafeAbi.json';
+import CPKProvider from '../providers/CPKProvider';
+import { OperationType } from './constants';
 
 const estimateSafeTxGas = async (
-  cpkProvider,
-  safeAddress,
-  data,
-  to,
-  value,
-  operation,
-) => {
+  cpkProvider: CPKProvider,
+  safeAddress: string,
+  data: string,
+  to: string,
+  value: number | string,
+  operation: OperationType,
+): Promise<{
+  safeTxGas: number;
+  baseGas: number;
+}> => {
   let safeTxGas;
   let additionalGas = 10000;
 

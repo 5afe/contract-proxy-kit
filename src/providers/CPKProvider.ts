@@ -48,6 +48,14 @@ interface CPKProvider {
     data: string;
   }): Promise<any>;
 
+  getCallRevertData(opts: {
+    from: string;
+    to: string;
+    value?: number | string;
+    data: string;
+    gasLimit?: number | string;
+  }): Promise<string>;
+
   attemptTransaction(
     contract: any,
     viewContract: any,
@@ -56,6 +64,8 @@ interface CPKProvider {
     sendOptions: object,
     err: Error
   ): Promise<TransactionResult>;
+
+  encodeAttemptTransaction(contractAbi: object[], methodName: string, params: any[]): string;
 
   attemptSafeProviderSendTx(
     tx: SafeProviderSendTransaction,

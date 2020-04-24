@@ -136,8 +136,9 @@ class CPKWeb3Provider implements CPKProvider {
   }: {
     from: string;
     to: string;
-    value: number | string;
+    value?: number | string;
     data: string;
+    gasLimit?: number | string;
   }): Promise<string> {
     try {
       // throw with full error data if provider is Web3 1.x

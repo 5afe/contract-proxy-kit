@@ -133,8 +133,9 @@ class CPKEthersProvider implements CPKProvider {
   }: {
     from: string;
     to: string;
-    value: number | string;
+    value?: number | string;
     data: string;
+    gasLimit?: number | string;
   }): Promise<string> {
     try {
       // Handle Geth/Ganache --noVMErrorsOnRPCResponse revert data
