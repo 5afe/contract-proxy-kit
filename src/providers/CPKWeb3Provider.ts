@@ -1,13 +1,27 @@
-const CPKProvider = require('./CPKProvider');
-const { predeterminedSaltNonce } = require('../utils/constants');
-const { standardizeTransactions } = require('../utils/transactions');
-const cpkFactoryAbi = require('../abis/CpkFactoryAbi.json');
-const safeAbi = require('../abis/SafeAbi.json');
-const multiSendAbi = require('../abis/MultiSendAbi.json');
+import CPKProvider, { CPKProviderInit, CPKProviderInitResult, TransactionResult } from './CPKProvider';
+import { predeterminedSaltNonce } from '../utils/constants';
+import {
+  standardizeTransactions,
+  NonStandardTransaction,
+  SafeProviderSendTransaction
+} from '../utils/transactions';
+import cpkFactoryAbi from '../abis/CpkFactoryAbi.json';
+import safeAbi from '../abis/SafeAbi.json';
+import multiSendAbi from '../abis/MultiSendAbi.json';
 
-class CPKWeb3Provider extends CPKProvider {
-  constructor({ web3 }) {
-    super();
+interface CPKWeb3ProviderConfig {
+  web3: any;
+}
+
+interface Web3TransactionResult extends TransactionResult {
+  sendOptions: object;
+  promiEvent: Promise<any>;
+}
+
+class CPKWeb3Provider implements CPKProvider {
+  web3: any;
+
+  constructor({ web3 }: CPKWeb3ProviderConfig) {
     if (!web3) {
       throw new Error('web3 property missing from options');
     }
@@ -16,7 +30,7 @@ class CPKWeb3Provider extends CPKProvider {
 
   async init({
     isConnectedToSafe, ownerAccount, masterCopyAddress, proxyFactoryAddress, multiSendAddress,
-  }) {
+  }: CPKProviderInit): Promise<CPKProviderInitResult> {
     const multiSend = new this.web3.eth.Contract(multiSendAbi, multiSendAddress);
     let contract;
     let proxyFactory;
@@ -50,36 +64,36 @@ class CPKWeb3Provider extends CPKProvider {
     };
   }
 
-  getProvider() {
+  getProvider(): any {
     return this.web3.currentProvider;
   }
 
-  async getNetworkId() {
+  async getNetworkId(): Promise<number> {
     return this.web3.eth.net.getId();
   }
 
-  async getOwnerAccount() {
+  async getOwnerAccount(): Promise<string> {
     return this.web3.eth.defaultAccount || (await this.web3.eth.getAccounts())[0];
   }
 
-  async getCodeAtAddress(contract) {
-    return this.web3.eth.getCode(this.constructor.getContractAddress(contract));
+  async getCodeAtAddress(contract: any): Promise<string> {
+    return this.web3.eth.getCode(this.getContractAddress(contract));
   }
 
-  static getContractAddress(contract) {
+  getContractAddress(contract: any): string {
     return contract.options.address;
   }
 
-  static promiEventToPromise(promiEvent, sendOptions) {
+  static promiEventToPromise(promiEvent: any, sendOptions: object): Promise<Web3TransactionResult> {
     return new Promise(
       (resolve, reject) => promiEvent.once(
         'transactionHash',
-        (hash) => resolve({ sendOptions, promiEvent, hash }),
+        (hash: string) => resolve({ sendOptions, promiEvent, hash }),
       ).catch(reject),
     );
   }
 
-  checkSingleCall(from, to, value, data) {
+  checkSingleCall(from: string, to: string, value: number | string, data: string): Promise<any> {
     return this.web3.eth.call({
       from,
       to,
@@ -88,23 +102,35 @@ class CPKWeb3Provider extends CPKProvider {
     });
   }
 
-  static async attemptTransaction(contract, viewContract, methodName, params, sendOptions, err) {
+  async attemptTransaction(
+    contract: any,
+    viewContract: any,
+    methodName: string,
+    params: Array<any>,
+    sendOptions: object,
+    err: Error
+  ): Promise<Web3TransactionResult> {
     if (!(await contract.methods[methodName](...params).call(sendOptions))) throw err;
 
     const promiEvent = contract.methods[methodName](...params).send(sendOptions);
 
-    return this.promiEventToPromise(promiEvent, sendOptions);
+    return CPKWeb3Provider.promiEventToPromise(promiEvent, sendOptions);
   }
 
-  attemptSafeProviderSendTx(txObj, sendOptions) {
+  async attemptSafeProviderSendTx(
+    txObj: SafeProviderSendTransaction,
+    sendOptions: object
+  ): Promise<Web3TransactionResult> {
     const promiEvent = this.web3.eth.sendTransaction({
       ...txObj,
       ...sendOptions,
     });
-    return this.constructor.promiEventToPromise(promiEvent, sendOptions);
+    return CPKWeb3Provider.promiEventToPromise(promiEvent, sendOptions);
   }
 
-  async attemptSafeProviderMultiSendTxs(txs) {
+  async attemptSafeProviderMultiSendTxs(
+    txs: SafeProviderSendTransaction[]
+  ): Promise<{ hash: string }> {
     const hash = await (
       this.web3.currentProvider.host === 'CustomProvider'
         ? this.web3.currentProvider.send(
@@ -116,7 +142,7 @@ class CPKWeb3Provider extends CPKProvider {
             id: new Date().getTime(),
             method: 'gs_multi_send',
             params: txs,
-          }, (err, result) => {
+          }, (err: Error, result: any) => {
             if (err) return reject(err);
             if (result.error) return reject(result.error);
             return resolve(result.result);
@@ -126,7 +152,7 @@ class CPKWeb3Provider extends CPKProvider {
     return { hash };
   }
 
-  encodeMultiSendCallData(transactions) {
+  encodeMultiSendCallData(transactions: NonStandardTransaction[]): string {
     const multiSend = new this.web3.eth.Contract(multiSendAbi);
     const standardizedTxs = standardizeTransactions(transactions);
 
@@ -141,7 +167,7 @@ class CPKWeb3Provider extends CPKProvider {
     ).encodeABI();
   }
 
-  static getSendOptions(options, ownerAccount) {
+  getSendOptions(options: object, ownerAccount: string): object {
     return {
       from: ownerAccount,
       ...(options || {}),
@@ -149,4 +175,4 @@ class CPKWeb3Provider extends CPKProvider {
   }
 }
 
-module.exports = CPKWeb3Provider;
+export default CPKWeb3Provider;

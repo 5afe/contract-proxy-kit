@@ -1,7 +1,11 @@
-const should = require('should');
-const { ethers: ethersMaj4 } = require('ethers-4');
-const Web3Maj1Min2 = require('web3-1-2');
-const Web3Maj2Alpha = require('web3-2-alpha');
+import should from 'should';
+import { ethers as ethersMaj4 } from 'ethers-4';
+import Web3Maj1Min2 from 'web3-1-2';
+import Web3Maj2Alpha from 'web3-2-alpha';
+import CPK from '../src';
+import { zeroAddress } from '../src/utils/constants';
+import shouldWorkWithWeb3 from './web3/shouldWorkWithWeb3';
+import shouldWorkWithEthers from './ethers/shouldWorkWithEthers';
 
 const web3Versions = [Web3Maj1Min2, Web3Maj2Alpha];
 
@@ -9,12 +13,6 @@ const GnosisSafe = artifacts.require('GnosisSafe');
 const MultiSend = artifacts.require('MultiSend');
 const DefaultCallbackHandler = artifacts.require('DefaultCallbackHandler');
 const ProxyFactory = artifacts.require('ProxyFactory');
-
-const CPK = require('..');
-
-const { zeroAddress } = require('../src/utils/constants');
-const shouldWorkWithWeb3 = require('./web3/shouldWorkWithWeb3');
-const shouldWorkWithEthers = require('./ethers/shouldWorkWithEthers');
 
 contract('CPK', ([defaultAccount, safeOwner]) => {
   const gnosisSafeProviderBox = [];
@@ -82,7 +80,7 @@ contract('CPK', ([defaultAccount, safeOwner]) => {
                 to,
                 value || 0,
                 data,
-                CPK.CALL,
+                CPK.Call,
                 0,
                 0,
                 0,
@@ -124,7 +122,7 @@ contract('CPK', ([defaultAccount, safeOwner]) => {
                   to,
                   value || 0,
                   data,
-                  CPK.CALL,
+                  CPK.Call,
                   0,
                   0,
                   0,
@@ -146,7 +144,7 @@ contract('CPK', ([defaultAccount, safeOwner]) => {
 
           const callData = multiSend.contract.methods.multiSend(
             `0x${params.map((tx) => [
-              web3.eth.abi.encodeParameter('uint8', CPK.CALL).slice(-2),
+              web3.eth.abi.encodeParameter('uint8', CPK.Call).slice(-2),
               web3.eth.abi.encodeParameter('address', tx.to).slice(-40),
               web3.eth.abi.encodeParameter('uint256', tx.value).slice(-64),
               web3.eth.abi.encodeParameter('uint256', web3.utils.hexToBytes(tx.data).length).slice(-64),
@@ -158,7 +156,7 @@ contract('CPK', ([defaultAccount, safeOwner]) => {
             multiSend.address,
             0,
             callData,
-            CPK.DELEGATECALL,
+            CPK.DelegateCall,
             0,
             0,
             0,

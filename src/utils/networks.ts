@@ -1,4 +1,15 @@
-const defaultNetworks = {
+interface NetworkConfigEntry {
+  masterCopyAddress: string;
+  proxyFactoryAddress: string;
+  multiSendAddress: string;
+  fallbackHandlerAddress: string;
+}
+
+export interface NetworksConfig {
+  [id: string]: NetworkConfigEntry;
+}
+
+export const defaultNetworks: NetworksConfig = {
   // mainnet
   1: {
     masterCopyAddress: '0x34CfAC646f301356fAa8B21e94227e3583Fe3F5F',
@@ -28,5 +39,3 @@ const defaultNetworks = {
     fallbackHandlerAddress: '0x40A930851BD2e590Bd5A5C981b436de25742E980',
   },
 };
-
-module.exports = defaultNetworks;

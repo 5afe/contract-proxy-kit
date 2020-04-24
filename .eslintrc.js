@@ -5,20 +5,20 @@ module.exports = {
     node: true,
   },
   extends: [
-    'airbnb-base',
-    'eslint:recommended'
+    'eslint:recommended',
+    'plugin:@typescript-eslint/eslint-recommended',
+    'plugin:@typescript-eslint/recommended',
   ],
   globals: {
     Atomics: 'readonly',
     SharedArrayBuffer: 'readonly',
   },
-  parserOptions: {
-    ecmaVersion: 2018,
-  },
+  parser: '@typescript-eslint/parser',
+  plugins: [
+    '@typescript-eslint',
+  ],
+  root: true,
   rules: {
-    'import/no-extraneous-dependencies': ['error', {
-      'devDependencies': ['truffle-config.js', 'test/**']
-    }],
     'quotes': ['error', 'single'],
     'indent': ['error', 2],
     'max-len': ['error', {

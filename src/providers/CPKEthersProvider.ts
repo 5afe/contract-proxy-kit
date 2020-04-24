@@ -1,13 +1,28 @@
-const CPKProvider = require('./CPKProvider');
-const { zeroAddress, predeterminedSaltNonce } = require('../utils/constants');
-const { standardizeTransactions } = require('../utils/transactions');
-const cpkFactoryAbi = require('../abis/CpkFactoryAbi.json');
-const safeAbi = require('../abis/SafeAbi.json');
-const multiSendAbi = require('../abis/MultiSendAbi.json');
+import CPKProvider, { CPKProviderInit, CPKProviderInitResult, TransactionResult } from './CPKProvider';
+import { zeroAddress, predeterminedSaltNonce } from '../utils/constants';
+import {
+  standardizeTransactions,
+  NonStandardTransaction,
+  SafeProviderSendTransaction
+} from '../utils/transactions';
+import cpkFactoryAbi from '../abis/CpkFactoryAbi.json';
+import safeAbi from '../abis/SafeAbi.json';
+import multiSendAbi from '../abis/MultiSendAbi.json';
 
-class CPKEthersProvider extends CPKProvider {
-  constructor({ ethers, signer }) {
-    super();
+interface CPKEthersProviderConfig {
+  ethers: any;
+  signer: any;
+}
+
+interface EthersTransactionResult extends TransactionResult {
+  transactionResponse: object;
+}
+
+class CPKEthersProvider implements CPKProvider {
+  ethers: any;
+  signer: any;
+
+  constructor({ ethers, signer }: CPKEthersProviderConfig) {
     if (!ethers) {
       throw new Error('ethers property missing from options');
     }
@@ -20,12 +35,12 @@ class CPKEthersProvider extends CPKProvider {
 
   async init({
     isConnectedToSafe, ownerAccount, masterCopyAddress, proxyFactoryAddress, multiSendAddress,
-  }) {
-    const abiToViewAbi = (abi) => abi.map(({
+  }: CPKProviderInit): Promise<CPKProviderInitResult> {
+    const abiToViewAbi = (abi: any): object => abi.map(({
       constant, // eslint-disable-line
       stateMutability, // eslint-disable-line
       ...rest
-    }) => Object.assign(rest, {
+    }: any) => Object.assign(rest, {
       constant: true,
       stateMutability: 'view',
     }));
@@ -85,28 +100,28 @@ class CPKEthersProvider extends CPKProvider {
     };
   }
 
-  getProvider() {
+  getProvider(): any {
     // eslint-disable-next-line no-underscore-dangle
     return this.signer.provider.provider || this.signer.provider._web3Provider;
   }
 
-  async getNetworkId() {
+  async getNetworkId(): Promise<number> {
     return (await this.signer.provider.getNetwork()).chainId;
   }
 
-  async getOwnerAccount() {
+  async getOwnerAccount(): Promise<string> {
     return this.signer.getAddress();
   }
 
-  async getCodeAtAddress(contract) {
-    return this.signer.provider.getCode(this.constructor.getContractAddress(contract));
+  async getCodeAtAddress(contract: any): Promise<string> {
+    return this.signer.provider.getCode(this.getContractAddress(contract));
   }
 
-  static getContractAddress(contract) {
+  getContractAddress(contract: any): string {
     return contract.address;
   }
 
-  checkSingleCall(from, to, value, data) {
+  checkSingleCall(from: string, to: string, value: number | string, data: string): Promise<any> {
     return this.signer.provider.call({
       from,
       to,
@@ -115,7 +130,14 @@ class CPKEthersProvider extends CPKProvider {
     });
   }
 
-  static async attemptTransaction(contract, viewContract, methodName, params, options, err) {
+  async attemptTransaction(
+    contract: any,
+    viewContract: any,
+    methodName: string,
+    params: Array<any>,
+    options: object,
+    err: Error
+  ): Promise<EthersTransactionResult> {
     if (!(await viewContract.functions[methodName](...params))) throw err;
     const transactionResponse = await contract.functions[methodName](
       ...params,
@@ -124,7 +146,10 @@ class CPKEthersProvider extends CPKProvider {
     return { transactionResponse, hash: transactionResponse.hash };
   }
 
-  async attemptSafeProviderSendTx(txObj, options) {
+  async attemptSafeProviderSendTx(
+    txObj: SafeProviderSendTransaction,
+    options: object
+  ): Promise<EthersTransactionResult> {
     const transactionResponse = await this.signer.sendTransaction({
       ...txObj,
       ...(options || {}),
@@ -132,12 +157,14 @@ class CPKEthersProvider extends CPKProvider {
     return { transactionResponse, hash: transactionResponse.hash };
   }
 
-  async attemptSafeProviderMultiSendTxs(txs) {
+  async attemptSafeProviderMultiSendTxs(
+    txs: SafeProviderSendTransaction[]
+  ): Promise<{ hash: string }> {
     const hash = await this.signer.provider.send('gs_multi_send', txs);
     return { hash };
   }
 
-  encodeMultiSendCallData(transactions) {
+  encodeMultiSendCallData(transactions: NonStandardTransaction[]): string {
     const multiSend = new this.ethers.Contract(zeroAddress, multiSendAbi, this.signer);
     const standardizedTxs = standardizeTransactions(transactions);
 
@@ -162,9 +189,9 @@ class CPKEthersProvider extends CPKProvider {
   }
 
   // eslint-disable-next-line
-  static getSendOptions(options, ownerAccount) {
+  getSendOptions(options: object, ownerAccount: string): object {
     return options;
   }
 }
 
-module.exports = CPKEthersProvider;
+export default CPKEthersProvider;

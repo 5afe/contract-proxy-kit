@@ -13,7 +13,7 @@ Enable batched transactions and contract account interactions using a unique det
 The Contract Proxy Kit package exposes a *CPK* class:
 
 ```js
-const CPK = require('contract-proxy-kit')
+import CPK from 'contract-proxy-kit'
 ```
 
 *CPK* requires either [web3.js](https://web3js.readthedocs.io) or [ethers.js](https://docs.ethers.io/ethers.js/html/) to function. Currently the following versions are supported:
@@ -35,7 +35,7 @@ In order to obtain the proxy address, use the property [CPK#address](#cpkaddress
 To use *CPK* with web3.js, supply `CPK.create` with a *Web3* instance as the value of the `web3` key. For example:
 
 ```js
-const Web3 = require('web3');
+import Web3 from 'web3';
 const web3 = new Web3(/*...*/);
 
 const cpkProvider = new CpkWeb3Provider({ web3 });
@@ -54,7 +54,7 @@ const cpk = await CPK.create({ cpkProvider, ownerAccount: '0x90F8bf6A479f320ead0
 To use *CPK* with ethers.js, supply `CPK.create` with the `ethers` object and an ethers.js *Signer* which has an active *Provider* connection. For example:
 
 ```js
-const { ethers } = require('ethers');
+import { ethers } from 'ethers');
 const provider = ethers.getDefaultProvider('homestead');
 const wallet = ethers.Wallet.createRandom().connect(provider);
 
@@ -128,7 +128,7 @@ To execute transactions using a *CPK* instance, call `execTransactions` with an 
 
 Each of the `transactions` provided as input to this function must be an *Object* with the following properties:
 
-* `operation`: Either `CPK.CALL` (0) or `CPK.DELEGATECALL` (1) to execute the transaction as either a normal call or a delegatecall. Note: when connected to Gnosis Safe via WalletConnect, this property is ignored, and `CPK.CALL` is assumed. Optional property, `CPK.CALL` is the default value.
+* `operation`: Either `CPK.Call` (0) or `CPK.DelegateCall` (1) to execute the transaction as either a normal call or a delegatecall. Note: when connected to Gnosis Safe via WalletConnect, this property is ignored, and `CPK.Call` is assumed. Optional property, `CPK.Call` is the default value.
 * `to`: The target address of the transaction.
 * `value`: The amount of ether to send along with this transaction. Optional property, `0` is the default value.
 * `data`: The calldata to send along with the transaction. Optional property, `0x` is the default value.
@@ -141,13 +141,13 @@ For example, if the proxy account holds some ether, it may batch send ether to m
 const cpk = await CPK.create(/* ... */);
 const txObject = await cpk.execTransactions([
   {
-    operation: CPK.CALL, // Not needed because this is the default value.
+    operation: CPK.Call, // Not needed because this is the default value.
     data: '0x', // Not needed because this is the default value.
     to: '0x90f8bf6a479f320ead074411a4b0e7944ea8c9c1',
     value: `${1e18}`,
   },
   {
-    operation: CPK.CALL, // Not needed because this is the default value.
+    operation: CPK.Call, // Not needed because this is the default value.
     data: '0x', // Not needed because this is the default value.
     to: '0xffcf8fdee72ac11b5c542428b35eef5769c409f0',
     value: `${1e18}`,

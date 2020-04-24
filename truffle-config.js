@@ -1,4 +1,5 @@
 require('dotenv').config();
+require('ts-node/register');
 
 const seed = process.env.SEED || 'myth like bonus scare over problem client lizard pioneer submit female collect';
 const HDWalletProvider = require('@truffle/hdwallet-provider');

@@ -1,13 +1,13 @@
+import CPK from '../../src';
+import CPKEthersProvider from '../../src/providers/CPKEthersProvider';
+import shouldSupportDifferentTransactions from '../transactions/shouldSupportDifferentTransactions';
+import { defaultGasLimit, toConfirmationPromise } from '../utils';
+
 const GnosisSafe = artifacts.require('GnosisSafe');
 const MultiSend = artifacts.require('MultiSend');
 const DefaultCallbackHandler = artifacts.require('DefaultCallbackHandler');
 const CPKFactory = artifacts.require('CPKFactory');
 const Multistep = artifacts.require('Multistep');
-
-const CPK = require('../..');
-const CPKEthersProvider = require('../../src/providers/CPKEthersProvider');
-const shouldSupportDifferentTransactions = require('../transactions/shouldSupportDifferentTransactions');
-const { defaultGasLimit, toConfirmationPromise } = require('../utils');
 
 function shouldWorkWithEthers(ethers, defaultAccount, safeOwner, gnosisSafeProviderBox) {
   describe(`with ethers version ${ethers.version}`, () => {
