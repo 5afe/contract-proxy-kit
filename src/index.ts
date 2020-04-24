@@ -188,7 +188,7 @@ class CPK {
           this.cpkProvider.getContractAddress(this.multiSend),
           0,
           this.cpkProvider.encodeMultiSendCallData(transactions),
-          CPK.Call,
+          CPK.DelegateCall,
           0,
           0,
           0,
