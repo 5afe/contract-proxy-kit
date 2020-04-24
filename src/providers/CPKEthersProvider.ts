@@ -121,7 +121,7 @@ class CPKEthersProvider implements CPKProvider {
     return contract.address;
   }
 
-  checkSingleCall(from: string, to: string, value: number, data: string): Promise<any> {
+  checkSingleCall(from: string, to: string, value: number | string, data: string): Promise<any> {
     return this.signer.provider.call({
       from,
       to,

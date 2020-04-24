@@ -93,7 +93,7 @@ class CPKWeb3Provider implements CPKProvider {
     );
   }
 
-  checkSingleCall(from: string, to: string, value: number, data: string): Promise<any> {
+  checkSingleCall(from: string, to: string, value: number | string, data: string): Promise<any> {
     return this.web3.eth.call({
       from,
       to,

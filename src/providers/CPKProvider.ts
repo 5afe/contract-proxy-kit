@@ -39,7 +39,7 @@ interface CPKProvider {
 
   getContractAddress(contract: any): string;
 
-  checkSingleCall(from: string, to: string, value: number, data: string): Promise<any>;
+  checkSingleCall(from: string, to: string, value: number | string, data: string): Promise<any>;
 
   attemptTransaction(
     contract: any,
