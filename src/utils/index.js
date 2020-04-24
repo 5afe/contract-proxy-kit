@@ -22,7 +22,7 @@ const estimateSafeTxGas = async (
     ],
   );
 
-  const estimateResponse = await cpkProvider.checkSingleCall({
+  const estimateResponse = await cpkProvider.getCallRevertData({
     from: safeAddress,
     to: safeAddress,
     data: estimateData,
@@ -37,7 +37,7 @@ const estimateSafeTxGas = async (
 
   for (let i = 0; i < 100; i += 1) {
     // eslint-disable-next-line no-await-in-loop
-    const estimateResponse = await cpkProvider.checkSingleCall({
+    const estimateResponse = await cpkProvider.getCallRevertData({
       to: safeAddress,
       from: safeAddress,
       data: estimateData,

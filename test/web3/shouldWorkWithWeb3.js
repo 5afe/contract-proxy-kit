@@ -117,7 +117,7 @@ function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderB
               from: defaultAccount,
               to: newAccount.address,
               value: `${2e18}`,
-              gasLimit: '0x5b8d80',
+              gas: '0x5b8d80',
             });
 
             const cpkProvider = new CPKWeb3Provider({ web3: ueb3 });

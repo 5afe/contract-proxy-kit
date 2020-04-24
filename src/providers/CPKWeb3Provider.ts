@@ -112,18 +112,78 @@ class CPKWeb3Provider implements CPKProvider {
     });
   }
 
+  providerSend(method: string, params: any[]): Promise<any> {
+    return this.web3.currentProvider.host === 'CustomProvider'
+      ? this.web3.currentProvider.send(
+        method,
+        params,
+      ) : new Promise(
+        (resolve, reject) => this.web3.currentProvider.send({
+          jsonrpc: '2.0',
+          id: new Date().getTime(),
+          method,
+          params,
+        }, (err: any, result: any) => {
+          if (err) return reject(err);
+          if (result.error) return reject(result.error);
+          return resolve(result.result);
+        }),
+      );
+  }
+
+  async getCallRevertData({
+    from, to, value, data,
+  }: {
+    from: string;
+    to: string;
+    value: number | string;
+    data: string;
+  }): Promise<string> {
+    try {
+      // throw with full error data if provider is Web3 1.x
+      // by using a low level eth_call instead of web3.eth.call
+      // this also handles Geth/Ganache --noVMErrorsOnRPCResponse
+      return await this.providerSend(
+        'eth_call',
+        [{
+          from,
+          to,
+          value,
+          data,
+        }],
+      );
+    } catch (e) {
+      let errData = e.data;
+      if (errData == null && e.message.startsWith('Node error: ')) {
+        // parse out error data if provider is Web3 2.x
+        errData = JSON.parse(e.message.slice(12)).data;
+      }
+      
+      if (typeof errData === 'string' && errData.startsWith('Reverted 0x')) {
+        // handle OpenEthereum revert data format
+        return errData.slice(9);
+      }
+
+      // handle Ganache revert data format
+      const txHash = Object.getOwnPropertyNames(errData).filter((k) => k.startsWith('0x'))[0];
+      return errData[txHash].return;
+    }
+  }
+
   async attemptTransaction(
     contract: any,
     viewContract: any,
     methodName: string,
     params: Array<any>,
-    sendOptions: object,
+    sendOptions: {
+      gasLimit?: number | string;
+    },
     err: Error
   ): Promise<Web3TransactionResult> {
     if (!(await contract.methods[methodName](...params).call(sendOptions))) throw err;
 
     const txObject = contract.methods[methodName](...params);
-    const gasLimit = sendOptions.gasLimit || await txObject.estimateGas(sendOptions)
+    const gasLimit = sendOptions.gasLimit || await txObject.estimateGas(sendOptions);
     const actualSendOptions = { gasLimit, ...sendOptions };
     const promiEvent = txObject.send(actualSendOptions);
 

@@ -128,6 +128,34 @@ class CPKEthersProvider implements CPKProvider {
     });
   }
 
+  async getCallRevertData({
+    from, to, value, data,
+  }: {
+    from: string;
+    to: string;
+    value: number | string;
+    data: string;
+  }): Promise<string> {
+    try {
+      // Handle Geth/Ganache --noVMErrorsOnRPCResponse revert data
+      return await this.signer.provider.call({
+        from,
+        to,
+        value,
+        data,
+      });
+    } catch (e) {
+      if (typeof e.data === 'string' && e.data.startsWith('Reverted 0x')) {
+        // handle OpenEthereum revert data format
+        return e.data.slice(9);
+      }
+
+      // handle Ganache revert data format
+      const txHash = Object.getOwnPropertyNames(e.data).filter((k) => k.startsWith('0x'))[0];
+      return e.data[txHash].return;
+    }
+  }
+
   async attemptTransaction(
     contract: any,
     viewContract: any,

@@ -63,7 +63,7 @@ function shouldSupportDifferentTransactions({
         from: proxyOwner,
         to: erc20.address,
         value: 0,
-        gasLimit: '0x5b8d80',
+        gas: '0x5b8d80',
         data: erc20.contract.methods.approve(cpk.address, `${1e20}`).encodeABI(),
       });
     });

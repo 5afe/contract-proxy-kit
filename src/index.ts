@@ -141,7 +141,7 @@ class CPK {
             operation,
           );
 
-          return this.cpkProvider.constructor.attemptTransaction(
+          return this.cpkProvider.attemptTransaction(
             this.contract,
             this.viewContract,
             'execTransaction',
@@ -162,7 +162,7 @@ class CPK {
           );
         }
 
-        return this.cpkProvider.constructor.attemptTransaction(
+        return this.cpkProvider.attemptTransaction(
           this.proxyFactory,
           this.viewProxyFactory,
           'createProxyAndExecTransaction',
@@ -209,7 +209,7 @@ class CPK {
         operation,
       );
 
-      return this.cpkProvider.constructor.attemptTransaction(
+      return this.cpkProvider.attemptTransaction(
         this.contract,
         this.viewContract,
         'execTransaction',
@@ -230,7 +230,7 @@ class CPK {
       );
     }
 
-    return this.cpkProvider.constructor.attemptTransaction(
+    return this.cpkProvider.attemptTransaction(
       this.proxyFactory,
       this.viewProxyFactory,
       'createProxyAndExecTransaction',
