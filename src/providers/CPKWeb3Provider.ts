@@ -146,12 +146,15 @@ class CPKWeb3Provider implements CPKProvider {
       // this also handles Geth/Ganache --noVMErrorsOnRPCResponse
       return await this.providerSend(
         'eth_call',
-        [{
-          from,
-          to,
-          value,
-          data,
-        }],
+        [
+          {
+            from,
+            to,
+            value,
+            data,
+          },
+          'latest',
+        ],
       );
     } catch (e) {
       let errData = e.data;
