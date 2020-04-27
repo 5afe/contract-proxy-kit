@@ -168,7 +168,9 @@ function shouldSupportDifferentTransactions({
       fromWei(await erc20.balanceOf(conditionalTokens.address)).should.equal(1);
     });
 
-    it('by default errors without transacting when single transaction would fail', async () => {
+    (
+      ownerIsRecognizedContract ? it.skip : it
+    )('by default errors without transacting when single transaction would fail', async () => {
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
       const startingTransactionCount = await getTransactionCount(proxyOwner);
 
