@@ -1,3 +1,13 @@
 language: node_js
 node_js:
   - lts/dubnium
+services:
+  - docker
+jobs:
+  include:
+  - name: Default Ganache
+    script: npm run test-norpc
+  - name: Geth
+    script: npm run test-geth
+  - name: Parity
+    script: npm run test-parity
