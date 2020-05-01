@@ -1,7 +1,7 @@
 import { OperationType, zeroAddress, predeterminedSaltNonce } from './utils/constants';
 import { defaultNetworks, NetworksConfig } from './utils/networks';
 import { standardizeTransactions, SafeProviderSendTransaction, NonStandardTransaction } from './utils/transactions';
-const { estimateSafeTxGas } = require('./utils');
+import { estimateSafeTxGas } from './utils';
 import CPKProvider from './providers/CPKProvider';
 
 interface CPKConfig {

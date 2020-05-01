@@ -16,7 +16,7 @@ function shouldWorkWithEthers(ethers, defaultAccount, safeOwner, gnosisSafeProvi
 
     const ethersTestHelpers = (signerBox) => ({
       checkAddressChecksum: (address) => ethers.utils.getAddress(address) === address,
-      sendTransaction: async ({ from, gas, ...txObj }) => {
+      sendTransaction: async ({ gas, ...txObj }) => {
         const signer = signerBox[0];
 
         if (signer.constructor.name === 'JsonRpcSigner') {

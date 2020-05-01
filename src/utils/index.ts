@@ -2,7 +2,7 @@ import safeAbi from '../abis/SafeAbi.json';
 import CPKProvider from '../providers/CPKProvider';
 import { OperationType } from './constants';
 
-const estimateSafeTxGas = async (
+export const estimateSafeTxGas = async (
   cpkProvider: CPKProvider,
   safeAddress: string,
   data: string,

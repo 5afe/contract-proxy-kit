@@ -267,11 +267,11 @@ class CPKWeb3Provider implements CPKProvider {
     };
   }
 
-  getGasPrice() {
+  getGasPrice(): Promise<number> {
     return this.web3.eth.getGasPrice();
   }
 
-  getSafeNonce(safeAddress:string) {
+  getSafeNonce(safeAddress: string): Promise<number> {
     const safeContract = this.getContract(safeAbi, safeAddress);
     return safeContract.methods.nonce().call();
   }

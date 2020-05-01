@@ -1,5 +1,4 @@
 import makeConditionalTokensIdHelpers from '@gnosis.pm/conditional-tokens-contracts/utils/id-helpers';
-import { defaultGasLimit } from '../utils';
 
 const Multistep = artifacts.require('Multistep');
 const ConditionalTokens = artifacts.require('ConditionalTokens');

@@ -74,7 +74,7 @@ interface CPKProvider {
     sendOptions: {
       gasLimit?: number | string;
     }
-  ): Promise<EthersTransactionResult>;
+  ): Promise<TransactionResult>;
 
   encodeAttemptTransaction(contractAbi: object[], methodName: string, params: any[]): string;
 
