@@ -6,20 +6,20 @@ services:
 jobs:
   include:
   - name: Truffle's internal Ganache
-    script: npm run test-norpc
+    script: yarn test-norpc
   - name: Ganache with --noVMErrorsOnRPCResponse
-    script: npm test
+    script: yarn test
   - name: Geth
-    script: npm run test-geth
+    script: yarn test-geth
   - name: OpenEthereum
     before_script:
       - PASSFILE=$(mktemp)
       - echo '' > $PASSFILE
       - chmod 644 $PASSFILE
       - CONTAINER_ID=$(docker run -d -p 8545:8545 -p 8546:8546 -v $PASSFILE:$PASSFILE openethereum/openethereum --config dev --jsonrpc-interface=all --ws-interface=all --unlock 0x00a329c0648769a73afac7f9381e08fb43dbea72 --password $PASSFILE)
-      - npx wait-port -t 10000 localhost:8545
+      - yarn wait-port -t 10000 localhost:8545
     script:
-      - npx truffle test --network local
+      - yarn truffle test --network local
     after_script:
       - docker logs $CONTAINER_ID
       - docker stop $CONTAINER_ID
