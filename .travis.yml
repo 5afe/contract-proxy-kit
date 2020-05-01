@@ -5,8 +5,10 @@ services:
   - docker
 jobs:
   include:
-  - name: Default Ganache
+  - name: Truffle's internal Ganache
     script: npm run test-norpc
+  - name: Ganache with --noVMErrorsOnRPCResponse
+    script: npm test
   - name: Geth
     script: npm run test-geth
   - name: OpenEthereum
