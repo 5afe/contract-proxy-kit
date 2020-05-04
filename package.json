@@ -5,8 +5,9 @@
   "main": "src/index.ts",
   "scripts": {
     "migrate": "truffle migrate",
-    "test": "truffle test",
-    "lint:check": "eslint './src/**/*.{js,ts}'",
+    "test-norpc": "truffle test",
+    "test": "run(){ run-with-testrpc -l 20000000 --noVMErrorsOnRPCResponse \"truffle test --network local $@\"; }; run",
+    "lint:check": "eslint './src/**/*.{js,jsx}' './test/**/*.{js,jsx}'",
     "lint:fix": "yarn lint:check --fix",
     "build": "tsc"
   },
@@ -41,6 +42,7 @@
     "dotenv": "^8.2.0",
     "eslint": "^6.8.0",
     "ethers-4": "npm:ethers@^4.0.45",
+    "run-with-testrpc": "^0.3.1",
     "should": "^13.2.3",
     "truffle": "^5.1.22",
     "ts-node": "^8.8.2",

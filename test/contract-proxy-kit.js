@@ -15,6 +15,10 @@ const DefaultCallbackHandler = artifacts.require('DefaultCallbackHandler');
 const ProxyFactory = artifacts.require('ProxyFactory');
 
 contract('CPK', ([defaultAccount, safeOwner]) => {
+  if (safeOwner == null) {
+    safeOwner = defaultAccount;
+  }
+
   const gnosisSafeProviderBox = [];
 
   before('emulate Gnosis Safe WalletConnect provider', async () => {

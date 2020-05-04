@@ -1,7 +1,7 @@
 import CPK from '../../src';
 import CPKEthersProvider from '../../src/providers/CPKEthersProvider';
 import shouldSupportDifferentTransactions from '../transactions/shouldSupportDifferentTransactions';
-import { defaultGasLimit, toConfirmationPromise } from '../utils';
+import { toConfirmationPromise } from '../utils';
 
 const GnosisSafe = artifacts.require('GnosisSafe');
 const MultiSend = artifacts.require('MultiSend');
@@ -16,7 +16,23 @@ function shouldWorkWithEthers(ethers, defaultAccount, safeOwner, gnosisSafeProvi
 
     const ethersTestHelpers = (signerBox) => ({
       checkAddressChecksum: (address) => ethers.utils.getAddress(address) === address,
-      sendTransaction: ({ from, ...txObj }) => signerBox[0].sendTransaction(txObj), // eslint-disable-line
+      sendTransaction: async ({ from, gas, ...txObj }) => {
+        const signer = signerBox[0];
+
+        if (signer.constructor.name === 'JsonRpcSigner') {
+          // mock WalletConnected Gnosis Safe provider
+          return signer.sendTransaction({ gasLimit: gas, ...txObj });
+        }
+
+        // See: https://github.com/ethers-io/ethers.js/issues/299
+        const nonce = await signer.provider.getTransactionCount(await signer.getAddress());
+        const signedTx = await signer.sign({
+          nonce,
+          gasLimit: gas,
+          ...txObj,
+        });
+        return signer.provider.sendTransaction(signedTx);
+      },
       randomHexWord: () => ethers.utils.hexlify(ethers.utils.randomBytes(32)),
       fromWei: (amount) => Number(ethers.utils.formatUnits(amount.toString(), 'ether')),
       getTransactionCount: signer.provider.getTransactionCount.bind(signer.provider),
@@ -94,7 +110,7 @@ function shouldWorkWithEthers(ethers, defaultAccount, safeOwner, gnosisSafeProvi
             from: defaultAccount,
             to: signer.address,
             value: `${2e18}`,
-            gasLimit: '0x5b8d80',
+            gas: '0x5b8d80',
           }));
         });
 
@@ -107,7 +123,7 @@ function shouldWorkWithEthers(ethers, defaultAccount, safeOwner, gnosisSafeProvi
           const idPrecompile = `0x${'0'.repeat(39)}4`;
           await cpk.execTransactions([{
             to: idPrecompile,
-          }], { gasLimit: defaultGasLimit });
+          }]);
         });
 
         shouldSupportDifferentTransactions({
@@ -128,7 +144,7 @@ function shouldWorkWithEthers(ethers, defaultAccount, safeOwner, gnosisSafeProvi
               from: defaultAccount,
               to: freshSignerBox[0].address,
               value: `${2e18}`,
-              gasLimit: '0x5b8d80',
+              gas: '0x5b8d80',
             }));
 
             const cpkProvider = new CPKEthersProvider({ ethers, signer: freshSignerBox[0] });

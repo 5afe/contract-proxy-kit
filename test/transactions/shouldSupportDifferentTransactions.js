@@ -63,7 +63,7 @@ function shouldSupportDifferentTransactions({
         from: proxyOwner,
         to: erc20.address,
         value: 0,
-        gasLimit: '0x5b8d80',
+        gas: '0x5b8d80',
         data: erc20.contract.methods.approve(cpk.address, `${1e20}`).encodeABI(),
       });
     });
@@ -74,7 +74,7 @@ function shouldSupportDifferentTransactions({
       await cpk.execTransactions([{
         to: multiStep.address,
         data: multiStep.contract.methods.doStep(1).encodeABI(),
-      }], { gasLimit: defaultGasLimit });
+      }]);
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(1);
     });
 
@@ -89,7 +89,7 @@ function shouldSupportDifferentTransactions({
           to: multiStep.address,
           data: multiStep.contract.methods.doStep(2).encodeABI(),
         },
-      ], { gasLimit: defaultGasLimit });
+      ]);
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(2);
     });
 
@@ -113,7 +113,7 @@ function shouldSupportDifferentTransactions({
           to: multiStep.address,
           data: multiStep.contract.methods.doERC20Step(2, erc20.address).encodeABI(),
         },
-      ], { gasLimit: defaultGasLimit });
+      ]);
 
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(2);
 
@@ -157,7 +157,7 @@ function shouldSupportDifferentTransactions({
             `${1e18}`,
           ).encodeABI(),
         },
-      ], { gasLimit: defaultGasLimit });
+      ]);
 
       if (cpk.address === proxyOwner) {
         fromWei(await erc20.balanceOf(cpk.address)).should.equal(99);
@@ -168,14 +168,16 @@ function shouldSupportDifferentTransactions({
       fromWei(await erc20.balanceOf(conditionalTokens.address)).should.equal(1);
     });
 
-    it('by default errors without transacting when single transaction would fail', async () => {
+    (
+      ownerIsRecognizedContract ? it.skip : it
+    )('by default errors without transacting when single transaction would fail', async () => {
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
       const startingTransactionCount = await getTransactionCount(proxyOwner);
 
       await cpk.execTransactions([{
         to: multiStep.address,
         data: multiStep.contract.methods.doStep(2).encodeABI(),
-      }], { gasLimit: defaultGasLimit }).should.be.rejectedWith(/must do the next step/);
+      }]).should.be.rejectedWith(/must do the next step|(proxy creation and )?transaction execution expected to fail/);
 
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
       await getTransactionCount(proxyOwner)
@@ -196,7 +198,7 @@ function shouldSupportDifferentTransactions({
           to: multiStep.address,
           data: multiStep.contract.methods.doStep(3).encodeABI(),
         },
-      ], { gasLimit: defaultGasLimit }).should.be.rejectedWith(/(proxy creation and )?transaction execution expected to fail/);
+      ]).should.be.rejectedWith(/(proxy creation and )?batch transaction execution expected to fail/);
 
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
       await getTransactionCount(proxyOwner)
@@ -207,7 +209,7 @@ function shouldSupportDifferentTransactions({
       checkTxObj(await cpk.execTransactions([{
         to: multiStep.address,
         data: multiStep.contract.methods.doStep(1).encodeABI(),
-      }], { gasLimit: defaultGasLimit }));
+      }]));
     });
 
     it('can execute a single transaction with a specific gas price', async () => {
@@ -221,7 +223,7 @@ function shouldSupportDifferentTransactions({
           to: multiStep.address,
           data: multiStep.contract.methods.doStep(1).encodeABI(),
         }],
-        { gasPrice, gasLimit: defaultGasLimit },
+        { gasPrice },
       );
       const gasUsed = await getGasUsed(txObj);
 
@@ -249,7 +251,7 @@ function shouldSupportDifferentTransactions({
             data: multiStep.contract.methods.doStep(2).encodeABI(),
           },
         ],
-        { gasPrice, gasLimit: defaultGasLimit },
+        { gasPrice },
       );
       const gasUsed = await getGasUsed(txObj);
 

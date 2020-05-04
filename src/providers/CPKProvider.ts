@@ -37,18 +37,46 @@ interface CPKProvider {
 
   getCodeAtAddress(contract: any): Promise<string>;
 
+  getContract(abi: Array<object>, address: string): any;
+
   getContractAddress(contract: any): string;
 
-  checkSingleCall(from: string, to: string, value: number | string, data: string): Promise<any>;
+  checkSingleCall(opts: {
+    from: string;
+    to: string;
+    value: number | string;
+    data: string;
+  }): Promise<any>;
 
-  attemptTransaction(
+  getCallRevertData(opts: {
+    from: string;
+    to: string;
+    value?: number | string;
+    data: string;
+    gasLimit?: number | string;
+  }): Promise<string>;
+
+  checkMethod(
     contract: any,
     viewContract: any,
     methodName: string,
     params: Array<any>,
-    sendOptions: object,
-    err: Error
-  ): Promise<TransactionResult>;
+    sendOptions: {
+      gasLimit?: number | string;
+    },
+    err: Error,
+  ): Promise<void>;
+
+  execMethod(
+    contract: any,
+    methodName: string,
+    params: Array<any>,
+    sendOptions: {
+      gasLimit?: number | string;
+    }
+  ): Promise<EthersTransactionResult>;
+
+  encodeAttemptTransaction(contractAbi: object[], methodName: string, params: any[]): string;
 
   attemptSafeProviderSendTx(
     tx: SafeProviderSendTransaction,

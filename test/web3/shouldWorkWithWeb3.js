@@ -1,7 +1,7 @@
 import CPK from '../../src';
 import CPKWeb3Provider from '../../src/providers/CPKWeb3Provider';
 import shouldSupportDifferentTransactions from '../transactions/shouldSupportDifferentTransactions';
-import { defaultGasLimit, toConfirmationPromise } from '../utils';
+import { toConfirmationPromise } from '../utils';
 
 const GnosisSafe = artifacts.require('GnosisSafe');
 const MultiSend = artifacts.require('MultiSend');
@@ -98,7 +98,7 @@ function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderB
           const idPrecompile = `0x${'0'.repeat(39)}4`;
           await cpk.execTransactions([{
             to: idPrecompile,
-          }], { gasLimit: defaultGasLimit });
+          }]);
         });
 
         shouldSupportDifferentTransactions({
@@ -117,7 +117,7 @@ function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderB
               from: defaultAccount,
               to: newAccount.address,
               value: `${2e18}`,
-              gasLimit: '0x5b8d80',
+              gas: '0x5b8d80',
             });
 
             const cpkProvider = new CPKWeb3Provider({ web3: ueb3 });
