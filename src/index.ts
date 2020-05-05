@@ -118,13 +118,6 @@ class CPK {
       } = standardizeTransactions(transactions)[0];
 
       if (operation === CPK.Call) {
-        await this.cpkProvider.checkSingleCall({
-          from: this.address,
-          to,
-          value,
-          data,
-        });
-
         if (this.isConnectedToSafe) {
           return this.cpkProvider.attemptSafeProviderSendTx({ to, value, data }, sendOptions);
         }

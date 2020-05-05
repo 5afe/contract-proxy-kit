@@ -98,20 +98,6 @@ class CPKWeb3Provider implements CPKProvider {
     );
   }
 
-  checkSingleCall({ from, to, value, data }: {
-    from: string;
-    to: string;
-    value: number | string;
-    data: string;
-  }): Promise<any> {
-    return this.web3.eth.call({
-      from,
-      to,
-      value,
-      data,
-    });
-  }
-
   providerSend(method: string, params: any[]): Promise<any> {
     return this.web3.currentProvider.host === 'CustomProvider'
       ? this.web3.currentProvider.send(

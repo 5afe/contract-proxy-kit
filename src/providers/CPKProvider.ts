@@ -41,13 +41,6 @@ interface CPKProvider {
 
   getContractAddress(contract: any): string;
 
-  checkSingleCall(opts: {
-    from: string;
-    to: string;
-    value: number | string;
-    data: string;
-  }): Promise<any>;
-
   getCallRevertData(opts: {
     from: string;
     to: string;
