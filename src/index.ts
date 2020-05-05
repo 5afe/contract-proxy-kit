@@ -145,7 +145,7 @@ class CPK {
             new Error('transaction execution expected to fail'),
           );
 
-          const { safeTxGas, baseGas } = await estimateSafeTxGas(
+          const safeTxGas = await estimateSafeTxGas(
             this.cpkProvider,
             this.address,
             data,
@@ -163,7 +163,7 @@ class CPK {
               data,
               operation,
               safeTxGas,
-              baseGas,
+              0,
               0,
               zeroAddress,
               zeroAddress,
@@ -246,7 +246,7 @@ class CPK {
         new Error('batch transaction execution expected to fail'),
       );
 
-      const { safeTxGas, baseGas } = await estimateSafeTxGas(
+      const safeTxGas = await estimateSafeTxGas(
         this.cpkProvider,
         this.address,
         data,
@@ -264,7 +264,7 @@ class CPK {
           data,
           operation,
           safeTxGas,
-          baseGas,
+          0,
           0,
           zeroAddress,
           zeroAddress,

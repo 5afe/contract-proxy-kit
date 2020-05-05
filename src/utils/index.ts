@@ -9,12 +9,8 @@ export const estimateSafeTxGas = async (
   to: string,
   value: number | string,
   operation: OperationType,
-): Promise<{
-  safeTxGas: number;
-  baseGas: number;
-}> => {
+): Promise<number> => {
   let safeTxGas;
-  let additionalGas = 10000;
 
   const estimateData = cpkProvider.encodeAttemptTransaction(
     safeAbi,
@@ -35,29 +31,16 @@ export const estimateSafeTxGas = async (
 
   safeTxGas = parseInt(estimateResponse.substring(138), 16);
 
-  // Add 10k else we will fail in case of nested calls
+  // Multiply by (64/63)^10 to ensure calls up to 10 deep in stack
+  // See: https://eips.ethereum.org/EIPS/eip-150
+  // Add at least 10k, so smaller deeper calls can be made
+  const additionalGas = Math.max(
+    10000,
+    Math.floor(0.17056152512 * safeTxGas),
+  );
   safeTxGas += additionalGas;
 
-  const baseGasEstimate = 6000 + 1500 + 1000 + 32000;
-
-  for (let i = 0; i < 100; i += 1) {
-    // eslint-disable-next-line no-await-in-loop
-    const estimateResponse = await cpkProvider.getCallRevertData({
-      to: safeAddress,
-      from: safeAddress,
-      data: estimateData,
-      gasLimit: safeTxGas + baseGasEstimate,
-    });
-
-    if (estimateResponse !== '0x') {
-      break;
-    }
-
-    safeTxGas += additionalGas;
-    additionalGas *= 2;
-  }
-
-  return { safeTxGas, baseGas: baseGasEstimate };
+  return safeTxGas;
 };
 
 module.exports = { estimateSafeTxGas };

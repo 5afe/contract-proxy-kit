@@ -77,6 +77,18 @@ function shouldSupportDifferentTransactions({
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(1);
     });
 
+    it('can execute deep transactions', async () => {
+      (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
+      const numSteps = 10;
+      await cpk.execTransactions([
+        {
+          to: multiStep.address,
+          data: multiStep.contract.methods.doDeepStep(numSteps, numSteps, cpk.address).encodeABI(),
+        }
+      ]);
+      (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(numSteps);
+    });
+
     it('can batch transactions together', async () => {
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
 

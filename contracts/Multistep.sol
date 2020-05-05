@@ -21,6 +21,16 @@ contract Multistep {
         makeExpensiveHash(step);
     }
 
+    function doDeepStep(uint finalStep, uint numSteps, address sender) external {
+        if (numSteps == 0) {
+            require(lastStepFinished[sender] == finalStep, "must end on the right step");
+        } else {
+            lastStepFinished[sender]++;
+            makeExpensiveHash(lastStepFinished[sender]);
+            this.doDeepStep(finalStep, numSteps - 1, sender);
+        }
+    }
+
     function doEtherStep(uint step) external payable {
         require(lastStepFinished[msg.sender] + 1 == step, "must do the next ether step");
         require(msg.value >= step * 1 ether, "must provide right amount of ether");
