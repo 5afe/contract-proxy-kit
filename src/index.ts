@@ -1,7 +1,6 @@
 import { OperationType, zeroAddress, predeterminedSaltNonce } from './utils/constants';
 import { defaultNetworks, NetworksConfig } from './utils/networks';
 import { standardizeTransactions, SafeProviderSendTransaction, NonStandardTransaction } from './utils/transactions';
-import { estimateSafeTxGas } from './utils';
 import CPKProvider from './providers/CPKProvider';
 
 interface CPKConfig {
@@ -160,15 +159,6 @@ class CPK {
           new Error('batch transaction execution expected to fail'),
         );
   
-        const safeTxGas = await estimateSafeTxGas(
-          this.cpkProvider,
-          this.address,
-          data,
-          to,
-          value,
-          operation,
-        );
-  
         return this.cpkProvider.execMethod(
           this.contract,
           'execTransaction',
@@ -177,7 +167,7 @@ class CPK {
             value,
             data,
             operation,
-            safeTxGas,
+            0,
             0,
             0,
             zeroAddress,
