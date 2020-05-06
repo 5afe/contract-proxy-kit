@@ -112,67 +112,81 @@ class CPK {
     const codeAtAddress = await this.cpkProvider.getCodeAtAddress(this.contract);
     const sendOptions = await this.cpkProvider.getSendOptions(options, ownerAccount);
 
-    if (transactions.length === 1) {
-      const {
-        to, value, data, operation,
-      } = standardizeTransactions(transactions)[0];
+    const standardizedTxs = standardizeTransactions(transactions);
 
-      if (operation === CPK.Call) {
-        if (this.isConnectedToSafe) {
-          return this.cpkProvider.attemptSafeProviderSendTx({ to, value, data }, sendOptions);
-        }
+    if (this.isConnectedToSafe) {
+      const connectedSafeTxs: SafeProviderSendTransaction[] = standardizedTxs.map(
+        ({ to, value, data }) => ({ to, value, data }),
+      );
+
+      if (standardizedTxs.length === 1 && standardizedTxs[0].operation === CPK.Call) {
+        return this.cpkProvider.attemptSafeProviderSendTx(connectedSafeTxs[0], sendOptions);
+      } else {
+        // NOTE: DelegateCalls get converted to Calls here
+        return this.cpkProvider.attemptSafeProviderMultiSendTxs(connectedSafeTxs);
+      }
+    } else {
+      let to, value, data, operation;
+
+      if (standardizedTxs.length === 1) {
+        ({
+          to, value, data, operation,
+        } = standardizedTxs[0]);
+      } else {
+        to = this.cpkProvider.getContractAddress(this.multiSend);
+        value = 0;
+        data = this.cpkProvider.encodeMultiSendCallData(standardizedTxs);
+        operation = CPK.DelegateCall;
       }
 
-      if (!this.isConnectedToSafe) {
-        if (codeAtAddress !== '0x') {
-          await this.cpkProvider.checkMethod(
-            this.contract,
-            this.viewContract,
-            'execTransaction',
-            [
-              to,
-              value,
-              data,
-              operation,
-              0,
-              0,
-              0,
-              zeroAddress,
-              zeroAddress,
-              signatureForAddress(ownerAccount),
-            ],
-            sendOptions,
-            new Error('transaction execution expected to fail'),
-          );
-
-          const safeTxGas = await estimateSafeTxGas(
-            this.cpkProvider,
-            this.address,
-            data,
+      if (codeAtAddress !== '0x') {
+        await this.cpkProvider.checkMethod(
+          this.contract,
+          this.viewContract,
+          'execTransaction',
+          [
             to,
             value,
+            data,
             operation,
-          );
-
-          return this.cpkProvider.execMethod(
-            this.contract,
-            'execTransaction',
-            [
-              to,
-              value,
-              data,
-              operation,
-              safeTxGas,
-              0,
-              0,
-              zeroAddress,
-              zeroAddress,
-              signatureForAddress(ownerAccount),
-            ],
-            sendOptions,
-          );
-        }
-
+            0,
+            0,
+            0,
+            zeroAddress,
+            zeroAddress,
+            signatureForAddress(ownerAccount),
+          ],
+          sendOptions,
+          new Error('batch transaction execution expected to fail'),
+        );
+  
+        const safeTxGas = await estimateSafeTxGas(
+          this.cpkProvider,
+          this.address,
+          data,
+          to,
+          value,
+          operation,
+        );
+  
+        return this.cpkProvider.execMethod(
+          this.contract,
+          'execTransaction',
+          [
+            to,
+            value,
+            data,
+            operation,
+            safeTxGas,
+            0,
+            0,
+            zeroAddress,
+            zeroAddress,
+            signatureForAddress(ownerAccount),
+          ],
+          sendOptions,
+        );
+      } else {
         await this.cpkProvider.checkMethod(
           this.proxyFactory,
           this.viewProxyFactory,
@@ -181,15 +195,15 @@ class CPK {
             this.masterCopyAddress,
             predeterminedSaltNonce,
             this.fallbackHandlerAddress,
-            to,
-            value,
-            data,
-            operation,
+            this.cpkProvider.getContractAddress(this.multiSend),
+            0,
+            this.cpkProvider.encodeMultiSendCallData(transactions),
+            CPK.DelegateCall,
           ],
           sendOptions,
-          new Error('proxy creation and transaction execution expected to fail'),
+          new Error('proxy creation and batch transaction execution expected to fail'),
         );
-
+    
         return this.cpkProvider.execMethod(
           this.proxyFactory,
           'createProxyAndExecTransaction',
@@ -197,114 +211,15 @@ class CPK {
             this.masterCopyAddress,
             predeterminedSaltNonce,
             this.fallbackHandlerAddress,
-            to,
-            value,
-            data,
-            operation,
+            this.cpkProvider.getContractAddress(this.multiSend),
+            0,
+            this.cpkProvider.encodeMultiSendCallData(transactions),
+            CPK.DelegateCall,
           ],
           sendOptions,
         );
       }
     }
-
-    if (this.isConnectedToSafe) {
-      const standardizedTxs = standardizeTransactions(transactions);
-      const connectedSafeTxs: SafeProviderSendTransaction[] = standardizedTxs.map(({
-        to, value, data,
-      }) => ({
-        data,
-        to,
-        value,
-      }));
-
-      return this.cpkProvider.attemptSafeProviderMultiSendTxs(connectedSafeTxs);
-    }
-
-    if (codeAtAddress !== '0x') {
-      const to = this.cpkProvider.getContractAddress(this.multiSend);
-      const value = 0;
-      const data = this.cpkProvider.encodeMultiSendCallData(transactions);
-      const operation = CPK.DelegateCall;
-
-      await this.cpkProvider.checkMethod(
-        this.contract,
-        this.viewContract,
-        'execTransaction',
-        [
-          to,
-          value,
-          data,
-          operation,
-          0,
-          0,
-          0,
-          zeroAddress,
-          zeroAddress,
-          signatureForAddress(ownerAccount),
-        ],
-        sendOptions,
-        new Error('batch transaction execution expected to fail'),
-      );
-
-      const safeTxGas = await estimateSafeTxGas(
-        this.cpkProvider,
-        this.address,
-        data,
-        to,
-        value,
-        operation,
-      );
-
-      return this.cpkProvider.execMethod(
-        this.contract,
-        'execTransaction',
-        [
-          to,
-          value,
-          data,
-          operation,
-          safeTxGas,
-          0,
-          0,
-          zeroAddress,
-          zeroAddress,
-          signatureForAddress(ownerAccount),
-        ],
-        sendOptions,
-      );
-    }
-
-    await this.cpkProvider.checkMethod(
-      this.proxyFactory,
-      this.viewProxyFactory,
-      'createProxyAndExecTransaction',
-      [
-        this.masterCopyAddress,
-        predeterminedSaltNonce,
-        this.fallbackHandlerAddress,
-        this.cpkProvider.getContractAddress(this.multiSend),
-        0,
-        this.cpkProvider.encodeMultiSendCallData(transactions),
-        CPK.DelegateCall,
-      ],
-      sendOptions,
-      new Error('proxy creation and batch transaction execution expected to fail'),
-    );
-
-    return this.cpkProvider.execMethod(
-      this.proxyFactory,
-      'createProxyAndExecTransaction',
-      [
-        this.masterCopyAddress,
-        predeterminedSaltNonce,
-        this.fallbackHandlerAddress,
-        this.cpkProvider.getContractAddress(this.multiSend),
-        0,
-        this.cpkProvider.encodeMultiSendCallData(transactions),
-        CPK.DelegateCall,
-      ],
-      sendOptions,
-    );
   }
 }
 
