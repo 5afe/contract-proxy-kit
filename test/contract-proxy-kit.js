@@ -14,7 +14,10 @@ const MultiSend = artifacts.require('MultiSend');
 const DefaultCallbackHandler = artifacts.require('DefaultCallbackHandler');
 const ProxyFactory = artifacts.require('ProxyFactory');
 
-contract('CPK', ([defaultAccount, safeOwner]) => {
+contract('CPK', ([coinbase, defaultAccount, safeOwner]) => {
+  if (defaultAccount == null) {
+    defaultAccount = coinbase;
+  }
   if (safeOwner == null) {
     safeOwner = defaultAccount;
   }

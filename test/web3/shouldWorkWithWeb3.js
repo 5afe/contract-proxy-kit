@@ -71,6 +71,7 @@ function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderB
         const cpkProvider = new CPKWeb3Provider({ web3: ueb3 });
         should.exist(cpkProvider);
         should.exist(await CPK.create({ cpkProvider, networks }));
+        should.exist(await CPK.create({ cpkProvider, networks, ownerAccount: defaultAccount }));
       });
 
       it('can encode multiSend call data', async () => {
@@ -94,7 +95,7 @@ function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderB
 
         before('create instance', async () => {
           const cpkProvider = new CPKWeb3Provider({ web3: ueb3 });
-          cpk = await CPK.create({ cpkProvider, networks });
+          cpk = await CPK.create({ cpkProvider, networks, ownerAccount: defaultAccount });
         });
 
         before('warm instance', async () => {
