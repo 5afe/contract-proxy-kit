@@ -143,6 +143,13 @@ class CPKEthersProvider implements CPKProvider {
     }
   }
 
+  decodeError(revertData: string): string {
+    if (!revertData.startsWith('0x08c379a0'))
+      return revertData;
+
+    return this.ethers.utils.defaultAbiCoder.decode(['string'], `0x${revertData.slice(10)}`)[0];
+  }
+
   ethCall(
     opts: {
       from?: string;
@@ -189,15 +196,14 @@ class CPKEthersProvider implements CPKProvider {
     ]);
   }
 
-  async checkMethod(
+  async findSuccessfulGasLimit(
     contract: any,
     viewContract: any,
     methodName: string,
     params: Array<any>,
     sendOptions?: object,
     gasLimit?: number | string,
-    err?: Error,
-  ): Promise<number> {
+  ): Promise<number | undefined> {
     const callData = contract.interface.functions[methodName].encode(params);
     const from = await this.getOwnerAccount();
     const to = this.getContractAddress(contract);
@@ -213,7 +219,7 @@ class CPKEthersProvider implements CPKProvider {
     if (gasLimit == null) {
       const blockGasLimit = (await this.signer.provider.getBlock('latest')).gasLimit.toNumber();
 
-      if (!(await makeCallWithGas(blockGasLimit))) throw err;
+      if (!(await makeCallWithGas(blockGasLimit))) return;
 
       let gasLow = (await contract.estimate[methodName](...params)).toNumber();
       let gasHigh = blockGasLimit;
@@ -234,7 +240,7 @@ class CPKEthersProvider implements CPKProvider {
       }
 
       return gasLow;
-    } else if (!(await makeCallWithGas(Number(gasLimit)))) throw err;
+    } else if (!(await makeCallWithGas(Number(gasLimit)))) return;
 
     return Number(gasLimit);
   }

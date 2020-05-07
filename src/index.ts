@@ -130,91 +130,80 @@ class CPK {
       }
     } else {
       let to, value, data, operation;
+      let tryToGetRevertMessage = false;
+      let txFailErrorMessage = 'transaction execution expected to fail';
 
       if (standardizedTxs.length === 1) {
         ({
           to, value, data, operation,
         } = standardizedTxs[0]);
+
+        tryToGetRevertMessage = operation === OperationType.Call;
       } else {
         to = this.cpkProvider.getContractAddress(this.multiSend);
         value = 0;
         data = this.cpkProvider.encodeMultiSendCallData(standardizedTxs);
         operation = CPK.DelegateCall;
+        txFailErrorMessage = `batch ${txFailErrorMessage}`;
       }
 
+      let targetContract, targetViewContract, execMethodName, execParams;
       if (codeAtAddress !== '0x') {
-        gasLimit = await this.cpkProvider.checkMethod(
-          this.contract,
-          this.viewContract,
-          'execTransaction',
-          [
-            to,
-            value,
-            data,
-            operation,
-            0,
-            0,
-            0,
-            zeroAddress,
-            zeroAddress,
-            signatureForAddress(ownerAccount),
-          ],
-          sendOptions,
-          gasLimit,
-          new Error('batch transaction execution expected to fail'),
-        );
-  
-        return this.cpkProvider.execMethod(
-          this.contract,
-          'execTransaction',
-          [
-            to,
-            value,
-            data,
-            operation,
-            0,
-            0,
-            0,
-            zeroAddress,
-            zeroAddress,
-            signatureForAddress(ownerAccount),
-          ],
-          { ...sendOptions, gasLimit },
-        );
+        targetContract = this.contract;
+        targetViewContract = this.viewContract;
+        execMethodName = 'execTransaction';
+        execParams = [
+          to, value, data, operation,
+          0, 0, 0, zeroAddress, zeroAddress,
+          signatureForAddress(ownerAccount),
+        ];
       } else {
-        gasLimit = await this.cpkProvider.checkMethod(
-          this.proxyFactory,
-          this.viewProxyFactory,
-          'createProxyAndExecTransaction',
-          [
-            this.masterCopyAddress,
-            predeterminedSaltNonce,
-            this.fallbackHandlerAddress,
-            this.cpkProvider.getContractAddress(this.multiSend),
-            0,
-            this.cpkProvider.encodeMultiSendCallData(transactions),
-            CPK.DelegateCall,
-          ],
-          sendOptions,
-          gasLimit,
-          new Error('proxy creation and batch transaction execution expected to fail'),
-        );
-    
-        return this.cpkProvider.execMethod(
-          this.proxyFactory,
-          'createProxyAndExecTransaction',
-          [
-            this.masterCopyAddress,
-            predeterminedSaltNonce,
-            this.fallbackHandlerAddress,
-            this.cpkProvider.getContractAddress(this.multiSend),
-            0,
-            this.cpkProvider.encodeMultiSendCallData(transactions),
-            CPK.DelegateCall,
-          ],
-          { ...sendOptions, gasLimit },
-        );
+        txFailErrorMessage = `proxy creation and ${txFailErrorMessage}`;
+        targetContract = this.proxyFactory;
+        targetViewContract = this.viewProxyFactory;
+        execMethodName = 'createProxyAndExecTransaction';
+        execParams = [
+          this.masterCopyAddress,
+          predeterminedSaltNonce,
+          this.fallbackHandlerAddress,
+          this.cpkProvider.getContractAddress(this.multiSend),
+          0,
+          this.cpkProvider.encodeMultiSendCallData(transactions),
+          CPK.DelegateCall,
+        ];
       }
+
+      gasLimit = await this.cpkProvider.findSuccessfulGasLimit(
+        targetContract,
+        targetViewContract,
+        execMethodName,
+        execParams,
+        sendOptions,
+        gasLimit,
+      );
+
+      if (gasLimit == null) {
+        // no limit will result in a successful execution
+        if (tryToGetRevertMessage) {
+          try {
+            const revertData = await this.cpkProvider.getCallRevertData({
+              from: this.address, to, value, data, gasLimit: 6000000,
+            });
+            const errorMessage = this.cpkProvider.decodeError(revertData);
+            txFailErrorMessage = `${txFailErrorMessage}: ${ errorMessage }`;
+          } catch (e) {
+            // empty
+          }
+        }
+        throw new Error(txFailErrorMessage);
+      }
+
+      return this.cpkProvider.execMethod(
+        targetContract,
+        execMethodName,
+        execParams,
+        { ...sendOptions, gasLimit },
+      );
     }
   }
 }

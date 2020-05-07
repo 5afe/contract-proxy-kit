@@ -118,7 +118,7 @@ class CPKWeb3Provider implements CPKProvider {
   }
 
   async getCallRevertData({
-    from, to, value, data,
+    from, to, value, data, gasLimit,
   }: {
     from: string;
     to: string;
@@ -130,17 +130,18 @@ class CPKWeb3Provider implements CPKProvider {
       // throw with full error data if provider is Web3 1.x
       // by using a low level eth_call instead of web3.eth.call
       // this also handles Geth/Ganache --noVMErrorsOnRPCResponse
+      const payload: {
+        from: string;
+        to: string;
+        value?: string;
+        data: string;
+        gas?: string;
+      } = { from, to, data };
+      if (value != null) payload.value = this.web3.utils.toHex(value);
+      if (gasLimit != null) payload.gas = this.web3.utils.toHex(gasLimit);
       return await this.providerSend(
         'eth_call',
-        [
-          {
-            from,
-            to,
-            value,
-            data,
-          },
-          'latest',
-        ],
+        [payload, 'latest'],
       );
     } catch (e) {
       let errData = e.data;
@@ -160,22 +161,28 @@ class CPKWeb3Provider implements CPKProvider {
     }
   }
 
-  async checkMethod(
+  decodeError(revertData: string): string {
+    if (!revertData.startsWith('0x08c379a0'))
+      return revertData;
+
+    return this.web3.eth.abi.decodeParameters(['string'], `0x${revertData.slice(10)}`)[0];
+  }
+
+  async findSuccessfulGasLimit(
     contract: any,
     viewContract: any,
     methodName: string,
     params: Array<any>,
     sendOptions?: object,
     gasLimit?: number | string,
-    err?: Error,
-  ): Promise<number> {
+  ): Promise<number | undefined> {
     const txObj = contract.methods[methodName](...params);
 
     if (gasLimit == null) {
       const blockGasLimit = (await this.web3.eth.getBlock('latest')).gasLimit;
 
       const gasEstimateOptions = { ...sendOptions, gas: blockGasLimit };
-      if (!(await txObj.call(gasEstimateOptions))) throw err;
+      if (!(await txObj.call(gasEstimateOptions))) return;
 
       let gasLow = Number(await txObj.estimateGas(gasEstimateOptions));
       let gasHigh = blockGasLimit;
@@ -200,7 +207,7 @@ class CPKWeb3Provider implements CPKProvider {
 
       return gasLow;
 
-    } else if (!(await txObj.call({ ...sendOptions, gas: gasLimit }))) throw err;
+    } else if (!(await txObj.call({ ...sendOptions, gas: gasLimit }))) return;
 
     return Number(gasLimit);
   }

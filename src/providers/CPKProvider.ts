@@ -49,15 +49,16 @@ interface CPKProvider {
     gasLimit?: number | string;
   }): Promise<string>;
 
-  checkMethod(
+  decodeError(revertData: string): string;
+
+  findSuccessfulGasLimit(
     contract: any,
     viewContract: any,
     methodName: string,
     params: Array<any>,
     sendOptions?: object,
     gasLimit?: number | string,
-    err?: Error,
-  ): Promise<number>;
+  ): Promise<number | undefined>;
 
   execMethod(
     contract: any,
