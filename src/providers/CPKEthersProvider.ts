@@ -143,24 +143,107 @@ class CPKEthersProvider implements CPKProvider {
     }
   }
 
+  ethCall(
+    opts: {
+      from?: string;
+      to: string;
+      gas?: number | string | object;
+      gasLimit?: number | string | object;
+      gasPrice?: number | string | object;
+      value?: number | string | object;
+      data?: string;
+    },
+    block: number | string,
+  ): Promise<string> {
+    // This is to workaround https://github.com/ethers-io/ethers.js/issues/819
+    const toHex = (v: number | string | object): string =>
+      `0x${Number(v.toString()).toString(16)}`;
+    const formattedOpts: {
+      from?: string;
+      to: string;
+      gas?: string;
+      gasPrice?: string;
+      value?: string;
+      data?: string;
+    } = { to: opts.to };
+    if (opts.from != null) formattedOpts.from = opts.from;
+    if (opts.to != null) formattedOpts.to = opts.to;
+    if (opts.gas != null) {
+      if (opts.gasLimit != null)
+        throw new Error(`specified both gas and gasLimit on eth_call params: ${
+          JSON.stringify(opts, null, 2)
+        }`);
+      formattedOpts.gas = toHex(opts.gas);
+    } else if (opts.gasLimit != null) {
+      formattedOpts.gas = toHex(opts.gasLimit);
+    }
+    if (opts.value != null) {
+      formattedOpts.value = toHex(opts.value);
+    }
+    if (opts.data != null) {
+      formattedOpts.data = opts.data;
+    }
+    return this.signer.provider.send('eth_call', [
+      formattedOpts,
+      block,
+    ]);
+  }
+
   async checkMethod(
     contract: any,
     viewContract: any,
     methodName: string,
     params: Array<any>,
-    sendOptions: {
-      gasLimit?: number | string;
-    },
-    err: Error,
-  ): Promise<void> {
-    if (!(await viewContract.functions[methodName](...params))) throw err;
+    sendOptions?: object,
+    gasLimit?: number | string,
+    err?: Error,
+  ): Promise<number> {
+    const callData = contract.interface.functions[methodName].encode(params);
+    const from = await this.getOwnerAccount();
+    const to = this.getContractAddress(contract);
+    const makeCallWithGas = async (gas: number): Promise<boolean> =>
+      !!Number(await this.ethCall({
+        ...sendOptions,
+        from,
+        to,
+        gas,
+        data: callData,
+      }, 'latest'));
+
+    if (gasLimit == null) {
+      const blockGasLimit = (await this.signer.provider.getBlock('latest')).gasLimit.toNumber();
+
+      if (!(await makeCallWithGas(blockGasLimit))) throw err;
+
+      let gasLow = (await contract.estimate[methodName](...params)).toNumber();
+      let gasHigh = blockGasLimit;
+
+      if (!(await makeCallWithGas(gasLow))) {
+        while (gasLow <= gasHigh) {
+          const testGasLimit = Math.floor((gasLow + gasHigh) * 0.5);
+
+          if (await makeCallWithGas(testGasLimit)) {
+            // values > gasHigh will work
+            gasHigh = testGasLimit - 1;
+          } else {
+            // values <= gasLow will work
+            gasLow = testGasLimit + 1;
+          }
+        }
+        // gasLow is now our target gas value
+      }
+
+      return gasLow;
+    } else if (!(await makeCallWithGas(Number(gasLimit)))) throw err;
+
+    return Number(gasLimit);
   }
 
   async execMethod(
     contract: any,
     methodName: string,
     params: Array<any>,
-    sendOptions: {
+    sendOptions?: {
       gasLimit?: number | string;
     }
   ): Promise<EthersTransactionResult> {
@@ -220,7 +303,7 @@ class CPKEthersProvider implements CPKProvider {
   }
 
   // eslint-disable-next-line
-  getSendOptions(options: object, ownerAccount: string): object {
+  getSendOptions(ownerAccount: string, options?: object): object | undefined {
     return options;
   }
 

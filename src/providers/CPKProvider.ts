@@ -54,17 +54,16 @@ interface CPKProvider {
     viewContract: any,
     methodName: string,
     params: Array<any>,
-    sendOptions: {
-      gasLimit?: number | string;
-    },
-    err: Error,
-  ): Promise<void>;
+    sendOptions?: object,
+    gasLimit?: number | string,
+    err?: Error,
+  ): Promise<number>;
 
   execMethod(
     contract: any,
     methodName: string,
     params: Array<any>,
-    sendOptions: {
+    sendOptions?: {
       gasLimit?: number | string;
     }
   ): Promise<TransactionResult>;
@@ -73,7 +72,7 @@ interface CPKProvider {
 
   attemptSafeProviderSendTx(
     tx: SafeProviderSendTransaction,
-    options: object
+    options?: object
   ): Promise<TransactionResult>;
 
   attemptSafeProviderMultiSendTxs(
@@ -82,7 +81,7 @@ interface CPKProvider {
 
   encodeMultiSendCallData(transactions: NonStandardTransaction[]): string;
 
-  getSendOptions(options: object, ownerAccount: string): object;
+  getSendOptions(ownerAccount: string, options?: object): object | undefined;
 }
 
 export default CPKProvider;

@@ -3,7 +3,7 @@ import { predeterminedSaltNonce, zeroAddress } from '../utils/constants';
 import {
   standardizeTransactions,
   NonStandardTransaction,
-  SafeProviderSendTransaction
+  SafeProviderSendTransaction,
 } from '../utils/transactions';
 import cpkFactoryAbi from '../abis/CpkFactoryAbi.json';
 import safeAbi from '../abis/SafeAbi.json';
@@ -14,7 +14,7 @@ interface CPKWeb3ProviderConfig {
 }
 
 interface Web3TransactionResult extends TransactionResult {
-  sendOptions: object;
+  sendOptions?: object;
   promiEvent: Promise<any>;
 }
 
@@ -89,7 +89,7 @@ class CPKWeb3Provider implements CPKProvider {
     return contract.options.address;
   }
 
-  static promiEventToPromise(promiEvent: any, sendOptions: object): Promise<Web3TransactionResult> {
+  static promiEventToPromise(promiEvent: any, sendOptions?: object): Promise<Web3TransactionResult> {
     return new Promise(
       (resolve, reject) => promiEvent.once(
         'transactionHash',
@@ -165,26 +165,58 @@ class CPKWeb3Provider implements CPKProvider {
     viewContract: any,
     methodName: string,
     params: Array<any>,
-    sendOptions: {
-      gasLimit?: number | string;
-    },
-    err: Error,
-  ): Promise<void> {
-    if (!(await contract.methods[methodName](...params).call(sendOptions))) throw err;
+    sendOptions?: object,
+    gasLimit?: number | string,
+    err?: Error,
+  ): Promise<number> {
+    const txObj = contract.methods[methodName](...params);
+
+    if (gasLimit == null) {
+      const blockGasLimit = (await this.web3.eth.getBlock('latest')).gasLimit;
+
+      const gasEstimateOptions = { ...sendOptions, gas: blockGasLimit };
+      if (!(await txObj.call(gasEstimateOptions))) throw err;
+
+      let gasLow = Number(await txObj.estimateGas(gasEstimateOptions));
+      let gasHigh = blockGasLimit;
+
+      gasEstimateOptions.gas = gasLow;
+
+      if (!(await txObj.call(gasEstimateOptions))) {
+        while (gasLow <= gasHigh) {
+          const testGasLimit = Math.floor((gasLow + gasHigh) * 0.5);
+          gasEstimateOptions.gas = testGasLimit;
+
+          if (await txObj.call(gasEstimateOptions)) {
+            // values > gasHigh will work
+            gasHigh = testGasLimit - 1;
+          } else {
+            // values <= gasLow will work
+            gasLow = testGasLimit + 1;
+          }
+        }
+        // gasLow is now our target gas value
+      }
+
+      return gasLow;
+
+    } else if (!(await txObj.call({ ...sendOptions, gas: gasLimit }))) throw err;
+
+    return Number(gasLimit);
   }
 
   async execMethod(
     contract: any,
     methodName: string,
     params: Array<any>,
-    sendOptions: {
+    sendOptions?: {
       gasLimit?: number | string;
     }
   ): Promise<Web3TransactionResult> {
 
     const txObject = contract.methods[methodName](...params);
-    const gasLimit = sendOptions.gasLimit || await txObject.estimateGas(sendOptions);
-    const actualSendOptions = { gasLimit, ...sendOptions };
+    const gasLimit = sendOptions && (sendOptions.gasLimit || await txObject.estimateGas(sendOptions));
+    const actualSendOptions = { ...sendOptions, gas: gasLimit };
     const promiEvent = txObject.send(actualSendOptions);
 
     return CPKWeb3Provider.promiEventToPromise(promiEvent, sendOptions);
@@ -246,7 +278,7 @@ class CPKWeb3Provider implements CPKProvider {
     ).encodeABI();
   }
 
-  getSendOptions(options: object, ownerAccount: string): object {
+  getSendOptions(ownerAccount: string, options?: object): object | undefined {
     return {
       from: ownerAccount,
       ...(options || {}),

@@ -101,7 +101,10 @@ class CPK {
 
   async execTransactions(
     transactions: NonStandardTransaction[],
-    options: object
+    options?: {
+      gasLimit?: number | string;
+      gas?: number | string;
+    }
   ): Promise<any> {
     const signatureForAddress = (address: string): string => `0x000000000000000000000000${
       address.replace(/^0x/, '').toLowerCase()
@@ -109,7 +112,8 @@ class CPK {
 
     const ownerAccount = await this.getOwnerAccount();
     const codeAtAddress = await this.cpkProvider.getCodeAtAddress(this.contract);
-    const sendOptions = await this.cpkProvider.getSendOptions(options, ownerAccount);
+    let gasLimit = options && (options.gasLimit || options.gas);
+    const sendOptions = await this.cpkProvider.getSendOptions(ownerAccount, options);
 
     const standardizedTxs = standardizeTransactions(transactions);
 
@@ -139,7 +143,7 @@ class CPK {
       }
 
       if (codeAtAddress !== '0x') {
-        await this.cpkProvider.checkMethod(
+        gasLimit = await this.cpkProvider.checkMethod(
           this.contract,
           this.viewContract,
           'execTransaction',
@@ -156,6 +160,7 @@ class CPK {
             signatureForAddress(ownerAccount),
           ],
           sendOptions,
+          gasLimit,
           new Error('batch transaction execution expected to fail'),
         );
   
@@ -174,10 +179,10 @@ class CPK {
             zeroAddress,
             signatureForAddress(ownerAccount),
           ],
-          sendOptions,
+          { ...sendOptions, gasLimit },
         );
       } else {
-        await this.cpkProvider.checkMethod(
+        gasLimit = await this.cpkProvider.checkMethod(
           this.proxyFactory,
           this.viewProxyFactory,
           'createProxyAndExecTransaction',
@@ -191,6 +196,7 @@ class CPK {
             CPK.DelegateCall,
           ],
           sendOptions,
+          gasLimit,
           new Error('proxy creation and batch transaction execution expected to fail'),
         );
     
@@ -206,7 +212,7 @@ class CPK {
             this.cpkProvider.encodeMultiSendCallData(transactions),
             CPK.DelegateCall,
           ],
-          sendOptions,
+          { ...sendOptions, gasLimit },
         );
       }
     }
