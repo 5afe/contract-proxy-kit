@@ -76,11 +76,11 @@ contract('CPK', ([defaultAccount, safeOwner]) => {
             params: [{
               from: safeOwner,
               to: safeAddress,
-              // Use 3M as default gas limit in this mock provider
+              // Override with 3M as gas limit in this mock provider
               // as Safe app/gas relayer ultimately has control over
               // this parameter, so we just set it to some value that
               // should allow all txs in this test suite to work.
-              gas: gas || web3.utils.toHex(3e6),
+              gas: web3.utils.toHex(3e6),
               gasPrice,
               value,
               nonce,
@@ -171,7 +171,7 @@ contract('CPK', ([defaultAccount, safeOwner]) => {
             zeroAddress,
             zeroAddress,
             safeSignature,
-            { from: safeOwner },
+            { from: safeOwner, gas: web3.utils.toHex(3e6) },
           ).then(({ tx }) => callback(null, { id, jsonrpc, result: tx }), callback);
         }
 
