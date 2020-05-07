@@ -172,7 +172,7 @@ contract('CPK', ([defaultAccount, safeOwner]) => {
             zeroAddress,
             safeSignature,
             { from: safeOwner },
-          ).then((result) => callback(null, { id, jsonrpc, result }), callback);
+          ).then(({ tx }) => callback(null, { id, jsonrpc, result: tx }), callback);
         }
 
         return web3.currentProvider.send(rpcData, callback);
