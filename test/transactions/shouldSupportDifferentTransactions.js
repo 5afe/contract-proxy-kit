@@ -12,9 +12,9 @@ function shouldSupportDifferentTransactions({
   fromWei,
   getTransactionCount,
   getBalance,
-  getGasUsed,
   testedTxObjProps,
   checkTxObj,
+  waitTxReceipt,
   ownerIsRecognizedContract,
   executor,
 }) {
@@ -70,29 +70,29 @@ function shouldSupportDifferentTransactions({
     it('can execute a single transaction', async () => {
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
 
-      await cpk.execTransactions([{
+      await waitTxReceipt(await cpk.execTransactions([{
         to: multiStep.address,
         data: multiStep.contract.methods.doStep(1).encodeABI(),
-      }]);
+      }]));
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(1);
     });
 
     it('can execute deep transactions', async () => {
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
       const numSteps = 10;
-      await cpk.execTransactions([
+      await waitTxReceipt(await cpk.execTransactions([
         {
           to: multiStep.address,
           data: multiStep.contract.methods.doDeepStep(numSteps, numSteps, cpk.address).encodeABI(),
         }
-      ]);
+      ]));
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(numSteps);
     });
 
     it('can batch transactions together', async () => {
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
 
-      await cpk.execTransactions([
+      await waitTxReceipt(await cpk.execTransactions([
         {
           to: multiStep.address,
           data: multiStep.contract.methods.doStep(1).encodeABI(),
@@ -100,14 +100,14 @@ function shouldSupportDifferentTransactions({
           to: multiStep.address,
           data: multiStep.contract.methods.doStep(2).encodeABI(),
         },
-      ]);
+      ]));
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(2);
     });
 
     it('can batch ERC20 transactions', async () => {
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
 
-      await cpk.execTransactions([
+      await waitTxReceipt(await cpk.execTransactions([
         {
           to: erc20.address,
           data: erc20.contract.methods.transferFrom(proxyOwner, cpk.address, `${3e18}`).encodeABI(),
@@ -124,7 +124,7 @@ function shouldSupportDifferentTransactions({
           to: multiStep.address,
           data: multiStep.contract.methods.doERC20Step(2, erc20.address).encodeABI(),
         },
-      ]);
+      ]));
 
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(2);
 
@@ -141,7 +141,7 @@ function shouldSupportDifferentTransactions({
       const questionId = randomHexWord();
       const conditionId = getConditionId(cpk.address, questionId, 2);
 
-      await cpk.execTransactions([
+      await waitTxReceipt(await cpk.execTransactions([
         {
           to: erc20.address,
           data: erc20.contract.methods.transferFrom(proxyOwner, cpk.address, `${3e18}`).encodeABI(),
@@ -168,7 +168,7 @@ function shouldSupportDifferentTransactions({
             `${1e18}`,
           ).encodeABI(),
         },
-      ]);
+      ]));
 
       if (cpk.address === proxyOwner) {
         fromWei(await erc20.balanceOf(cpk.address)).should.equal(99);
@@ -236,7 +236,8 @@ function shouldSupportDifferentTransactions({
         }],
         { gasPrice },
       );
-      const gasUsed = await getGasUsed(txObj);
+      const receipt = await waitTxReceipt(txObj);
+      const { gasUsed } = receipt;
 
       const endingBalance = await getBalance(executor || proxyOwner);
       const gasCosts = startingBalance.sub(endingBalance).toNumber();
@@ -264,7 +265,8 @@ function shouldSupportDifferentTransactions({
         ],
         { gasPrice },
       );
-      const gasUsed = await getGasUsed(txObj);
+      const receipt = await waitTxReceipt(txObj);
+      const { gasUsed } = receipt;
 
       const endingBalance = await getBalance(executor || proxyOwner);
       const gasCosts = startingBalance.sub(endingBalance).toNumber();

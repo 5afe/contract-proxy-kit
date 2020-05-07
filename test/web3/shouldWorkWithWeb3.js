@@ -22,14 +22,17 @@ function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderB
       testedTxObjProps: 'the PromiEvent for the transaction and the hash',
       getBalance: (address) => web3Box[0].eth.getBalance(address)
         .then((balance) => web3Box[0].utils.toBN(balance)),
-      getGasUsed: ({ promiEvent }) => new Promise(
-        (resolve, reject) => promiEvent
-          .on('confirmation', (confNumber, receipt) => resolve(receipt.gasUsed))
-          .on('error', reject),
-      ),
       checkTxObj: ({ promiEvent, hash }) => {
         should.exist(promiEvent);
         should.exist(hash);
+      },
+      waitTxReceipt: async ({ hash }) => {
+        let receipt = await web3Box[0].eth.getTransactionReceipt(hash);
+        while (receipt == null) {
+          await new Promise((resolve) => setTimeout(resolve, 50));
+          receipt = await web3Box[0].eth.getTransactionReceipt(hash);
+        }
+        return receipt;
       },
     });
 

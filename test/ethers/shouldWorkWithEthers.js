@@ -37,14 +37,12 @@ function shouldWorkWithEthers(ethers, defaultAccount, safeOwner, gnosisSafeProvi
       fromWei: (amount) => Number(ethers.utils.formatUnits(amount.toString(), 'ether')),
       getTransactionCount: signer.provider.getTransactionCount.bind(signer.provider),
       getBalance: signer.provider.getBalance.bind(signer.provider),
-      getGasUsed: async ({ transactionResponse }) => (
-        await transactionResponse.wait()
-      ).gasUsed.toNumber(),
       testedTxObjProps: 'the TransactionResponse and the hash',
       checkTxObj: ({ transactionResponse, hash }) => {
         should.exist(transactionResponse);
         should.exist(hash);
       },
+      waitTxReceipt: ({ hash }) => signer.provider.waitForTransaction(hash),
     });
 
     let multiStep;
