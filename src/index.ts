@@ -1,10 +1,10 @@
 import { OperationType, zeroAddress, predeterminedSaltNonce } from './utils/constants';
 import { defaultNetworks, NetworksConfig } from './utils/networks';
-import { standardizeTransactions, SafeProviderSendTransaction, NonStandardTransaction } from './utils/transactions';
-import CPKProvider from './providers/CPKProvider';
+import { standardizeTransactions, SafeProviderSendTransaction, Transaction } from './utils/transactions';
+import EthLibAdapter, { Contract, Address, TransactionResult } from './eth-lib-adapters/EthLibAdapter';
 
 interface CPKConfig {
-  cpkProvider: CPKProvider;
+  ethLibAdapter: EthLibAdapter;
   ownerAccount?: string;
   networks?: NetworksConfig;
 }
@@ -13,16 +13,16 @@ class CPK {
   static Call = OperationType.Call;
   static DelegateCall = OperationType.DelegateCall;
 
-  cpkProvider: CPKProvider;
-  ownerAccount?: string;
+  ethLibAdapter: EthLibAdapter;
+  ownerAccount?: Address;
   networks: NetworksConfig;
-  multiSend: any;
-  contract: any;
-  viewContract: any;
-  proxyFactory: any;
-  viewProxyFactory: any;
-  masterCopyAddress?: string;
-  fallbackHandlerAddress?: string;
+  multiSend: Contract;
+  contract: Contract;
+  viewContract: Contract;
+  proxyFactory: Contract;
+  viewProxyFactory: Contract;
+  masterCopyAddress?: Address;
+  fallbackHandlerAddress?: Address;
   isConnectedToSafe = false;
   
   static async create(opts: CPKConfig): Promise<CPK> {
@@ -33,14 +33,14 @@ class CPK {
   }
   
   constructor({
-    cpkProvider,
+    ethLibAdapter,
     ownerAccount,
     networks,
   }: CPKConfig) {
-    if (!cpkProvider) {
-      throw new Error('cpkProvider property missing from options');
+    if (!ethLibAdapter) {
+      throw new Error('ethLibAdapter property missing from options');
     }
-    this.cpkProvider = cpkProvider;
+    this.ethLibAdapter = ethLibAdapter;
     
     this.setOwnerAccount(ownerAccount);
     this.networks = {
@@ -50,7 +50,7 @@ class CPK {
   }
 
   async init(): Promise<void> {
-    const networkId = await this.cpkProvider.getNetworkId();
+    const networkId = await this.ethLibAdapter.getNetworkId();
     const network = this.networks[networkId];
 
     if (!network) {
@@ -62,7 +62,7 @@ class CPK {
 
     const ownerAccount = await this.getOwnerAccount();
 
-    const provider = this.cpkProvider.getProvider();
+    const provider = this.ethLibAdapter.getProvider();
     const wc = provider && (provider.wc || (provider.connection && provider.connection.wc));
     if (
       wc && wc.peerMeta && wc.peerMeta.name
@@ -71,7 +71,7 @@ class CPK {
       this.isConnectedToSafe = true;
     }
 
-    const initializedCpkProvider = await this.cpkProvider.init({
+    const initializedCpkProvider = await this.ethLibAdapter.init({
       isConnectedToSafe: this.isConnectedToSafe,
       ownerAccount,
       masterCopyAddress: network.masterCopyAddress,
@@ -86,34 +86,34 @@ class CPK {
     this.viewProxyFactory = initializedCpkProvider.viewProxyFactory;
   }
 
-  async getOwnerAccount(): Promise<string> {
+  async getOwnerAccount(): Promise<Address> {
     if (this.ownerAccount) return this.ownerAccount;
-    return this.cpkProvider.getOwnerAccount();
+    return this.ethLibAdapter.getOwnerAccount();
   }
 
-  setOwnerAccount(ownerAccount?: string): void {
+  setOwnerAccount(ownerAccount?: Address): void {
     this.ownerAccount = ownerAccount;
   }
 
-  get address(): string {
-    return this.cpkProvider.getContractAddress(this.contract);
+  get address(): Address {
+    return this.ethLibAdapter.getContractAddress(this.contract);
   }
 
   async execTransactions(
-    transactions: NonStandardTransaction[],
+    transactions: Transaction[],
     options?: {
       gasLimit?: number | string;
       gas?: number | string;
     }
-  ): Promise<any> {
+  ): Promise<TransactionResult> {
     const signatureForAddress = (address: string): string => `0x000000000000000000000000${
       address.replace(/^0x/, '').toLowerCase()
     }000000000000000000000000000000000000000000000000000000000000000001`;
 
     const ownerAccount = await this.getOwnerAccount();
-    const codeAtAddress = await this.cpkProvider.getCodeAtAddress(this.contract);
+    const codeAtAddress = await this.ethLibAdapter.getCode(this.address);
     let gasLimit = options && (options.gasLimit || options.gas);
-    const sendOptions = await this.cpkProvider.getSendOptions(ownerAccount, options);
+    const sendOptions = await this.ethLibAdapter.getSendOptions(ownerAccount, options);
 
     const standardizedTxs = standardizeTransactions(transactions);
 
@@ -123,10 +123,10 @@ class CPK {
       );
 
       if (standardizedTxs.length === 1 && standardizedTxs[0].operation === CPK.Call) {
-        return this.cpkProvider.attemptSafeProviderSendTx(connectedSafeTxs[0], sendOptions);
+        return this.ethLibAdapter.attemptSafeProviderSendTx(connectedSafeTxs[0], sendOptions);
       } else {
         // NOTE: DelegateCalls get converted to Calls here
-        return this.cpkProvider.attemptSafeProviderMultiSendTxs(connectedSafeTxs);
+        return this.ethLibAdapter.attemptSafeProviderMultiSendTxs(connectedSafeTxs);
       }
     } else {
       let to, value, data, operation;
@@ -140,9 +140,9 @@ class CPK {
 
         tryToGetRevertMessage = operation === OperationType.Call;
       } else {
-        to = this.cpkProvider.getContractAddress(this.multiSend);
+        to = this.ethLibAdapter.getContractAddress(this.multiSend);
         value = 0;
-        data = this.cpkProvider.encodeMultiSendCallData(standardizedTxs);
+        data = this.ethLibAdapter.encodeMultiSendCallData(standardizedTxs);
         operation = CPK.DelegateCall;
         txFailErrorMessage = `batch ${txFailErrorMessage}`;
       }
@@ -166,14 +166,14 @@ class CPK {
           this.masterCopyAddress,
           predeterminedSaltNonce,
           this.fallbackHandlerAddress,
-          this.cpkProvider.getContractAddress(this.multiSend),
+          this.ethLibAdapter.getContractAddress(this.multiSend),
           0,
-          this.cpkProvider.encodeMultiSendCallData(transactions),
+          this.ethLibAdapter.encodeMultiSendCallData(transactions),
           CPK.DelegateCall,
         ];
       }
 
-      gasLimit = await this.cpkProvider.findSuccessfulGasLimit(
+      gasLimit = await this.ethLibAdapter.findSuccessfulGasLimit(
         targetContract,
         targetViewContract,
         execMethodName,
@@ -186,10 +186,10 @@ class CPK {
         // no limit will result in a successful execution
         if (tryToGetRevertMessage) {
           try {
-            const revertData = await this.cpkProvider.getCallRevertData({
+            const revertData = await this.ethLibAdapter.getCallRevertData({
               from: this.address, to, value, data, gasLimit: 6000000,
             });
-            const errorMessage = this.cpkProvider.decodeError(revertData);
+            const errorMessage = this.ethLibAdapter.decodeError(revertData);
             txFailErrorMessage = `${txFailErrorMessage}: ${ errorMessage }`;
           } catch (e) {
             // empty
@@ -198,7 +198,7 @@ class CPK {
         throw new Error(txFailErrorMessage);
       }
 
-      return this.cpkProvider.execMethod(
+      return this.ethLibAdapter.execMethod(
         targetContract,
         execMethodName,
         execParams,

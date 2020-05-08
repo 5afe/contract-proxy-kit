@@ -1,15 +1,15 @@
-import CPKProvider, { CPKProviderInit, CPKProviderInitResult, TransactionResult } from './CPKProvider';
+import EthLibAdapter, { EthLibAdapterInitParams, EthLibAdapterInitResult, TransactionResult, Abi, Address, Contract } from './EthLibAdapter';
 import { zeroAddress, predeterminedSaltNonce } from '../utils/constants';
 import {
   standardizeTransactions,
-  NonStandardTransaction,
+  Transaction,
   SafeProviderSendTransaction
 } from '../utils/transactions';
 import cpkFactoryAbi from '../abis/CpkFactoryAbi.json';
 import safeAbi from '../abis/SafeAbi.json';
 import multiSendAbi from '../abis/MultiSendAbi.json';
 
-interface CPKEthersProviderConfig {
+interface EthersAdapterConfig {
   ethers: any;
   signer: any;
 }
@@ -18,11 +18,11 @@ interface EthersTransactionResult extends TransactionResult {
   transactionResponse: object;
 }
 
-class CPKEthersProvider implements CPKProvider {
+class EthersAdapter implements EthLibAdapter {
   ethers: any;
   signer: any;
 
-  constructor({ ethers, signer }: CPKEthersProviderConfig) {
+  constructor({ ethers, signer }: EthersAdapterConfig) {
     if (!ethers) {
       throw new Error('ethers property missing from options');
     }
@@ -35,12 +35,9 @@ class CPKEthersProvider implements CPKProvider {
 
   async init({
     isConnectedToSafe, ownerAccount, masterCopyAddress, proxyFactoryAddress, multiSendAddress,
-  }: CPKProviderInit): Promise<CPKProviderInitResult> {
-    const abiToViewAbi = (abi: any): object[] => abi.map(({
-      constant, // eslint-disable-line
-      stateMutability, // eslint-disable-line
-      ...rest
-    }: any) => Object.assign(rest, {
+  }: EthLibAdapterInitParams): Promise<EthLibAdapterInitResult> {
+    const abiToViewAbi = (abi: Abi): Abi => abi.map((fnDesc) => ({
+      ...fnDesc,
       constant: true,
       stateMutability: 'view',
     }));
@@ -97,28 +94,28 @@ class CPKEthersProvider implements CPKProvider {
     return (await this.signer.provider.getNetwork()).chainId;
   }
 
-  async getOwnerAccount(): Promise<string> {
+  async getOwnerAccount(): Promise<Address> {
     return this.signer.getAddress();
   }
 
-  async getCodeAtAddress(contract: any): Promise<string> {
-    return this.signer.provider.getCode(this.getContractAddress(contract));
+  getCode(address: Address): Promise<string> {
+    return this.signer.provider.getCode(address);
   }
 
-  getContract(abi: Array<object>, address: string): any {
+  getContract(abi: Abi, address: Address): Contract {
     const contract = new this.ethers.Contract(address, abi, this.signer);
     return contract;
   }
 
-  getContractAddress(contract: any): string {
+  getContractAddress(contract: Contract): string {
     return contract.address;
   }
 
   async getCallRevertData({
     from, to, value, data,
   }: {
-    from: string;
-    to: string;
+    from: Address;
+    to: Address;
     value?: number | string;
     data: string;
     gasLimit?: number | string;
@@ -197,10 +194,10 @@ class CPKEthersProvider implements CPKProvider {
   }
 
   async findSuccessfulGasLimit(
-    contract: any,
-    viewContract: any,
+    contract: Contract,
+    viewContract: Contract,
     methodName: string,
-    params: Array<any>,
+    params: any[],
     sendOptions?: object,
     gasLimit?: number | string,
   ): Promise<number | undefined> {
@@ -246,9 +243,9 @@ class CPKEthersProvider implements CPKProvider {
   }
 
   async execMethod(
-    contract: any,
+    contract: Contract,
     methodName: string,
-    params: Array<any>,
+    params: any[],
     sendOptions?: {
       gasLimit?: number | string;
     }
@@ -260,19 +257,19 @@ class CPKEthersProvider implements CPKProvider {
     return { transactionResponse, hash: transactionResponse.hash };
   }
 
-  encodeAttemptTransaction(contractAbi: object[], methodName: string, params: any[]): string {
+  encodeAttemptTransaction(contractAbi: Abi, methodName: string, params: any[]): string {
     const iface = new this.ethers.utils.Interface(contractAbi);
     const payload = iface.functions[methodName].encode(params);
     return payload;
   }
 
   async attemptSafeProviderSendTx(
-    txObj: SafeProviderSendTransaction,
-    options: object
+    tx: SafeProviderSendTransaction,
+    options?: object
   ): Promise<EthersTransactionResult> {
     const transactionResponse = await this.signer.sendTransaction({
-      ...txObj,
-      ...(options || {}),
+      ...tx,
+      ...options,
     });
     return { transactionResponse, hash: transactionResponse.hash };
   }
@@ -284,7 +281,7 @@ class CPKEthersProvider implements CPKProvider {
     return { hash };
   }
 
-  encodeMultiSendCallData(transactions: NonStandardTransaction[]): string {
+  encodeMultiSendCallData(transactions: Transaction[]): string {
     const multiSend = this.getContract(multiSendAbi, zeroAddress);
     const standardizedTxs = standardizeTransactions(transactions);
 
@@ -309,20 +306,9 @@ class CPKEthersProvider implements CPKProvider {
   }
 
   // eslint-disable-next-line
-  getSendOptions(ownerAccount: string, options?: object): object | undefined {
+  getSendOptions(ownerAccount: Address, options?: object): object | undefined {
     return options;
-  }
-
-  async getGasPrice(): Promise<number> {
-    const gasPrice = await this.signer.provider.getGasPrice();
-    return gasPrice.toNumber();
-  }
-
-  async getSafeNonce(safeAddress: string): Promise<number> {
-    const safeContract = this.getContract(safeAbi, safeAddress);
-    const nonce = (await safeContract.nonce()).toNumber();
-    return nonce;
   }
 }
 
-export default CPKEthersProvider;
+export default EthersAdapter;

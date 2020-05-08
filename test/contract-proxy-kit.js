@@ -193,8 +193,8 @@ contract('CPK', ([coinbase, defaultAccount, safeOwner]) => {
     await CPK.create().should.be.rejectedWith('missing options');
   });
 
-  it('should not produce CPK instances when cpkProvider not provided', async () => {
-    await CPK.create({}).should.be.rejectedWith('cpkProvider property missing from options');
+  it('should not produce CPK instances when ethLibAdapter not provided', async () => {
+    await CPK.create({}).should.be.rejectedWith('ethLibAdapter property missing from options');
   });
 
   web3Versions.forEach((Web3) => {
