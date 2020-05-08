@@ -18,6 +18,10 @@ function shouldWorkWithEthers(ethers, defaultAccount, safeOwner, gnosisSafeProvi
       checkAddressChecksum: (address) => ethers.utils.getAddress(address) === address,
       sendTransaction: async ({ from, gas, ...txObj }) => {
         const signer = signerBox[0];
+        const expectedFrom = await signer.getAddress();
+        if (from != null && from.toLowerCase() !== expectedFrom.toLowerCase()) {
+          throw new Error(`from ${from} doesn't match signer ${expectedFrom}`);
+        }
 
         if (signer.constructor.name === 'JsonRpcSigner') {
           // mock WalletConnected Gnosis Safe provider

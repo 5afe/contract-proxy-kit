@@ -89,7 +89,10 @@ class CPKWeb3Provider implements CPKProvider {
     return contract.options.address;
   }
 
-  static promiEventToPromise(promiEvent: any, sendOptions?: object): Promise<Web3TransactionResult> {
+  static promiEventToPromise(
+    promiEvent: any,
+    sendOptions?: object,
+  ): Promise<Web3TransactionResult> {
     return new Promise(
       (resolve, reject) => promiEvent.once(
         'transactionHash',
@@ -222,7 +225,9 @@ class CPKWeb3Provider implements CPKProvider {
   ): Promise<Web3TransactionResult> {
 
     const txObject = contract.methods[methodName](...params);
-    const gasLimit = sendOptions && (sendOptions.gasLimit || await txObject.estimateGas(sendOptions));
+    const gasLimit = sendOptions && (
+      sendOptions.gasLimit || await txObject.estimateGas(sendOptions)
+    );
     const actualSendOptions = { ...sendOptions, gas: gasLimit };
     const promiEvent = txObject.send(actualSendOptions);
 

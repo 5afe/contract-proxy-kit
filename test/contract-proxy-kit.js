@@ -65,7 +65,7 @@ contract('CPK', ([coinbase, defaultAccount, safeOwner]) => {
 
         if (method === 'eth_sendTransaction') {
           const [{
-            from, to, gas, gasPrice, value, data, nonce,
+            from, to, gasPrice, value, data, nonce,
           }] = params;
 
           if (from.toLowerCase() !== safeAddress.toLowerCase()) {
