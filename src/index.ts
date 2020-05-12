@@ -232,7 +232,7 @@ class CPK {
       );
 
       if (gasLimit == null) {
-        // no limit will result in a successful execution
+        // there's no limit that will result in a successful execution
         if (tryToGetRevertMessage) {
           try {
             const revertData = await this.ethLibAdapter.getCallRevertData({

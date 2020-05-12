@@ -135,9 +135,9 @@ class Web3Adapter extends EthLibAdapter {
 
   async getCallRevertData(tx: EthCallTx, block: string | number): Promise<string> {
     try {
-      // throw with full error data if provider is Web3 1.x
-      // by using a low level eth_call instead of web3.eth.call
-      // this also handles Geth/Ganache --noVMErrorsOnRPCResponse
+      // this block handles Geth/Ganache --noVMErrorsOnRPCResponse
+      // use a low level eth_call instead of web3.eth.call so
+      // full error data from eth node is available if provider is Web3 1.x
       return await this.providerSend(
         'eth_call',
         [formatCallTx(tx), block],
