@@ -1,7 +1,11 @@
-import { OperationType, zeroAddress, predeterminedSaltNonce } from './utils/constants';
+import { OperationType, zeroAddress, predeterminedSaltNonce, Address } from './utils/constants';
 import { defaultNetworks, NetworksConfig } from './utils/networks';
-import { standardizeTransactions, SafeProviderSendTransaction, Transaction } from './utils/transactions';
-import EthLibAdapter, { Contract, Address, TransactionResult } from './eth-lib-adapters/EthLibAdapter';
+import { joinHexData, getHexDataLength } from './utils/hex-data';
+import { standardizeTransactions, Transaction, TransactionResult, ExecOptions, EthTx } from './utils/transactions';
+import EthLibAdapter, { Contract } from './eth-lib-adapters/EthLibAdapter';
+import cpkFactoryAbi from './abis/CpkFactoryAbi.json';
+import safeAbi from './abis/SafeAbi.json';
+import multiSendAbi from './abis/MultiSendAbi.json';
 
 interface CPKConfig {
   ethLibAdapter: EthLibAdapter;
@@ -16,11 +20,9 @@ class CPK {
   ethLibAdapter: EthLibAdapter;
   ownerAccount?: Address;
   networks: NetworksConfig;
-  multiSend: Contract;
-  contract: Contract;
-  viewContract: Contract;
-  proxyFactory: Contract;
-  viewProxyFactory: Contract;
+  multiSend?: Contract;
+  contract?: Contract;
+  proxyFactory?: Contract;
   masterCopyAddress?: Address;
   fallbackHandlerAddress?: Address;
   isConnectedToSafe = false;
@@ -45,7 +47,7 @@ class CPK {
     this.setOwnerAccount(ownerAccount);
     this.networks = {
       ...defaultNetworks,
-      ...(networks || {}),
+      ...networks,
     };
   }
 
@@ -71,24 +73,40 @@ class CPK {
       this.isConnectedToSafe = true;
     }
 
-    const initializedCpkProvider = await this.ethLibAdapter.init({
-      isConnectedToSafe: this.isConnectedToSafe,
-      ownerAccount,
-      masterCopyAddress: network.masterCopyAddress,
-      proxyFactoryAddress: network.proxyFactoryAddress,
-      multiSendAddress: network.multiSendAddress,
-    });
+    this.multiSend = this.ethLibAdapter.getContract(multiSendAbi, network.multiSendAddress);
 
-    this.multiSend = initializedCpkProvider.multiSend;
-    this.contract = initializedCpkProvider.contract;
-    this.viewContract = initializedCpkProvider.viewContract;
-    this.proxyFactory = initializedCpkProvider.proxyFactory;
-    this.viewProxyFactory = initializedCpkProvider.viewProxyFactory;
+    if (this.isConnectedToSafe) {
+      this.contract = this.ethLibAdapter.getContract(safeAbi, ownerAccount);
+    } else {
+      this.proxyFactory = this.ethLibAdapter.getContract(
+        cpkFactoryAbi,
+        network.proxyFactoryAddress,
+      );
+
+      const salt = this.ethLibAdapter.keccak256(this.ethLibAdapter.abiEncode(
+        ['address', 'uint256'],
+        [ownerAccount, predeterminedSaltNonce],
+      ));
+      const initCode = this.ethLibAdapter.abiEncodePacked(
+        { type: 'bytes', value: await this.proxyFactory.call('proxyCreationCode', []) },
+        {
+          type: 'bytes',
+          value: this.ethLibAdapter.abiEncode(['address'], [network.masterCopyAddress]),
+        },
+      );
+      const proxyAddress = this.ethLibAdapter.calcCreate2Address(
+        this.proxyFactory.address,
+        salt,
+        initCode
+      );
+
+      this.contract = this.ethLibAdapter.getContract(safeAbi, proxyAddress);
+    }
   }
 
   async getOwnerAccount(): Promise<Address> {
     if (this.ownerAccount) return this.ownerAccount;
-    return this.ethLibAdapter.getOwnerAccount();
+    return this.ethLibAdapter.getAccount();
   }
 
   setOwnerAccount(ownerAccount?: Address): void {
@@ -96,16 +114,38 @@ class CPK {
   }
 
   get address(): Address {
-    return this.ethLibAdapter.getContractAddress(this.contract);
+    if (this.contract == null)
+      throw new Error('CPK uninitialized');
+    return this.contract.address;
+  }
+
+  encodeMultiSendCallData(transactions: Transaction[]): string {
+    const multiSend = this.multiSend || this.ethLibAdapter.getContract(multiSendAbi);
+
+    const standardizedTxs = standardizeTransactions(transactions);
+
+    return multiSend.encode('multiSend', [
+      joinHexData(standardizedTxs.map((tx) => this.ethLibAdapter.abiEncodePacked(
+        { type: 'uint8', value: tx.operation },
+        { type: 'address', value: tx.to },
+        { type: 'uint256', value: tx.value },
+        { type: 'uint256', value: getHexDataLength(tx.data) },
+        { type: 'bytes', value: tx.data },
+      ))),
+    ]);
   }
 
   async execTransactions(
     transactions: Transaction[],
-    options?: {
-      gasLimit?: number | string;
-      gas?: number | string;
-    }
+    options?: ExecOptions,
   ): Promise<TransactionResult> {
+    if (
+      this.contract == null ||
+      this.multiSend == null
+    ) {
+      throw new Error('CPK uninitialized');
+    }
+
     const signatureForAddress = (address: string): string => `0x000000000000000000000000${
       address.replace(/^0x/, '').toLowerCase()
     }000000000000000000000000000000000000000000000000000000000000000001`;
@@ -113,22 +153,28 @@ class CPK {
     const ownerAccount = await this.getOwnerAccount();
     const codeAtAddress = await this.ethLibAdapter.getCode(this.address);
     let gasLimit = options && (options.gasLimit || options.gas);
-    const sendOptions = await this.ethLibAdapter.getSendOptions(ownerAccount, options);
+    const sendOptions = { ...options, from: ownerAccount };
 
     const standardizedTxs = standardizeTransactions(transactions);
 
     if (this.isConnectedToSafe) {
-      const connectedSafeTxs: SafeProviderSendTransaction[] = standardizedTxs.map(
+      const connectedSafeTxs: EthTx[] = standardizedTxs.map(
         ({ to, value, data }) => ({ to, value, data }),
       );
 
       if (standardizedTxs.length === 1 && standardizedTxs[0].operation === CPK.Call) {
-        return this.ethLibAdapter.attemptSafeProviderSendTx(connectedSafeTxs[0], sendOptions);
+        return this.ethLibAdapter.ethSendTransaction(connectedSafeTxs[0], sendOptions);
       } else {
         // NOTE: DelegateCalls get converted to Calls here
-        return this.ethLibAdapter.attemptSafeProviderMultiSendTxs(connectedSafeTxs);
+        return {
+          hash: await this.ethLibAdapter.providerSend('gs_multi_send', connectedSafeTxs),
+        };
       }
     } else {
+      if (this.proxyFactory == null) {
+        throw new Error('CPK uninitialized');
+      }
+
       let to, value, data, operation;
       let tryToGetRevertMessage = false;
       let txFailErrorMessage = 'transaction execution expected to fail';
@@ -140,17 +186,16 @@ class CPK {
 
         tryToGetRevertMessage = operation === OperationType.Call;
       } else {
-        to = this.ethLibAdapter.getContractAddress(this.multiSend);
+        to = this.multiSend.address;
         value = 0;
-        data = this.ethLibAdapter.encodeMultiSendCallData(standardizedTxs);
+        data = this.encodeMultiSendCallData(standardizedTxs);
         operation = CPK.DelegateCall;
         txFailErrorMessage = `batch ${txFailErrorMessage}`;
       }
 
-      let targetContract, targetViewContract, execMethodName, execParams;
+      let targetContract, execMethodName, execParams;
       if (codeAtAddress !== '0x') {
         targetContract = this.contract;
-        targetViewContract = this.viewContract;
         execMethodName = 'execTransaction';
         execParams = [
           to, value, data, operation,
@@ -160,22 +205,20 @@ class CPK {
       } else {
         txFailErrorMessage = `proxy creation and ${txFailErrorMessage}`;
         targetContract = this.proxyFactory;
-        targetViewContract = this.viewProxyFactory;
         execMethodName = 'createProxyAndExecTransaction';
         execParams = [
           this.masterCopyAddress,
           predeterminedSaltNonce,
           this.fallbackHandlerAddress,
-          this.ethLibAdapter.getContractAddress(this.multiSend),
+          this.multiSend.address,
           0,
-          this.ethLibAdapter.encodeMultiSendCallData(transactions),
+          this.encodeMultiSendCallData(transactions),
           CPK.DelegateCall,
         ];
       }
 
       gasLimit = await this.ethLibAdapter.findSuccessfulGasLimit(
         targetContract,
-        targetViewContract,
         execMethodName,
         execParams,
         sendOptions,
@@ -198,12 +241,7 @@ class CPK {
         throw new Error(txFailErrorMessage);
       }
 
-      return this.ethLibAdapter.execMethod(
-        targetContract,
-        execMethodName,
-        execParams,
-        { ...sendOptions, gasLimit },
-      );
+      return targetContract.send(execMethodName, execParams, { ...sendOptions, gasLimit });
     }
   }
 }

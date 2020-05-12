@@ -1,13 +1,8 @@
-import EthLibAdapter, { EthLibAdapterInitParams, EthLibAdapterInitResult, TransactionResult, Abi, Address, Contract } from './EthLibAdapter';
-import { zeroAddress, predeterminedSaltNonce } from '../utils/constants';
+import EthLibAdapter, { Contract } from './EthLibAdapter';
 import {
-  standardizeTransactions,
-  Transaction,
-  SafeProviderSendTransaction
+  EthTx, TransactionResult, CallOptions, SendOptions, EthCallTx, formatCallTx
 } from '../utils/transactions';
-import cpkFactoryAbi from '../abis/CpkFactoryAbi.json';
-import safeAbi from '../abis/SafeAbi.json';
-import multiSendAbi from '../abis/MultiSendAbi.json';
+import { zeroAddress, Address, Abi } from '../utils/constants';
 
 interface EthersAdapterConfig {
   ethers: any;
@@ -18,11 +13,78 @@ interface EthersTransactionResult extends TransactionResult {
   transactionResponse: object;
 }
 
-class EthersAdapter implements EthLibAdapter {
+class EthersContractAdapter implements Contract {
+  contract: any;
+  ethersAdapter: EthersAdapter;
+
+  constructor(contract: any, ethersAdapter: EthersAdapter) {
+    this.contract = contract;
+    this.ethersAdapter = ethersAdapter;
+  }
+
+  get address(): Address {
+    return this.contract.address;
+  }
+
+  async call(methodName: string, params: any[], options?: CallOptions): Promise<any> {
+    const data = this.encode(methodName, params);
+    const resHex = await this.ethersAdapter.ethCall({
+      ...options,
+      to: this.address,
+      data,
+    }, 'latest');
+    const rets = this.contract.interface.functions[methodName].decode(resHex);
+
+    if (rets.length === 1)
+      return rets[0];
+
+    return rets;
+  }
+
+  async send(
+    methodName: string,
+    params: any[],
+    options?: SendOptions,
+  ): Promise<EthersTransactionResult> {
+    let transactionResponse;
+    if (options != null) {
+      const { from, ...sendOptions } = options;
+      const { getAddress } = this.ethersAdapter.ethers.utils;
+      const expectedFrom = await this.ethersAdapter.getAccount();
+      if (getAddress(from) !== expectedFrom) {
+        throw new Error(`want from ${expectedFrom} but got from ${from}`);
+      }
+      transactionResponse = await this.contract.functions[methodName](
+        ...params,
+        sendOptions,
+      );
+    } else {
+      transactionResponse = await this.contract.functions[methodName](
+        ...params,
+      );
+    }
+    return { transactionResponse, hash: transactionResponse.hash };
+  }
+
+  async estimateGas(methodName: string, params: any[], options?: CallOptions): Promise<number> {
+    return (await this.contract.estimate[methodName](
+      ...params,
+      ...(!options ? [] : [options]),
+    )).toNumber();
+  }
+
+  encode(methodName: string, params: any[]): string {
+    return this.contract.interface.functions[methodName].encode(params);
+  }
+}
+
+class EthersAdapter extends EthLibAdapter {
   ethers: any;
   signer: any;
 
   constructor({ ethers, signer }: EthersAdapterConfig) {
+    super();
+
     if (!ethers) {
       throw new Error('ethers property missing from options');
     }
@@ -33,101 +95,63 @@ class EthersAdapter implements EthLibAdapter {
     this.signer = signer;
   }
 
-  async init({
-    isConnectedToSafe, ownerAccount, masterCopyAddress, proxyFactoryAddress, multiSendAddress,
-  }: EthLibAdapterInitParams): Promise<EthLibAdapterInitResult> {
-    const abiToViewAbi = (abi: Abi): Abi => abi.map((fnDesc) => ({
-      ...fnDesc,
-      constant: true,
-      stateMutability: 'view',
-    }));
-
-    const multiSend = this.getContract(multiSendAbi, multiSendAddress);
-    let contract;
-    let viewContract;
-    let proxyFactory;
-    let viewProxyFactory;
-
-    if (isConnectedToSafe) {
-      contract = this.getContract(safeAbi, ownerAccount);
-      viewContract = this.getContract(abiToViewAbi(safeAbi), ownerAccount);
-    } else {
-      proxyFactory = this.getContract(cpkFactoryAbi, proxyFactoryAddress);
-      viewProxyFactory = this.getContract(abiToViewAbi(cpkFactoryAbi), proxyFactoryAddress);
-
-      const create2Salt = this.ethers.utils.keccak256(this.ethers.utils.defaultAbiCoder.encode(
-        ['address', 'uint256'],
-        [ownerAccount, predeterminedSaltNonce],
-      ));
-
-      const address = this.ethers.utils.getAddress(
-        this.ethers.utils.solidityKeccak256(['bytes', 'address', 'bytes32', 'bytes32'], [
-          '0xff',
-          proxyFactory.address,
-          create2Salt,
-          this.ethers.utils.solidityKeccak256(['bytes', 'bytes'], [
-            await proxyFactory.proxyCreationCode(),
-            this.ethers.utils.defaultAbiCoder.encode(['address'], [masterCopyAddress]),
-          ]),
-        ]).slice(-40),
-      );
-
-      contract = this.getContract(safeAbi, address);
-      viewContract = this.getContract(abiToViewAbi(safeAbi), address);
-    }
-
-    return {
-      multiSend,
-      contract,
-      viewContract,
-      proxyFactory,
-      viewProxyFactory,
-    };
-  }
-
   getProvider(): any {
     // eslint-disable-next-line no-underscore-dangle
     return this.signer.provider.provider || this.signer.provider._web3Provider;
+  }
+
+  providerSend(method: string, params: any[]): Promise<any> {
+    return this.signer.provider.send(method, params);
   }
 
   async getNetworkId(): Promise<number> {
     return (await this.signer.provider.getNetwork()).chainId;
   }
 
-  async getOwnerAccount(): Promise<Address> {
+  async getAccount(): Promise<Address> {
     return this.signer.getAddress();
+  }
+
+  keccak256(data: string): string {
+    return this.ethers.utils.keccak256(data);
+  }
+
+  abiEncode(types: string[], values: any[]): string {
+    return this.ethers.utils.defaultAbiCoder.encode(types, values);
+  }
+
+  abiDecode(types: string[], data: string): any[] {
+    return this.ethers.utils.defaultAbiCoder.decode(types, data);
+  }
+
+  getContract(abi: Abi, address?: Address): Contract {
+    const contract = new this.ethers.Contract(address || zeroAddress, abi, this.signer);
+    return new EthersContractAdapter(contract, this);
+  }
+
+  calcCreate2Address(deployer: Address, salt: string, initCode: string): string {
+    return this.ethers.utils.getAddress(
+      this.ethers.utils.solidityKeccak256(['bytes', 'address', 'bytes32', 'bytes32'], [
+        '0xff',
+        deployer,
+        salt,
+        this.keccak256(initCode),
+      ]).slice(-40),
+    );
   }
 
   getCode(address: Address): Promise<string> {
     return this.signer.provider.getCode(address);
   }
 
-  getContract(abi: Abi, address: Address): Contract {
-    const contract = new this.ethers.Contract(address, abi, this.signer);
-    return contract;
+  getBlock(blockHashOrBlockNumber: string | number): Promise<{ [property: string]: any }> {
+    return this.signer.provider.getBlock(blockHashOrBlockNumber);
   }
 
-  getContractAddress(contract: Contract): string {
-    return contract.address;
-  }
-
-  async getCallRevertData({
-    from, to, value, data,
-  }: {
-    from: Address;
-    to: Address;
-    value?: number | string;
-    data: string;
-    gasLimit?: number | string;
-  }): Promise<string> {
+  async getCallRevertData(tx: EthCallTx): Promise<string> {
     try {
       // Handle Geth/Ganache --noVMErrorsOnRPCResponse revert data
-      return await this.signer.provider.call({
-        from,
-        to,
-        value,
-        data,
-      });
+      return await this.ethCall(tx, 'latest');
     } catch (e) {
       if (typeof e.data === 'string' && e.data.startsWith('Reverted 0x')) {
         // handle OpenEthereum revert data format
@@ -140,174 +164,32 @@ class EthersAdapter implements EthLibAdapter {
     }
   }
 
-  decodeError(revertData: string): string {
-    if (!revertData.startsWith('0x08c379a0'))
-      return revertData;
-
-    return this.ethers.utils.defaultAbiCoder.decode(['string'], `0x${revertData.slice(10)}`)[0];
-  }
-
   ethCall(
-    opts: {
-      from?: string;
-      to: string;
-      gas?: number | string | object;
-      gasLimit?: number | string | object;
-      gasPrice?: number | string | object;
-      value?: number | string | object;
-      data?: string;
-    },
+    tx: EthCallTx,
     block: number | string,
   ): Promise<string> {
     // This is to workaround https://github.com/ethers-io/ethers.js/issues/819
-    const toHex = (v: number | string | object): string =>
-      `0x${Number(v.toString()).toString(16)}`;
-    const formattedOpts: {
-      from?: string;
-      to: string;
-      gas?: string;
-      gasPrice?: string;
-      value?: string;
-      data?: string;
-    } = { to: opts.to };
-    if (opts.from != null) formattedOpts.from = opts.from;
-    if (opts.to != null) formattedOpts.to = opts.to;
-    if (opts.gas != null) {
-      if (opts.gasLimit != null)
-        throw new Error(`specified both gas and gasLimit on eth_call params: ${
-          JSON.stringify(opts, null, 2)
-        }`);
-      formattedOpts.gas = toHex(opts.gas);
-    } else if (opts.gasLimit != null) {
-      formattedOpts.gas = toHex(opts.gasLimit);
-    }
-    if (opts.value != null) {
-      formattedOpts.value = toHex(opts.value);
-    }
-    if (opts.data != null) {
-      formattedOpts.data = opts.data;
-    }
-    return this.signer.provider.send('eth_call', [
-      formattedOpts,
+    return this.providerSend('eth_call', [
+      formatCallTx(tx),
       block,
     ]);
   }
 
-  async findSuccessfulGasLimit(
-    contract: Contract,
-    viewContract: Contract,
-    methodName: string,
-    params: any[],
-    sendOptions?: object,
-    gasLimit?: number | string,
-  ): Promise<number | undefined> {
-    const callData = contract.interface.functions[methodName].encode(params);
-    const from = await this.getOwnerAccount();
-    const to = this.getContractAddress(contract);
-    const makeCallWithGas = async (gas: number): Promise<boolean> =>
-      !!Number(await this.ethCall({
-        ...sendOptions,
-        from,
-        to,
-        gas,
-        data: callData,
-      }, 'latest'));
-
-    if (gasLimit == null) {
-      const blockGasLimit = (await this.signer.provider.getBlock('latest')).gasLimit.toNumber();
-
-      if (!(await makeCallWithGas(blockGasLimit))) return;
-
-      let gasLow = (await contract.estimate[methodName](...params)).toNumber();
-      let gasHigh = blockGasLimit;
-
-      if (!(await makeCallWithGas(gasLow))) {
-        while (gasLow <= gasHigh) {
-          const testGasLimit = Math.floor((gasLow + gasHigh) * 0.5);
-
-          if (await makeCallWithGas(testGasLimit)) {
-            // values > gasHigh will work
-            gasHigh = testGasLimit - 1;
-          } else {
-            // values <= gasLow will work
-            gasLow = testGasLimit + 1;
-          }
-        }
-        // gasLow is now our target gas value
-      }
-
-      return gasLow;
-    } else if (!(await makeCallWithGas(Number(gasLimit)))) return;
-
-    return Number(gasLimit);
-  }
-
-  async execMethod(
-    contract: Contract,
-    methodName: string,
-    params: any[],
-    sendOptions?: {
-      gasLimit?: number | string;
-    }
-  ): Promise<EthersTransactionResult> {
-    const transactionResponse = await contract.functions[methodName](
-      ...params,
-      ...(!sendOptions ? [] : [sendOptions]),
-    );
-    return { transactionResponse, hash: transactionResponse.hash };
-  }
-
-  encodeAttemptTransaction(contractAbi: Abi, methodName: string, params: any[]): string {
-    const iface = new this.ethers.utils.Interface(contractAbi);
-    const payload = iface.functions[methodName].encode(params);
-    return payload;
-  }
-
-  async attemptSafeProviderSendTx(
-    tx: SafeProviderSendTransaction,
-    options?: object
-  ): Promise<EthersTransactionResult> {
+  async ethSendTransaction(tx: EthTx, options?: SendOptions): Promise<EthersTransactionResult> {
+    const sendOptions: { from?: string } = { ...options };
+    delete sendOptions.from;
     const transactionResponse = await this.signer.sendTransaction({
       ...tx,
-      ...options,
+      ...sendOptions,
     });
     return { transactionResponse, hash: transactionResponse.hash };
   }
 
-  async attemptSafeProviderMultiSendTxs(
-    txs: SafeProviderSendTransaction[]
-  ): Promise<{ hash: string }> {
-    const hash = await this.signer.provider.send('gs_multi_send', txs);
-    return { hash };
-  }
-
-  encodeMultiSendCallData(transactions: Transaction[]): string {
-    const multiSend = this.getContract(multiSendAbi, zeroAddress);
-    const standardizedTxs = standardizeTransactions(transactions);
-
-    return multiSend.interface.functions.multiSend.encode([
-      this.ethers.utils.hexlify(
-        this.ethers.utils.concat(
-          standardizedTxs.map(
-            (tx) => this.ethers.utils.solidityPack(
-              ['uint8', 'address', 'uint256', 'uint256', 'bytes'],
-              [
-                tx.operation,
-                tx.to,
-                tx.value,
-                this.ethers.utils.hexDataLength(tx.data),
-                tx.data,
-              ],
-            ),
-          ),
-        ),
-      ),
-    ]);
-  }
-
-  // eslint-disable-next-line
-  getSendOptions(ownerAccount: Address, options?: object): object | undefined {
-    return options;
+  getSendOptions(ownerAccount: Address, options?: CallOptions): SendOptions {
+    return {
+      from: ownerAccount,
+      ...options,
+    };
   }
 }
 

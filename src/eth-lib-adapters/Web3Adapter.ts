@@ -1,104 +1,73 @@
-import EthLibAdapter, { EthLibAdapterInitParams, EthLibAdapterInitResult, TransactionResult, Abi, Address, Contract } from './EthLibAdapter';
-import { predeterminedSaltNonce, zeroAddress } from '../utils/constants';
+import EthLibAdapter, { Contract } from './EthLibAdapter';
 import {
-  standardizeTransactions,
-  Transaction,
-  SafeProviderSendTransaction,
+  EthTx, TransactionResult, SendOptions, CallOptions, EthCallTx, formatCallTx,
 } from '../utils/transactions';
-import cpkFactoryAbi from '../abis/CpkFactoryAbi.json';
-import safeAbi from '../abis/SafeAbi.json';
-import multiSendAbi from '../abis/MultiSendAbi.json';
+import { Address, Abi } from '../utils/constants';
 
 interface Web3AdapterConfig {
   web3: any;
 }
 
 interface Web3TransactionResult extends TransactionResult {
-  sendOptions?: object;
+  sendOptions?: SendOptions;
   promiEvent: Promise<any>;
 }
 
-class Web3Adapter implements EthLibAdapter {
+function toTxResult(
+  promiEvent: any,
+  sendOptions?: SendOptions,
+): Promise<Web3TransactionResult> {
+  return new Promise(
+    (resolve, reject) => promiEvent.once(
+      'transactionHash',
+      (hash: string) => resolve({ sendOptions, promiEvent, hash }),
+    ).catch(reject),
+  );
+}
+
+class Web3ContractAdapter implements Contract {
+  contract: any;
+
+  constructor(contract: any) {
+    this.contract = contract;
+  }
+
+  get address(): Address {
+    return this.contract.options.address;
+  }
+
+  call(methodName: string, params: any[], options?: CallOptions): Promise<any> {
+    return this.contract.methods[methodName](...params).call(options);
+  }
+
+  send(methodName: string, params: any[], options?: SendOptions): Promise<Web3TransactionResult> {
+    const promiEvent = this.contract.methods[methodName](...params).send(options);
+    return toTxResult(promiEvent, options);
+  }
+
+  async estimateGas(methodName: string, params: any[], options?: CallOptions): Promise<number> {
+    return Number(await this.contract.methods[methodName](...params).estimateGas(options));
+  }
+
+  encode(methodName: string, params: any[]): string {
+    return this.contract.methods[methodName](...params).encodeABI();
+  }
+}
+
+class Web3Adapter extends EthLibAdapter {
   web3: any;
 
   constructor({ web3 }: Web3AdapterConfig) {
+    super();
+
     if (!web3) {
       throw new Error('web3 property missing from options');
     }
     this.web3 = web3;
   }
 
-  async init({
-    isConnectedToSafe, ownerAccount, masterCopyAddress, proxyFactoryAddress, multiSendAddress,
-  }: EthLibAdapterInitParams): Promise<EthLibAdapterInitResult> {
-    const multiSend = this.getContract(multiSendAbi, multiSendAddress);
-    let contract;
-    let proxyFactory;
-
-    if (isConnectedToSafe) {
-      contract = this.getContract(safeAbi, ownerAccount);
-    } else {
-      proxyFactory = this.getContract(cpkFactoryAbi, proxyFactoryAddress);
-      const create2Salt = this.web3.utils.keccak256(this.web3.eth.abi.encodeParameters(
-        ['address', 'uint256'],
-        [ownerAccount, predeterminedSaltNonce],
-      ));
-
-      contract = this.getContract(safeAbi, this.web3.utils.toChecksumAddress(
-        this.web3.utils.soliditySha3(
-          '0xff',
-          { t: 'address', v: proxyFactory.options.address },
-          { t: 'bytes32', v: create2Salt },
-          this.web3.utils.soliditySha3(
-            await proxyFactory.methods.proxyCreationCode().call(),
-            this.web3.eth.abi.encodeParameters(['address'], [masterCopyAddress]),
-          ),
-        ).slice(-40),
-      ));
-    }
-
-    return {
-      multiSend,
-      contract,
-      proxyFactory,
-    };
-  }
-
   getProvider(): any {
     return this.web3.currentProvider;
-  }
-
-  async getNetworkId(): Promise<number> {
-    return this.web3.eth.net.getId();
-  }
-
-  async getOwnerAccount(): Promise<Address> {
-    return this.web3.eth.defaultAccount || (await this.web3.eth.getAccounts())[0];
-  }
-
-  async getCode(address: Address): Promise<string> {
-    return this.web3.eth.getCode(address);
-  }
-
-  getContract(abi: Abi, address: Address): Contract {
-    const contract = new this.web3.eth.Contract(abi, address);
-    return contract;
-  }
-
-  getContractAddress(contract: Contract): string {
-    return contract.options.address;
-  }
-
-  static promiEventToPromise(
-    promiEvent: any,
-    sendOptions?: object,
-  ): Promise<Web3TransactionResult> {
-    return new Promise(
-      (resolve, reject) => promiEvent.once(
-        'transactionHash',
-        (hash: string) => resolve({ sendOptions, promiEvent, hash }),
-      ).catch(reject),
-    );
   }
 
   providerSend(method: string, params: any[]): Promise<any> {
@@ -120,31 +89,58 @@ class Web3Adapter implements EthLibAdapter {
       );
   }
 
-  async getCallRevertData({
-    from, to, value, data, gasLimit,
-  }: {
-    from: Address;
-    to: Address;
-    value?: number | string;
-    data: string;
-    gasLimit?: number | string;
-  }): Promise<string> {
+  async getNetworkId(): Promise<number> {
+    return this.web3.eth.net.getId();
+  }
+
+  async getAccount(): Promise<Address> {
+    return this.web3.eth.defaultAccount || (await this.web3.eth.getAccounts())[0];
+  }
+
+  keccak256(data: string): string {
+    return this.web3.utils.keccak256(data);
+  }
+
+  abiEncode(types: string[], values: any[]): string {
+    return this.web3.eth.abi.encodeParameters(types, values);
+  }
+
+  abiDecode(types: string[], data: string): any[] {
+    return this.web3.eth.abi.decodeParameters(types, data);
+  }
+
+  calcCreate2Address(deployer: Address, salt: string, initCode: string): string {
+    return this.web3.utils.toChecksumAddress(
+      this.web3.utils.soliditySha3(
+        '0xff',
+        { t: 'address', v: deployer },
+        { t: 'bytes32', v: salt },
+        this.keccak256(initCode),
+      ).slice(-40),
+    );
+  }
+
+  getCode(address: Address): Promise<string> {
+    return this.web3.eth.getCode(address);
+  }
+
+  getBlock(blockHashOrBlockNumber: string | number): Promise<{ [property: string]: any }> {
+    return this.web3.eth.getBlock(blockHashOrBlockNumber);
+  }
+
+  getContract(abi: Abi, address: Address): Contract {
+    const contract = new this.web3.eth.Contract(abi, address);
+    return new Web3ContractAdapter(contract);
+  }
+
+  async getCallRevertData(tx: EthCallTx): Promise<string> {
     try {
       // throw with full error data if provider is Web3 1.x
       // by using a low level eth_call instead of web3.eth.call
       // this also handles Geth/Ganache --noVMErrorsOnRPCResponse
-      const payload: {
-        from: string;
-        to: string;
-        value?: string;
-        data: string;
-        gas?: string;
-      } = { from, to, data };
-      if (value != null) payload.value = this.web3.utils.toHex(value);
-      if (gasLimit != null) payload.gas = this.web3.utils.toHex(gasLimit);
       return await this.providerSend(
         'eth_call',
-        [payload, 'latest'],
+        [formatCallTx(tx), 'latest'],
       );
     } catch (e) {
       let errData = e.data;
@@ -164,137 +160,11 @@ class Web3Adapter implements EthLibAdapter {
     }
   }
 
-  decodeError(revertData: string): string {
-    if (!revertData.startsWith('0x08c379a0'))
-      return revertData;
-
-    return this.web3.eth.abi.decodeParameters(['string'], `0x${revertData.slice(10)}`)[0];
-  }
-
-  async findSuccessfulGasLimit(
-    contract: Contract,
-    viewContract: Contract,
-    methodName: string,
-    params: any[],
-    sendOptions?: object,
-    gasLimit?: number | string,
-  ): Promise<number | undefined> {
-    const txObj = contract.methods[methodName](...params);
-
-    if (gasLimit == null) {
-      const blockGasLimit = (await this.web3.eth.getBlock('latest')).gasLimit;
-
-      const gasEstimateOptions = { ...sendOptions, gas: blockGasLimit };
-      if (!(await txObj.call(gasEstimateOptions))) return;
-
-      let gasLow = Number(await txObj.estimateGas(gasEstimateOptions));
-      let gasHigh = blockGasLimit;
-
-      gasEstimateOptions.gas = gasLow;
-
-      if (!(await txObj.call(gasEstimateOptions))) {
-        while (gasLow <= gasHigh) {
-          const testGasLimit = Math.floor((gasLow + gasHigh) * 0.5);
-          gasEstimateOptions.gas = testGasLimit;
-
-          if (await txObj.call(gasEstimateOptions)) {
-            // values > gasHigh will work
-            gasHigh = testGasLimit - 1;
-          } else {
-            // values <= gasLow will work
-            gasLow = testGasLimit + 1;
-          }
-        }
-        // gasLow is now our target gas value
-      }
-
-      return gasLow;
-
-    } else if (!(await txObj.call({ ...sendOptions, gas: gasLimit }))) return;
-
-    return Number(gasLimit);
-  }
-
-  async execMethod(
-    contract: Contract,
-    methodName: string,
-    params: any[],
-    sendOptions?: {
-      gasLimit?: number | string;
-    }
-  ): Promise<Web3TransactionResult> {
-
-    const txObject = contract.methods[methodName](...params);
-    const gasLimit = sendOptions && (
-      sendOptions.gasLimit || await txObject.estimateGas(sendOptions)
-    );
-    const actualSendOptions = { ...sendOptions, gas: gasLimit };
-    const promiEvent = txObject.send(actualSendOptions);
-
-    return Web3Adapter.promiEventToPromise(promiEvent, sendOptions);
-  }
-
-  encodeAttemptTransaction(contractAbi: Abi, methodName: string, params: any[]): string {
-    const contract = this.getContract(contractAbi, zeroAddress);
-    const payload = contract.methods[methodName](...params).encodeABI();
-    return payload;
-  }
-
-  async attemptSafeProviderSendTx(
-    tx: SafeProviderSendTransaction,
-    options?: object
-  ): Promise<Web3TransactionResult> {
-    const promiEvent = this.web3.eth.sendTransaction({
+  ethSendTransaction(tx: EthTx, options?: SendOptions): Promise<Web3TransactionResult> {
+    return toTxResult(this.web3.eth.sendTransaction({
       ...tx,
       ...options,
-    });
-    return Web3Adapter.promiEventToPromise(promiEvent, options);
-  }
-
-  async attemptSafeProviderMultiSendTxs(
-    txs: SafeProviderSendTransaction[]
-  ): Promise<{ hash: string }> {
-    const hash = await (
-      this.web3.currentProvider.host === 'CustomProvider'
-        ? this.web3.currentProvider.send(
-          'gs_multi_send',
-          txs,
-        ) : new Promise(
-          (resolve, reject) => this.web3.currentProvider.send({
-            jsonrpc: '2.0',
-            id: new Date().getTime(),
-            method: 'gs_multi_send',
-            params: txs,
-          }, (err: Error, result: any) => {
-            if (err) return reject(err);
-            if (result.error) return reject(result.error);
-            return resolve(result.result);
-          }),
-        )
-    );
-    return { hash };
-  }
-
-  encodeMultiSendCallData(transactions: Transaction[]): string {
-    const multiSend = this.getContract(multiSendAbi, zeroAddress);
-    const standardizedTxs = standardizeTransactions(transactions);
-
-    return multiSend.methods.multiSend(
-      `0x${standardizedTxs.map((tx) => [
-        this.web3.eth.abi.encodeParameter('uint8', tx.operation).slice(-2),
-        this.web3.eth.abi.encodeParameter('address', tx.to).slice(-40),
-        this.web3.eth.abi.encodeParameter('uint256', tx.value).slice(-64),
-        this.web3.eth.abi.encodeParameter('uint256', this.web3.utils.hexToBytes(tx.data).length).slice(-64),
-        tx.data.replace(/^0x/, ''),
-      ].join('')).join('')}`,
-    ).encodeABI();
-  }
-
-  getSendOptions(ownerAccount: Address, options?: object): object | undefined {
-    return {
-      from: ownerAccount,
-      ...(options || {}),
-    };
+    }), options);
   }
 }
 

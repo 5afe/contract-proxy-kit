@@ -1,101 +1,125 @@
-import { Transaction, SafeProviderSendTransaction } from '../utils/transactions';
+import { EthTx, TransactionResult, SendOptions, CallOptions, EthCallTx } from '../utils/transactions';
+import { joinHexData } from '../utils/hex-data';
+import { Address, Abi, NumberLike } from '../utils/constants';
 
-type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | JsonObject
-  | Json[];
-type JsonObject = { [property: string]: Json }
-
-export type Contract = any;
-export type Address = string;
-export type Abi = JsonObject[];
-
-export interface EthLibAdapterInitParams {
-  isConnectedToSafe: boolean;
-  ownerAccount: Address;
-  masterCopyAddress: Address;
-  proxyFactoryAddress: Address;
-  multiSendAddress: Address;
+export interface Contract {
+  address: Address;
+  call(methodName: string, params: any[], options?: CallOptions): Promise<any>;
+  send(methodName: string, params: any[], options?: SendOptions): Promise<TransactionResult>;
+  estimateGas(methodName: string, params: any[], options?: CallOptions): Promise<number>;
+  encode(methodName: string, params: any[]): string;
 }
 
-export interface EthLibAdapterInitResult {
-  multiSend: Contract;
-  contract: Contract;
-  viewContract?: Contract;
-  proxyFactory: Contract;
-  viewProxyFactory?: Contract;
-}
+abstract class EthLibAdapter {
+  abstract keccak256(data: string): string;
 
-export interface TransactionResult {
-  hash: string;
-}
+  abstract abiEncode(types: string[], values: any[]): string;
 
-interface EthLibAdapter {
-  init({
-    isConnectedToSafe,
-    ownerAccount,
-    masterCopyAddress,
-    proxyFactoryAddress,
-    multiSendAddress
-  }: EthLibAdapterInitParams): Promise<EthLibAdapterInitResult>;
+  abstract abiDecode(types: string[], data: string): any[];
 
-  getProvider(): any;
+  abstract calcCreate2Address(deployer: Address, salt: string, initCode: string): string;
 
-  getNetworkId(): Promise<number>;
+  abstract getProvider(): any;
 
-  getOwnerAccount(): Promise<Address>;
+  abstract providerSend(method: string, params: any[]): Promise<any>;
 
-  getCode(address: Address): Promise<string>;
+  abstract getNetworkId(): Promise<number>;
 
-  getContract(abi: Abi, address: Address): Contract;
+  abstract getAccount(): Promise<Address>;
 
-  getContractAddress(contract: Contract): Address;
+  abstract getCode(address: Address): Promise<string>;
 
-  getCallRevertData(opts: {
-    from: Address;
-    to: Address;
-    value?: number | string;
-    data: string;
-    gasLimit?: number | string;
-  }): Promise<string>;
+  abstract getBlock(blockHashOrBlockNumber: string | number): Promise<{ [property: string]: any }>
 
-  decodeError(revertData: string): string;
+  abstract getContract(abi: Abi, address?: Address): Contract;
 
-  findSuccessfulGasLimit(
+  abstract getCallRevertData(tx: EthCallTx): Promise<string>;
+
+  abstract ethSendTransaction(tx: EthTx, options?: SendOptions): Promise<TransactionResult>;
+
+  abiEncodePacked(...params: { type: string; value: any }[]): string {
+    return joinHexData(params.map(({ type, value }) => {
+      const encoded = this.abiEncode([type], [value]);
+
+      if (type === 'bytes' || type === 'string') {
+        const bytesLength = parseInt(encoded.slice(66, 130), 16);
+        return encoded.slice(130, 130 + 2 * bytesLength);
+      }
+
+      let typeMatch = type.match(/^(?:u?int\d*|bytes\d+|address)\[\]$/);
+      if (typeMatch != null) {
+        return encoded.slice(130);
+      }
+
+      if (type.startsWith('bytes')) {
+        const bytesLength = parseInt(type.slice(5));
+        return encoded.slice(2, 2 + 2 * bytesLength);
+      }
+
+      typeMatch = type.match(/^u?int(\d*)$/);
+      if (typeMatch != null) {
+        if (typeMatch[1] !== '') {
+          const bytesLength = parseInt(typeMatch[1]) / 8;
+          return encoded.slice(-2 * bytesLength);
+        }
+        return encoded.slice(-64);
+      }
+
+      if (type === 'address') {
+        return encoded.slice(-40);
+      }
+
+      throw new Error(`unsupported type ${type}`);
+    }));
+  }
+
+  decodeError(revertData: string): string {
+    if (!revertData.startsWith('0x08c379a0'))
+      return revertData;
+
+    return this.abiDecode(['string'], `0x${revertData.slice(10)}`)[0];
+  }
+
+  async findSuccessfulGasLimit(
     contract: Contract,
-    viewContract: Contract,
     methodName: string,
     params: any[],
-    sendOptions?: object,
-    gasLimit?: number | string,
-  ): Promise<number | undefined>;
+    sendOptions: SendOptions,
+    gasLimit?: NumberLike,
+  ): Promise<number | undefined> {
+    if (gasLimit == null) {
+      const blockGasLimit = Number((await this.getBlock('latest')).gasLimit.toString());
 
-  execMethod(
-    contract: Contract,
-    methodName: string,
-    params: any[],
-    sendOptions?: {
-      gasLimit?: number | string;
-    }
-  ): Promise<TransactionResult>;
+      const gasEstimateOptions = { ...sendOptions, gas: blockGasLimit };
+      if (!(await contract.call(methodName, params, gasEstimateOptions))) return;
 
-  encodeAttemptTransaction(contractAbi: Abi, methodName: string, params: any[]): string;
+      let gasLow = await contract.estimateGas(methodName, params, sendOptions);
+      let gasHigh = blockGasLimit;
 
-  attemptSafeProviderSendTx(
-    tx: SafeProviderSendTransaction,
-    options?: object
-  ): Promise<TransactionResult>;
+      gasEstimateOptions.gas = gasLow;
 
-  attemptSafeProviderMultiSendTxs(
-    txs: SafeProviderSendTransaction[]
-  ): Promise<{ hash: string }>;
+      if (!(await contract.call(methodName, params, gasEstimateOptions))) {
+        while (gasLow <= gasHigh) {
+          const testGasLimit = Math.floor((gasLow + gasHigh) * 0.5);
+          gasEstimateOptions.gas = testGasLimit;
 
-  encodeMultiSendCallData(transactions: Transaction[]): string;
+          if (await contract.call(methodName, params, gasEstimateOptions)) {
+            // values > gasHigh will work
+            gasHigh = testGasLimit - 1;
+          } else {
+            // values <= gasLow will work
+            gasLow = testGasLimit + 1;
+          }
+        }
+        // gasLow is now our target gas value
+      }
 
-  getSendOptions(ownerAccount: Address, options?: object): object | undefined;
+      return gasLow;
+
+    } else if (!(await contract.call(methodName, params, sendOptions))) return;
+
+    return Number(gasLimit);
+  }
 }
 
 export default EthLibAdapter;
