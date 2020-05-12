@@ -146,10 +146,6 @@ class CPK {
       throw new Error('CPK uninitialized');
     }
 
-    const signatureForAddress = (address: string): string => `0x000000000000000000000000${
-      address.replace(/^0x/, '').toLowerCase()
-    }000000000000000000000000000000000000000000000000000000000000000001`;
-
     const ownerAccount = await this.getOwnerAccount();
     const codeAtAddress = await this.ethLibAdapter.getCode(this.address);
     let gasLimit = options && (options.gasLimit || options.gas);
@@ -195,12 +191,20 @@ class CPK {
 
       let targetContract, execMethodName, execParams;
       if (codeAtAddress !== '0x') {
+        // (r, s, v) where v is 1 means this signature is approved by
+        // the address encoded in the value r
+        // "Hashes are automatically approved by the sender of the message"
+        const safeAutoApprovedSignature = this.ethLibAdapter.abiEncodePacked(
+          { type: 'uint256', value: ownerAccount },
+          { type: 'uint256', value: 0 },
+          { type: 'uint8', value: 1 },
+        );
         targetContract = this.contract;
         execMethodName = 'execTransaction';
         execParams = [
           to, value, data, operation,
           0, 0, 0, zeroAddress, zeroAddress,
-          signatureForAddress(ownerAccount),
+          safeAutoApprovedSignature,
         ];
       } else {
         txFailErrorMessage = `proxy creation and ${txFailErrorMessage}`;
