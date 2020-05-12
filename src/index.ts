@@ -1,7 +1,7 @@
 import { OperationType, zeroAddress, predeterminedSaltNonce, Address } from './utils/constants';
 import { defaultNetworks, NetworksConfig } from './utils/networks';
 import { joinHexData, getHexDataLength } from './utils/hex-data';
-import { standardizeTransactions, Transaction, TransactionResult, ExecOptions } from './utils/transactions';
+import { Transaction, TransactionResult, ExecOptions, standardizeTransaction, SendOptions, StandardTransaction } from './utils/transactions';
 import EthLibAdapter, { Contract } from './eth-lib-adapters/EthLibAdapter';
 import cpkFactoryAbi from './abis/CpkFactoryAbi.json';
 import safeAbi from './abis/SafeAbi.json';
@@ -11,6 +11,12 @@ interface CPKConfig {
   ethLibAdapter: EthLibAdapter;
   ownerAccount?: string;
   networks?: NetworksConfig;
+}
+
+interface ContractTxObj {
+  contract: Contract;
+  methodName: string;
+  params: any[];
 }
 
 class CPK {
@@ -122,7 +128,7 @@ class CPK {
   encodeMultiSendCallData(transactions: Transaction[]): string {
     const multiSend = this.multiSend || this.ethLibAdapter.getContract(multiSendAbi);
 
-    const standardizedTxs = standardizeTransactions(transactions);
+    const standardizedTxs = transactions.map(standardizeTransaction);
 
     return multiSend.encode('multiSend', [
       joinHexData(standardizedTxs.map((tx) => this.ethLibAdapter.abiEncodePacked(
@@ -140,115 +146,160 @@ class CPK {
     options?: ExecOptions,
   ): Promise<TransactionResult> {
     const ownerAccount = await this.getOwnerAccount();
-    const codeAtAddress = await this.ethLibAdapter.getCode(this.address);
-    let gasLimit = options && (options.gasLimit || options.gas);
     const sendOptions = { ...options, from: ownerAccount };
 
-    const standardizedTxs = standardizeTransactions(transactions);
-
     if (this.isConnectedToSafe) {
-      if (standardizedTxs.length === 1 && standardizedTxs[0].operation === CPK.Call) {
-        const { to, value, data } = transactions[0];
-        return this.ethLibAdapter.ethSendTransaction({
-          to, value, data,
-          ...sendOptions,
-        });
-      } else {
-        // NOTE: DelegateCalls get converted to Calls here
-        return {
-          hash: await this.ethLibAdapter.providerSend(
-            'gs_multi_send',
-            transactions.map(
-              ({ to, value, data }) => ({ to, value, data }),
-            ),
-          ),
-        };
-      }
-    } else {
-      if (
-        this.contract == null ||
-        this.multiSend == null ||
-        this.proxyFactory == null
-      ) {
-        throw new Error('CPK uninitialized');
-      }
-
-      let to, value, data, operation;
-      let tryToGetRevertMessage = false;
-      let txFailErrorMessage = 'transaction execution expected to fail';
-
-      if (standardizedTxs.length === 1) {
-        ({
-          to, value, data, operation,
-        } = standardizedTxs[0]);
-
-        tryToGetRevertMessage = operation === OperationType.Call;
-      } else {
-        to = this.multiSend.address;
-        value = 0;
-        data = this.encodeMultiSendCallData(standardizedTxs);
-        operation = CPK.DelegateCall;
-        txFailErrorMessage = `batch ${txFailErrorMessage}`;
-      }
-
-      let targetContract, execMethodName, execParams;
-      if (codeAtAddress !== '0x') {
-        // (r, s, v) where v is 1 means this signature is approved by
-        // the address encoded in the value r
-        // "Hashes are automatically approved by the sender of the message"
-        const safeAutoApprovedSignature = this.ethLibAdapter.abiEncodePacked(
-          { type: 'uint256', value: ownerAccount },
-          { type: 'uint256', value: 0 },
-          { type: 'uint8', value: 1 },
-        );
-        targetContract = this.contract;
-        execMethodName = 'execTransaction';
-        execParams = [
-          to, value, data, operation,
-          0, 0, 0, zeroAddress, zeroAddress,
-          safeAutoApprovedSignature,
-        ];
-      } else {
-        txFailErrorMessage = `proxy creation and ${txFailErrorMessage}`;
-        targetContract = this.proxyFactory;
-        execMethodName = 'createProxyAndExecTransaction';
-        execParams = [
-          this.masterCopyAddress,
-          predeterminedSaltNonce,
-          this.fallbackHandlerAddress,
-          this.multiSend.address,
-          0,
-          this.encodeMultiSendCallData(transactions),
-          CPK.DelegateCall,
-        ];
-      }
-
-      gasLimit = await this.ethLibAdapter.findSuccessfulGasLimit(
-        targetContract,
-        execMethodName,
-        execParams,
-        sendOptions,
-        gasLimit,
-      );
-
-      if (gasLimit == null) {
-        // there's no limit that will result in a successful execution
-        if (tryToGetRevertMessage) {
-          try {
-            const revertData = await this.ethLibAdapter.getCallRevertData({
-              from: this.address, to, value, data, gasLimit: 6000000,
-            }, 'latest');
-            const errorMessage = this.ethLibAdapter.decodeError(revertData);
-            txFailErrorMessage = `${txFailErrorMessage}: ${ errorMessage }`;
-          } catch (e) {
-            // empty
-          }
-        }
-        throw new Error(txFailErrorMessage);
-      }
-
-      return targetContract.send(execMethodName, execParams, { ...sendOptions, gasLimit });
+      return this.execTxsWhileConnectedToSafe(transactions, sendOptions);
     }
+
+    const safeExecTxParams = this.getSafeExecTxParams(transactions);
+
+    const codeAtAddress = await this.ethLibAdapter.getCode(this.address);
+    const isDeployed = codeAtAddress !== '0x';
+
+    const {
+      contract: targetContract,
+      methodName: execMethodName,
+      params: execParams
+    } = isDeployed ?
+      this.getSafeProxyTxObj(safeExecTxParams, ownerAccount) :
+      this.getCPKFactoryTxObj(safeExecTxParams);
+
+    let gasLimit = options && (options.gasLimit || options.gas);
+
+    gasLimit = await this.ethLibAdapter.findSuccessfulGasLimit(
+      targetContract,
+      execMethodName,
+      execParams,
+      sendOptions,
+      gasLimit,
+    );
+
+    if (gasLimit == null) {
+      const { to, value, data, operation } = safeExecTxParams;
+
+      // there's no limit that will result in a successful execution
+      let txFailErrorMessage = `${
+        isDeployed ? '' : 'proxy creation and '
+      }${
+        transactions.length === 1 ? 'transaction' : 'batch transaction'
+      } execution expected to fail`;
+
+      if (transactions.length === 1 && operation === OperationType.Call) {
+        try {
+          const revertData = await this.ethLibAdapter.getCallRevertData({
+            from: this.address, to, value, data, gasLimit: 6000000,
+          }, 'latest');
+          const errorMessage = this.ethLibAdapter.decodeError(revertData);
+          txFailErrorMessage = `${txFailErrorMessage}: ${ errorMessage }`;
+        } catch (e) {
+          // empty
+        }
+      }
+      throw new Error(txFailErrorMessage);
+    }
+
+    return targetContract.send(execMethodName, execParams, { ...sendOptions, gasLimit });
+  }
+
+  private async execTxsWhileConnectedToSafe(
+    transactions: Transaction[],
+    sendOptions: SendOptions,
+  ): Promise<TransactionResult> {
+    if (
+      transactions.length === 1 &&
+      (transactions[0].operation == null || transactions[0].operation === CPK.Call)
+    ) {
+      const { to, value, data } = transactions[0];
+      return this.ethLibAdapter.ethSendTransaction({
+        to, value, data,
+        ...sendOptions,
+      });
+    } else {
+      if (transactions.some(
+        ({ operation }) => operation === OperationType.DelegateCall
+      )) {
+        throw new Error('DelegateCall unsupported by WalletConnected Safe');
+      }
+
+      return {
+        hash: await this.ethLibAdapter.providerSend(
+          'gs_multi_send',
+          transactions.map(
+            ({ to, value, data }) => ({ to, value, data }),
+          ),
+        ),
+      };
+    }
+  }
+
+  private getSafeExecTxParams(transactions: Transaction[]): StandardTransaction {
+    if (transactions.length === 1) {
+      return standardizeTransaction(transactions[0]);
+    } else {
+      if (this.multiSend == null) {
+        throw new Error('CPK MultiSend uninitialized');
+      }
+      return {
+        to: this.multiSend.address,
+        value: 0,
+        data: this.encodeMultiSendCallData(transactions),
+        operation: CPK.DelegateCall,
+      };
+    }
+  }
+
+  private getSafeProxyTxObj(
+    { to, value, data, operation }: StandardTransaction,
+    ownerAccount: Address
+  ): ContractTxObj {
+    if (
+      this.contract == null
+    ) {
+      throw new Error('CPK uninitialized');
+    }
+    // (r, s, v) where v is 1 means this signature is approved by
+    // the address encoded in the value r
+    // "Hashes are automatically approved by the sender of the message"
+    const safeAutoApprovedSignature = this.ethLibAdapter.abiEncodePacked(
+      { type: 'uint256', value: ownerAccount },
+      { type: 'uint256', value: 0 },
+      { type: 'uint8', value: 1 },
+    );
+
+    return {
+      contract: this.contract,
+      methodName: 'execTransaction',
+      params: [
+        to, value, data, operation,
+        0, 0, 0, zeroAddress, zeroAddress,
+        safeAutoApprovedSignature,
+      ],
+    };
+  }
+
+  private getCPKFactoryTxObj(
+    { to, value, data, operation }: StandardTransaction,
+  ): ContractTxObj {
+    if (
+      this.proxyFactory == null
+    ) {
+      throw new Error('CPK factory uninitialized');
+    }
+
+    return {
+      contract: this.proxyFactory,
+      methodName: 'createProxyAndExecTransaction',
+      params: [
+        this.masterCopyAddress,
+        predeterminedSaltNonce,
+        this.fallbackHandlerAddress,
+        to,
+        value,
+        data,
+        operation,
+      ],
+    };
   }
 }
 

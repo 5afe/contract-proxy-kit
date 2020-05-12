@@ -37,20 +37,20 @@ export interface TransactionResult {
   hash: string;
 }
 
-interface StandardTransaction {
+export interface StandardTransaction {
   operation: OperationType;
   to: Address;
   value: number;
   data: string;
 }
 
-export function standardizeTransactions(transactions: Transaction[]): StandardTransaction[] {
-  return transactions.map((tx: Transaction) => ({
+export function standardizeTransaction(tx: Transaction): StandardTransaction {
+  return {
     operation: tx.operation ? tx.operation : defaultTxOperation,
     to: tx.to,
     value: tx.value ? Number(tx.value.toString()) : defaultTxValue,
     data: tx.data ? tx.data : defaultTxData,
-  }));
+  };
 }
 
 export interface RpcCallTx {
