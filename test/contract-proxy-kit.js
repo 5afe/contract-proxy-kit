@@ -157,7 +157,7 @@ contract('CPK', ([coinbase, defaultAccount, safeOwner]) => {
             `0x${params.map((tx) => [
               web3.eth.abi.encodeParameter('uint8', CPK.Call).slice(-2),
               web3.eth.abi.encodeParameter('address', tx.to).slice(-40),
-              web3.eth.abi.encodeParameter('uint256', tx.value).slice(-64),
+              web3.eth.abi.encodeParameter('uint256', tx.value || 0).slice(-64),
               web3.eth.abi.encodeParameter('uint256', web3.utils.hexToBytes(tx.data).length).slice(-64),
               tx.data.replace(/^0x/, ''),
             ].join('')).join('')}`,

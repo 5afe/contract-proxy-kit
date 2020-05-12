@@ -27,4 +27,9 @@ const networks = Object.assign(...[
   },
 });
 
-module.exports = { networks };
+module.exports = {
+  networks,
+  mocha: {
+    bail: true,
+  }
+};

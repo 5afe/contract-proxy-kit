@@ -1,6 +1,6 @@
 import EthLibAdapter, { Contract } from './EthLibAdapter';
 import {
-  EthTx, TransactionResult, CallOptions, SendOptions, EthCallTx, formatCallTx
+  EthTx, TransactionResult, CallOptions, SendOptions, EthCallTx, formatCallTx, EthSendTx
 } from '../utils/transactions';
 import { zeroAddress, Address, Abi } from '../utils/constants';
 
@@ -49,11 +49,7 @@ class EthersContractAdapter implements Contract {
     let transactionResponse;
     if (options != null) {
       const { from, ...sendOptions } = options;
-      const { getAddress } = this.ethersAdapter.ethers.utils;
-      const expectedFrom = await this.ethersAdapter.getAccount();
-      if (getAddress(from) !== expectedFrom) {
-        throw new Error(`want from ${expectedFrom} but got from ${from}`);
-      }
+      await this.ethersAdapter.checkFromAddress(from);
       transactionResponse = await this.contract.functions[methodName](
         ...params,
         sendOptions,
@@ -148,10 +144,10 @@ class EthersAdapter extends EthLibAdapter {
     return this.signer.provider.getBlock(blockHashOrBlockNumber);
   }
 
-  async getCallRevertData(tx: EthCallTx): Promise<string> {
+  async getCallRevertData(tx: EthCallTx, block: string | number): Promise<string> {
     try {
       // Handle Geth/Ganache --noVMErrorsOnRPCResponse revert data
-      return await this.ethCall(tx, 'latest');
+      return await this.ethCall(tx, block);
     } catch (e) {
       if (typeof e.data === 'string' && e.data.startsWith('Reverted 0x')) {
         // handle OpenEthereum revert data format
@@ -175,13 +171,18 @@ class EthersAdapter extends EthLibAdapter {
     ]);
   }
 
-  async ethSendTransaction(tx: EthTx, options?: SendOptions): Promise<EthersTransactionResult> {
-    const sendOptions: { from?: string } = { ...options };
-    delete sendOptions.from;
-    const transactionResponse = await this.signer.sendTransaction({
-      ...tx,
-      ...sendOptions,
-    });
+  async checkFromAddress(from: Address): Promise<void> {
+    const { getAddress } = this.ethers.utils;
+    const expectedFrom = await this.getAccount();
+    if (getAddress(from) !== expectedFrom) {
+      throw new Error(`want from ${expectedFrom} but got from ${from}`);
+    }
+  }
+
+  async ethSendTransaction(tx: EthSendTx): Promise<EthersTransactionResult> {
+    const { from, ...sendTx } = tx;
+    await this.checkFromAddress(from);
+    const transactionResponse = await this.signer.sendTransaction(sendTx);
     return { transactionResponse, hash: transactionResponse.hash };
   }
 

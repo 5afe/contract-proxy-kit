@@ -1,4 +1,4 @@
-import { EthTx, TransactionResult, SendOptions, CallOptions, EthCallTx } from '../utils/transactions';
+import { EthTx, TransactionResult, SendOptions, CallOptions, EthCallTx, EthSendTx } from '../utils/transactions';
 import { joinHexData } from '../utils/hex-data';
 import { Address, Abi, NumberLike } from '../utils/constants';
 
@@ -33,9 +33,9 @@ abstract class EthLibAdapter {
 
   abstract getContract(abi: Abi, address?: Address): Contract;
 
-  abstract getCallRevertData(tx: EthCallTx): Promise<string>;
+  abstract getCallRevertData(tx: EthCallTx, block: string | number): Promise<string>;
 
-  abstract ethSendTransaction(tx: EthTx, options?: SendOptions): Promise<TransactionResult>;
+  abstract ethSendTransaction(tx: EthSendTx): Promise<TransactionResult>;
 
   abiEncodePacked(...params: { type: string; value: any }[]): string {
     return joinHexData(params.map(({ type, value }) => {

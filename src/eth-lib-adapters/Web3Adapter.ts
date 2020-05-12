@@ -1,6 +1,6 @@
 import EthLibAdapter, { Contract } from './EthLibAdapter';
 import {
-  EthTx, TransactionResult, SendOptions, CallOptions, EthCallTx, formatCallTx,
+  EthTx, TransactionResult, SendOptions, CallOptions, EthCallTx, formatCallTx, EthSendTx,
 } from '../utils/transactions';
 import { Address, Abi } from '../utils/constants';
 
@@ -133,19 +133,19 @@ class Web3Adapter extends EthLibAdapter {
     return new Web3ContractAdapter(contract);
   }
 
-  async getCallRevertData(tx: EthCallTx): Promise<string> {
+  async getCallRevertData(tx: EthCallTx, block: string | number): Promise<string> {
     try {
       // throw with full error data if provider is Web3 1.x
       // by using a low level eth_call instead of web3.eth.call
       // this also handles Geth/Ganache --noVMErrorsOnRPCResponse
       return await this.providerSend(
         'eth_call',
-        [formatCallTx(tx), 'latest'],
+        [formatCallTx(tx), block],
       );
     } catch (e) {
       let errData = e.data;
       if (errData == null && e.message.startsWith('Node error: ')) {
-        // parse out error data if provider is Web3 2.x
+        // parse out error data from eth node if provider is Web3 2.x
         errData = JSON.parse(e.message.slice(12)).data;
       }
       
@@ -160,11 +160,8 @@ class Web3Adapter extends EthLibAdapter {
     }
   }
 
-  ethSendTransaction(tx: EthTx, options?: SendOptions): Promise<Web3TransactionResult> {
-    return toTxResult(this.web3.eth.sendTransaction({
-      ...tx,
-      ...options,
-    }), options);
+  ethSendTransaction(tx: EthSendTx): Promise<Web3TransactionResult> {
+    return toTxResult(this.web3.eth.sendTransaction(tx), tx);
   }
 }
 

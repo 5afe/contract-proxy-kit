@@ -1,7 +1,7 @@
 import { OperationType, zeroAddress, predeterminedSaltNonce, Address } from './utils/constants';
 import { defaultNetworks, NetworksConfig } from './utils/networks';
 import { joinHexData, getHexDataLength } from './utils/hex-data';
-import { standardizeTransactions, Transaction, TransactionResult, ExecOptions, EthTx } from './utils/transactions';
+import { standardizeTransactions, Transaction, TransactionResult, ExecOptions } from './utils/transactions';
 import EthLibAdapter, { Contract } from './eth-lib-adapters/EthLibAdapter';
 import cpkFactoryAbi from './abis/CpkFactoryAbi.json';
 import safeAbi from './abis/SafeAbi.json';
@@ -139,13 +139,6 @@ class CPK {
     transactions: Transaction[],
     options?: ExecOptions,
   ): Promise<TransactionResult> {
-    if (
-      this.contract == null ||
-      this.multiSend == null
-    ) {
-      throw new Error('CPK uninitialized');
-    }
-
     const ownerAccount = await this.getOwnerAccount();
     const codeAtAddress = await this.ethLibAdapter.getCode(this.address);
     let gasLimit = options && (options.gasLimit || options.gas);
@@ -154,20 +147,29 @@ class CPK {
     const standardizedTxs = standardizeTransactions(transactions);
 
     if (this.isConnectedToSafe) {
-      const connectedSafeTxs: EthTx[] = standardizedTxs.map(
-        ({ to, value, data }) => ({ to, value, data }),
-      );
-
       if (standardizedTxs.length === 1 && standardizedTxs[0].operation === CPK.Call) {
-        return this.ethLibAdapter.ethSendTransaction(connectedSafeTxs[0], sendOptions);
+        const { to, value, data } = transactions[0];
+        return this.ethLibAdapter.ethSendTransaction({
+          to, value, data,
+          ...sendOptions,
+        });
       } else {
         // NOTE: DelegateCalls get converted to Calls here
         return {
-          hash: await this.ethLibAdapter.providerSend('gs_multi_send', connectedSafeTxs),
+          hash: await this.ethLibAdapter.providerSend(
+            'gs_multi_send',
+            transactions.map(
+              ({ to, value, data }) => ({ to, value, data }),
+            ),
+          ),
         };
       }
     } else {
-      if (this.proxyFactory == null) {
+      if (
+        this.contract == null ||
+        this.multiSend == null ||
+        this.proxyFactory == null
+      ) {
         throw new Error('CPK uninitialized');
       }
 
@@ -235,7 +237,7 @@ class CPK {
           try {
             const revertData = await this.ethLibAdapter.getCallRevertData({
               from: this.address, to, value, data, gasLimit: 6000000,
-            });
+            }, 'latest');
             const errorMessage = this.ethLibAdapter.decodeError(revertData);
             txFailErrorMessage = `${txFailErrorMessage}: ${ errorMessage }`;
           } catch (e) {
