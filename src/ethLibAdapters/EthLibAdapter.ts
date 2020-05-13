@@ -1,6 +1,12 @@
-import { TransactionResult, SendOptions, CallOptions, EthCallTx, EthSendTx } from '../utils/transactions';
-import { joinHexData } from '../utils/hex-data';
-import { Address, Abi } from '../utils/constants';
+import {
+  TransactionResult,
+  SendOptions,
+  CallOptions,
+  EthCallTx,
+  EthSendTx
+} from '../utils/transactions';
+import { joinHexData } from '../utils/hexData';
+import { Address, Abi } from '../utils/basicTypes';
 
 export interface Contract {
   address: Address;
@@ -47,7 +53,7 @@ abstract class EthLibAdapter {
       }
 
       let typeMatch = type.match(/^(?:u?int\d*|bytes\d+|address)\[\]$/);
-      if (typeMatch != null) {
+      if (typeMatch) {
         return encoded.slice(130);
       }
 
@@ -57,7 +63,7 @@ abstract class EthLibAdapter {
       }
 
       typeMatch = type.match(/^u?int(\d*)$/);
-      if (typeMatch != null) {
+      if (typeMatch) {
         if (typeMatch[1] !== '') {
           const bytesLength = parseInt(typeMatch[1]) / 8;
           return encoded.slice(-2 * bytesLength);
