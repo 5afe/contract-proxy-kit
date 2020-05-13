@@ -1,5 +1,12 @@
-import { defaultTxData, defaultTxOperation, defaultTxValue, OperationType, Address, NumberLike } from './constants';
-import { toHex } from './hex-data';
+import fetch from 'node-fetch';
+import { Address, NumberLike } from './basicTypes';
+import { defaultTxData, defaultTxOperation, defaultTxValue } from './constants';
+import { toHex } from './hexData';
+
+export enum OperationType {
+  Call, // 0
+  DelegateCall // 1
+}
 
 interface GasLimitOptions {
   gas?: NumberLike;
@@ -82,7 +89,7 @@ export function normalizeGasLimit<T extends GasLimitOptions>(
   options: T,
 ): NormalizeGas<T> {
   const { gas, gasLimit, ...rest } = options;
-  if (gas != null && gasLimit != null) {
+  if (gas && gasLimit) {
     throw new Error(`specified both gas and gasLimit on options: ${options}`);
   }
   return {

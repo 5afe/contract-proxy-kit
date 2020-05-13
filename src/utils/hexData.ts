@@ -1,4 +1,4 @@
-import { NumberLike } from './constants';
+import { NumberLike } from './basicTypes';
 
 export function joinHexData(hexData: string[]): string {
   return `0x${ hexData.map((hex) => {

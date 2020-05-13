@@ -3,6 +3,7 @@ interface NetworkConfigEntry {
   proxyFactoryAddress: string;
   multiSendAddress: string;
   fallbackHandlerAddress: string;
+  defaultTxRelayerUrl?: string;
 }
 
 export interface NetworksConfig {
@@ -16,6 +17,7 @@ export const defaultNetworks: NetworksConfig = {
     proxyFactoryAddress: '0x0fB4340432e56c014fa96286de17222822a9281b',
     multiSendAddress: '0xB522a9f781924eD250A11C54105E51840B138AdD',
     fallbackHandlerAddress: '0x40A930851BD2e590Bd5A5C981b436de25742E980',
+    defaultTxRelayerUrl: 'https://safe-relay.gnosis.io/',
   },
   // rinkeby
   4: {
@@ -23,6 +25,7 @@ export const defaultNetworks: NetworksConfig = {
     proxyFactoryAddress: '0x336c19296d3989e9e0c2561ef21c964068657c38',
     multiSendAddress: '0xB522a9f781924eD250A11C54105E51840B138AdD',
     fallbackHandlerAddress: '0x40A930851BD2e590Bd5A5C981b436de25742E980',
+    defaultTxRelayerUrl: 'https://safe-relay.rinkeby.gnosis.io/',
   },
   // goerli
   5: {
@@ -30,6 +33,7 @@ export const defaultNetworks: NetworksConfig = {
     proxyFactoryAddress: '0xfC7577774887aAE7bAcdf0Fc8ce041DA0b3200f7',
     multiSendAddress: '0xB522a9f781924eD250A11C54105E51840B138AdD',
     fallbackHandlerAddress: '0x40A930851BD2e590Bd5A5C981b436de25742E980',
+    // There is no Safe Relay API currently running on this network
   },
   // kovan
   42: {
@@ -37,5 +41,6 @@ export const defaultNetworks: NetworksConfig = {
     proxyFactoryAddress: '0xfC7577774887aAE7bAcdf0Fc8ce041DA0b3200f7',
     multiSendAddress: '0xB522a9f781924eD250A11C54105E51840B138AdD',
     fallbackHandlerAddress: '0x40A930851BD2e590Bd5A5C981b436de25742E980',
+    // There is no Safe Relay API currently running on this network
   },
 };
