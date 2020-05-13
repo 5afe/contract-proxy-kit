@@ -1,6 +1,6 @@
 import EthLibAdapter, { Contract } from './EthLibAdapter';
 import {
-  EthTx, TransactionResult, CallOptions, SendOptions, EthCallTx, formatCallTx, EthSendTx
+  TransactionResult, CallOptions, SendOptions, EthCallTx, formatCallTx, EthSendTx
 } from '../utils/transactions';
 import { zeroAddress, Address, Abi } from '../utils/constants';
 

@@ -1,6 +1,6 @@
-import { EthTx, TransactionResult, SendOptions, CallOptions, EthCallTx, EthSendTx } from '../utils/transactions';
+import { TransactionResult, SendOptions, CallOptions, EthCallTx, EthSendTx } from '../utils/transactions';
 import { joinHexData } from '../utils/hex-data';
-import { Address, Abi, NumberLike } from '../utils/constants';
+import { Address, Abi } from '../utils/constants';
 
 export interface Contract {
   address: Address;
@@ -75,50 +75,9 @@ abstract class EthLibAdapter {
 
   decodeError(revertData: string): string {
     if (!revertData.startsWith('0x08c379a0'))
-      return revertData;
+      throw new Error('unrecognized error format');
 
     return this.abiDecode(['string'], `0x${revertData.slice(10)}`)[0];
-  }
-
-  async findSuccessfulGasLimit(
-    contract: Contract,
-    methodName: string,
-    params: any[],
-    sendOptions: SendOptions,
-    gasLimit?: NumberLike,
-  ): Promise<number | undefined> {
-    if (gasLimit == null) {
-      const blockGasLimit = Number((await this.getBlock('latest')).gasLimit.toString());
-
-      const gasEstimateOptions = { ...sendOptions, gas: blockGasLimit };
-      if (!(await contract.call(methodName, params, gasEstimateOptions))) return;
-
-      let gasLow = await contract.estimateGas(methodName, params, sendOptions);
-      let gasHigh = blockGasLimit;
-
-      gasEstimateOptions.gas = gasLow;
-
-      if (!(await contract.call(methodName, params, gasEstimateOptions))) {
-        while (gasLow <= gasHigh) {
-          const testGasLimit = Math.floor((gasLow + gasHigh) * 0.5);
-          gasEstimateOptions.gas = testGasLimit;
-
-          if (await contract.call(methodName, params, gasEstimateOptions)) {
-            // values > gasHigh will work
-            gasHigh = testGasLimit - 1;
-          } else {
-            // values <= gasLow will work
-            gasLow = testGasLimit + 1;
-          }
-        }
-        // gasLow is now our target gas value
-      }
-
-      return gasLow;
-
-    } else if (!(await contract.call(methodName, params, sendOptions))) return;
-
-    return Number(gasLimit);
   }
 }
 

@@ -1,7 +1,7 @@
-import { OperationType, zeroAddress, predeterminedSaltNonce, Address } from './utils/constants';
+import { OperationType, zeroAddress, predeterminedSaltNonce, Address, NumberLike } from './utils/constants';
 import { defaultNetworks, NetworksConfig } from './utils/networks';
 import { joinHexData, getHexDataLength } from './utils/hex-data';
-import { Transaction, TransactionResult, ExecOptions, standardizeTransaction, SendOptions, StandardTransaction } from './utils/transactions';
+import { Transaction, TransactionResult, ExecOptions, standardizeTransaction, SendOptions, StandardTransaction, normalizeGasLimit, TransactionError } from './utils/transactions';
 import EthLibAdapter, { Contract } from './eth-lib-adapters/EthLibAdapter';
 import cpkFactoryAbi from './abis/CpkFactoryAbi.json';
 import safeAbi from './abis/SafeAbi.json';
@@ -146,7 +146,7 @@ class CPK {
     options?: ExecOptions,
   ): Promise<TransactionResult> {
     const ownerAccount = await this.getOwnerAccount();
-    const sendOptions = { ...options, from: ownerAccount };
+    const sendOptions = normalizeGasLimit({ ...options, from: ownerAccount });
 
     if (this.isConnectedToSafe) {
       return this.execTxsWhileConnectedToSafe(transactions, sendOptions);
@@ -157,49 +157,24 @@ class CPK {
     const codeAtAddress = await this.ethLibAdapter.getCode(this.address);
     const isDeployed = codeAtAddress !== '0x';
 
-    const {
-      contract: targetContract,
-      methodName: execMethodName,
-      params: execParams
-    } = isDeployed ?
+    const txObj = isDeployed ?
       this.getSafeProxyTxObj(safeExecTxParams, ownerAccount) :
       this.getCPKFactoryTxObj(safeExecTxParams);
 
-    let gasLimit = options && (options.gasLimit || options.gas);
+    const { success, gasLimit } = await this.findGasLimit(txObj, sendOptions);
 
-    gasLimit = await this.ethLibAdapter.findSuccessfulGasLimit(
-      targetContract,
-      execMethodName,
-      execParams,
-      sendOptions,
-      gasLimit,
-    );
-
-    if (gasLimit == null) {
-      const { to, value, data, operation } = safeExecTxParams;
-
-      // there's no limit that will result in a successful execution
-      let txFailErrorMessage = `${
-        isDeployed ? '' : 'proxy creation and '
-      }${
-        transactions.length === 1 ? 'transaction' : 'batch transaction'
-      } execution expected to fail`;
-
-      if (transactions.length === 1 && operation === OperationType.Call) {
-        try {
-          const revertData = await this.ethLibAdapter.getCallRevertData({
-            from: this.address, to, value, data, gasLimit: 6000000,
-          }, 'latest');
-          const errorMessage = this.ethLibAdapter.decodeError(revertData);
-          txFailErrorMessage = `${txFailErrorMessage}: ${ errorMessage }`;
-        } catch (e) {
-          // empty
-        }
-      }
-      throw new Error(txFailErrorMessage);
+    if (success) {
+      const { contract, methodName, params } = txObj;
+      sendOptions.gasLimit = gasLimit;
+      return contract.send(methodName, params, sendOptions);
+    } else {
+      throw await this.makeTransactionError(
+        safeExecTxParams,
+        gasLimit,
+        isDeployed,
+        transactions.length === 1,
+      );
     }
-
-    return targetContract.send(execMethodName, execParams, { ...sendOptions, gasLimit });
   }
 
   private async execTxsWhileConnectedToSafe(
@@ -300,6 +275,76 @@ class CPK {
         operation,
       ],
     };
+  }
+
+  private async findGasLimit(
+    { contract, methodName, params }: ContractTxObj,
+    sendOptions: SendOptions,
+  ): Promise<{ success: boolean; gasLimit: number }> {
+    const toNumber = (num: NumberLike): number => Number(num.toString());
+    if (sendOptions.gasLimit == null) {
+      const blockGasLimit = toNumber((await this.ethLibAdapter.getBlock('latest')).gasLimit);
+
+      const gasEstimateOptions = { ...sendOptions, gasLimit: blockGasLimit };
+      if (!(await contract.call(methodName, params, gasEstimateOptions))) {
+        return { success: false, gasLimit: blockGasLimit };
+      }
+
+      let gasLow = await contract.estimateGas(methodName, params, sendOptions);
+      let gasHigh = blockGasLimit;
+  
+      gasEstimateOptions.gasLimit = gasLow;
+  
+      if (!(await contract.call(methodName, params, gasEstimateOptions))) {
+        while (gasLow <= gasHigh) {
+          const testGasLimit = Math.floor((gasLow + gasHigh) * 0.5);
+          gasEstimateOptions.gasLimit = testGasLimit;
+  
+          if (await contract.call(methodName, params, gasEstimateOptions)) {
+            // values > gasHigh will work
+            gasHigh = testGasLimit - 1;
+          } else {
+            // values <= gasLow will work
+            gasLow = testGasLimit + 1;
+          }
+        }
+        // gasLow is now our target gas value
+      }
+
+      return { success: true, gasLimit: gasLow };
+    }
+
+    return {
+      success: await contract.call(methodName, params, sendOptions),
+      gasLimit: toNumber(sendOptions.gasLimit),
+    };
+  }
+
+  private async makeTransactionError(
+    { to, value, data, operation }: StandardTransaction,
+    gasLimit: number,
+    isDeployed: boolean,
+    isSingleTx: boolean,
+  ): Promise<Error> {
+    let errorMessage = `${
+      isDeployed ? '' : 'proxy creation and '
+    }${
+      isSingleTx ? 'transaction' : 'batch transaction'
+    } execution expected to fail`;
+
+    let revertData, revertMessage;
+    if (isSingleTx && operation === OperationType.Call) {
+      try {
+        revertData = await this.ethLibAdapter.getCallRevertData({
+          from: this.address, to, value, data, gasLimit,
+        }, 'latest');
+        revertMessage = this.ethLibAdapter.decodeError(revertData);
+        errorMessage = `${errorMessage}: ${ revertMessage }`;
+      } catch (e) {
+        // empty
+      }
+    }
+    return new TransactionError(errorMessage, revertData, revertMessage);
   }
 }
 

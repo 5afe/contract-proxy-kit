@@ -1,9 +1,12 @@
 import { defaultTxData, defaultTxOperation, defaultTxValue, OperationType, Address, NumberLike } from './constants';
 import { toHex } from './hex-data';
 
-interface BaseTxOptions {
+interface GasLimitOptions {
   gas?: NumberLike;
   gasLimit?: NumberLike;
+}
+
+interface BaseTxOptions extends GasLimitOptions {
   gasPrice?: NumberLike;
 }
 
@@ -37,6 +40,17 @@ export interface TransactionResult {
   hash: string;
 }
 
+export class TransactionError extends Error {
+  revertData?: string;
+  revertMessage?: string;
+
+  constructor(message: string, revertData?: string, revertMessage?: string) {
+    super(message);
+    this.revertData = revertData;
+    this.revertMessage = revertMessage;
+  }
+}
+
 export interface StandardTransaction {
   operation: OperationType;
   to: Address;
@@ -62,25 +76,26 @@ export interface RpcCallTx {
   data?: string;
 }
 
-export function formatCallTx(tx: EthCallTx): RpcCallTx {
-  const formattedTx: RpcCallTx = { to: tx.to };
-  if (tx.from != null) formattedTx.from = tx.from;
-  if (tx.to != null) formattedTx.to = tx.to;
-  if (tx.gas != null) {
-    if (tx.gasLimit != null)
-      throw new Error(`specified both gas and gasLimit on eth_call params: ${
-        JSON.stringify(tx, null, 2)
-      }`);
-    formattedTx.gas = toHex(tx.gas);
-  } else if (tx.gasLimit != null) {
-    formattedTx.gas = toHex(tx.gasLimit);
+export function normalizeGasLimit<T extends GasLimitOptions>(
+  options: T,
+): Pick<T, Exclude<keyof T, 'gas'>> {
+  const { gas, gasLimit, ...rest } = options;
+  if (gas != null && gasLimit != null) {
+    throw new Error(`specified both gas and gasLimit on options: ${options}`);
   }
-  if (tx.value != null) {
-    formattedTx.value = toHex(tx.value);
-  }
-  if (tx.data != null) {
-    formattedTx.data = tx.data;
-  }
+  return {
+    ...rest,
+    gasLimit: gas || gasLimit,
+  } as Pick<T, Exclude<keyof T, 'gas'>>;
+}
 
-  return formattedTx;
+export function formatCallTx(tx: EthCallTx): RpcCallTx {
+  const { from, to, value, data, gasLimit } = normalizeGasLimit(tx);
+
+  return {
+    from, to,
+    value: value == null ? value : toHex(value),
+    data,
+    gas: gasLimit == null ? gasLimit : toHex(gasLimit),
+  };
 }
