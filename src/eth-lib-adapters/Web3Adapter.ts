@@ -1,6 +1,6 @@
 import EthLibAdapter, { Contract } from './EthLibAdapter';
 import {
-  TransactionResult, SendOptions, CallOptions, EthCallTx, formatCallTx, EthSendTx,
+  TransactionResult, SendOptions, CallOptions, EthCallTx, formatCallTx, EthSendTx, normalizeGasLimit,
 } from '../utils/transactions';
 import { Address, Abi } from '../utils/constants';
 
@@ -37,16 +37,20 @@ class Web3ContractAdapter implements Contract {
   }
 
   call(methodName: string, params: any[], options?: CallOptions): Promise<any> {
-    return this.contract.methods[methodName](...params).call(options);
+    return this.contract.methods[methodName](...params).call(options && normalizeGasLimit(options));
   }
 
   send(methodName: string, params: any[], options?: SendOptions): Promise<Web3TransactionResult> {
-    const promiEvent = this.contract.methods[methodName](...params).send(options);
+    const promiEvent = this.contract.methods[methodName](...params).send(
+      options && normalizeGasLimit(options)
+    );
     return toTxResult(promiEvent, options);
   }
 
   async estimateGas(methodName: string, params: any[], options?: CallOptions): Promise<number> {
-    return Number(await this.contract.methods[methodName](...params).estimateGas(options));
+    return Number(await this.contract.methods[methodName](...params).estimateGas(
+      options && normalizeGasLimit(options)
+    ));
   }
 
   encode(methodName: string, params: any[]): string {
@@ -161,7 +165,7 @@ class Web3Adapter extends EthLibAdapter {
   }
 
   ethSendTransaction(tx: EthSendTx): Promise<Web3TransactionResult> {
-    return toTxResult(this.web3.eth.sendTransaction(tx), tx);
+    return toTxResult(this.web3.eth.sendTransaction(normalizeGasLimit(tx)), tx);
   }
 }
 

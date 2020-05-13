@@ -76,26 +76,28 @@ export interface RpcCallTx {
   data?: string;
 }
 
+export type NormalizeGas<T> = Pick<T, Exclude<keyof T, 'gasLimit'>>
+
 export function normalizeGasLimit<T extends GasLimitOptions>(
   options: T,
-): Pick<T, Exclude<keyof T, 'gas'>> {
+): NormalizeGas<T> {
   const { gas, gasLimit, ...rest } = options;
   if (gas != null && gasLimit != null) {
     throw new Error(`specified both gas and gasLimit on options: ${options}`);
   }
   return {
     ...rest,
-    gasLimit: gas || gasLimit,
-  } as Pick<T, Exclude<keyof T, 'gas'>>;
+    gas: gas || gasLimit,
+  } as NormalizeGas<T>;
 }
 
 export function formatCallTx(tx: EthCallTx): RpcCallTx {
-  const { from, to, value, data, gasLimit } = normalizeGasLimit(tx);
+  const { from, to, value, data, gas } = normalizeGasLimit(tx);
 
   return {
     from, to,
     value: value == null ? value : toHex(value),
     data,
-    gas: gasLimit == null ? gasLimit : toHex(gasLimit),
+    gas: gas == null ? gas : toHex(gas),
   };
 }

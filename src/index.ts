@@ -1,7 +1,7 @@
 import { OperationType, zeroAddress, predeterminedSaltNonce, Address, NumberLike } from './utils/constants';
 import { defaultNetworks, NetworksConfig } from './utils/networks';
 import { joinHexData, getHexDataLength } from './utils/hex-data';
-import { Transaction, TransactionResult, ExecOptions, standardizeTransaction, SendOptions, StandardTransaction, normalizeGasLimit, TransactionError } from './utils/transactions';
+import { Transaction, TransactionResult, ExecOptions, standardizeTransaction, SendOptions, StandardTransaction, normalizeGasLimit, TransactionError, NormalizeGas } from './utils/transactions';
 import EthLibAdapter, { Contract } from './eth-lib-adapters/EthLibAdapter';
 import cpkFactoryAbi from './abis/CpkFactoryAbi.json';
 import safeAbi from './abis/SafeAbi.json';
@@ -165,7 +165,7 @@ class CPK {
 
     if (success) {
       const { contract, methodName, params } = txObj;
-      sendOptions.gasLimit = gasLimit;
+      sendOptions.gas = gasLimit;
       return contract.send(methodName, params, sendOptions);
     } else {
       throw await this.makeTransactionError(
@@ -279,13 +279,13 @@ class CPK {
 
   private async findGasLimit(
     { contract, methodName, params }: ContractTxObj,
-    sendOptions: SendOptions,
+    sendOptions: NormalizeGas<SendOptions>,
   ): Promise<{ success: boolean; gasLimit: number }> {
     const toNumber = (num: NumberLike): number => Number(num.toString());
-    if (sendOptions.gasLimit == null) {
+    if (sendOptions.gas == null) {
       const blockGasLimit = toNumber((await this.ethLibAdapter.getBlock('latest')).gasLimit);
 
-      const gasEstimateOptions = { ...sendOptions, gasLimit: blockGasLimit };
+      const gasEstimateOptions = { ...sendOptions, gas: blockGasLimit };
       if (!(await contract.call(methodName, params, gasEstimateOptions))) {
         return { success: false, gasLimit: blockGasLimit };
       }
@@ -293,12 +293,12 @@ class CPK {
       let gasLow = await contract.estimateGas(methodName, params, sendOptions);
       let gasHigh = blockGasLimit;
   
-      gasEstimateOptions.gasLimit = gasLow;
+      gasEstimateOptions.gas = gasLow;
   
       if (!(await contract.call(methodName, params, gasEstimateOptions))) {
         while (gasLow <= gasHigh) {
           const testGasLimit = Math.floor((gasLow + gasHigh) * 0.5);
-          gasEstimateOptions.gasLimit = testGasLimit;
+          gasEstimateOptions.gas = testGasLimit;
   
           if (await contract.call(methodName, params, gasEstimateOptions)) {
             // values > gasHigh will work
@@ -316,7 +316,7 @@ class CPK {
 
     return {
       success: await contract.call(methodName, params, sendOptions),
-      gasLimit: toNumber(sendOptions.gasLimit),
+      gasLimit: toNumber(sendOptions.gas),
     };
   }
 

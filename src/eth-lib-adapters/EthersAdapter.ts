@@ -1,6 +1,6 @@
 import EthLibAdapter, { Contract } from './EthLibAdapter';
 import {
-  TransactionResult, CallOptions, SendOptions, EthCallTx, formatCallTx, EthSendTx
+  TransactionResult, CallOptions, SendOptions, EthCallTx, formatCallTx, EthSendTx, normalizeGasLimit
 } from '../utils/transactions';
 import { zeroAddress, Address, Abi } from '../utils/constants';
 
@@ -48,11 +48,11 @@ class EthersContractAdapter implements Contract {
   ): Promise<EthersTransactionResult> {
     let transactionResponse;
     if (options != null) {
-      const { from, ...sendOptions } = options;
+      const { from, gas, ...sendOptions } = normalizeGasLimit(options);
       await this.ethersAdapter.checkFromAddress(from);
       transactionResponse = await this.contract.functions[methodName](
         ...params,
-        sendOptions,
+        { gasLimit: gas, ...sendOptions },
       );
     } else {
       transactionResponse = await this.contract.functions[methodName](
@@ -63,10 +63,15 @@ class EthersContractAdapter implements Contract {
   }
 
   async estimateGas(methodName: string, params: any[], options?: CallOptions): Promise<number> {
-    return (await this.contract.estimate[methodName](
-      ...params,
-      ...(!options ? [] : [options]),
-    )).toNumber();
+    if (options == null) {
+      return (await this.contract.estimate[methodName](...params)).toNumber();
+    } else {
+      const { gas, ...callOptions } = normalizeGasLimit(options);
+      return (await this.contract.estimate[methodName](
+        ...params,
+        { gasLimit: gas, ...callOptions },
+      )).toNumber();
+    }
   }
 
   encode(methodName: string, params: any[]): string {
@@ -180,9 +185,9 @@ class EthersAdapter extends EthLibAdapter {
   }
 
   async ethSendTransaction(tx: EthSendTx): Promise<EthersTransactionResult> {
-    const { from, ...sendTx } = tx;
+    const { from, gas, ...sendTx } = normalizeGasLimit(tx);
     await this.checkFromAddress(from);
-    const transactionResponse = await this.signer.sendTransaction(sendTx);
+    const transactionResponse = await this.signer.sendTransaction({ gasLimit: gas, ...sendTx });
     return { transactionResponse, hash: transactionResponse.hash };
   }
 
