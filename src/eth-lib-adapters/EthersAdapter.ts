@@ -57,7 +57,7 @@ class EthersContractAdapter implements Contract {
   }
 
   async estimateGas(methodName: string, params: any[], options?: CallOptions): Promise<number> {
-    if (options == null) {
+    if (!options) {
       return (await this.contract.estimate[methodName](...params)).toNumber();
     } else {
       const { gas, ...callOptions } = normalizeGasLimit(options);

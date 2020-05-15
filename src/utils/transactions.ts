@@ -96,8 +96,8 @@ export function formatCallTx(tx: EthCallTx): RpcCallTx {
 
   return {
     from, to,
-    value: value == null ? value : toHex(value),
+    value: !value ? undefined : toHex(value),
     data,
-    gas: gas == null ? gas : toHex(gas),
+    gas: !gas ? undefined : toHex(gas),
   };
 }

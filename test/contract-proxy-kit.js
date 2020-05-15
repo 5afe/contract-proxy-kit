@@ -15,10 +15,10 @@ const DefaultCallbackHandler = artifacts.require('DefaultCallbackHandler');
 const ProxyFactory = artifacts.require('ProxyFactory');
 
 contract('CPK', ([coinbase, defaultAccount, safeOwner]) => {
-  if (defaultAccount == null) {
+  if (!defaultAccount) {
     defaultAccount = coinbase;
   }
-  if (safeOwner == null) {
+  if (!safeOwner) {
     safeOwner = defaultAccount;
   }
 

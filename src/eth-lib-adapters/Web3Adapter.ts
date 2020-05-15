@@ -1,6 +1,12 @@
 import EthLibAdapter, { Contract } from './EthLibAdapter';
 import {
-  TransactionResult, SendOptions, CallOptions, EthCallTx, formatCallTx, EthSendTx, normalizeGasLimit,
+  TransactionResult,
+  SendOptions,
+  CallOptions,
+  EthCallTx,
+  formatCallTx,
+  EthSendTx,
+  normalizeGasLimit,
 } from '../utils/transactions';
 import { Address, Abi } from '../utils/constants';
 
@@ -144,7 +150,7 @@ class Web3Adapter extends EthLibAdapter {
       );
     } catch (e) {
       let errData = e.data;
-      if (errData == null && e.message.startsWith('Node error: ')) {
+      if (!errData && e.message.startsWith('Node error: ')) {
         // parse out error data from eth node if provider is Web3 2.x
         errData = JSON.parse(e.message.slice(12)).data;
       }

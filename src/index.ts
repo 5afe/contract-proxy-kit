@@ -120,8 +120,9 @@ class CPK {
   }
 
   get address(): Address {
-    if (this.contract == null)
+    if (!this.contract) {
       throw new Error('CPK uninitialized');
+    }
     return this.contract.address;
   }
 
@@ -157,9 +158,9 @@ class CPK {
     const codeAtAddress = await this.ethLibAdapter.getCode(this.address);
     const isDeployed = codeAtAddress !== '0x';
 
-    const txObj = isDeployed ?
-      this.getSafeProxyTxObj(safeExecTxParams, ownerAccount) :
-      this.getCPKFactoryTxObj(safeExecTxParams);
+    const txObj = isDeployed
+      ? this.getSafeProxyTxObj(safeExecTxParams, ownerAccount)
+      : this.getCPKFactoryTxObj(safeExecTxParams);
 
     const { success, gasLimit } = await this.findGasLimit(txObj, sendOptions);
 
@@ -183,7 +184,7 @@ class CPK {
   ): Promise<TransactionResult> {
     if (
       transactions.length === 1 &&
-      (transactions[0].operation == null || transactions[0].operation === CPK.Call)
+      (!transactions[0].operation || transactions[0].operation === CPK.Call)
     ) {
       const { to, value, data } = transactions[0];
       return this.ethLibAdapter.ethSendTransaction({
@@ -212,7 +213,7 @@ class CPK {
     if (transactions.length === 1) {
       return standardizeTransaction(transactions[0]);
     } else {
-      if (this.multiSend == null) {
+      if (!this.multiSend) {
         throw new Error('CPK MultiSend uninitialized');
       }
       return {
@@ -228,9 +229,7 @@ class CPK {
     { to, value, data, operation }: StandardTransaction,
     ownerAccount: Address
   ): ContractTxObj {
-    if (
-      this.contract == null
-    ) {
+    if (!this.contract) {
       throw new Error('CPK uninitialized');
     }
     // (r, s, v) where v is 1 means this signature is approved by
@@ -256,9 +255,7 @@ class CPK {
   private getCPKFactoryTxObj(
     { to, value, data, operation }: StandardTransaction,
   ): ContractTxObj {
-    if (
-      this.proxyFactory == null
-    ) {
+    if (!this.proxyFactory) {
       throw new Error('CPK factory uninitialized');
     }
 
@@ -282,7 +279,7 @@ class CPK {
     sendOptions: NormalizeGas<SendOptions>,
   ): Promise<{ success: boolean; gasLimit: number }> {
     const toNumber = (num: NumberLike): number => Number(num.toString());
-    if (sendOptions.gas == null) {
+    if (!sendOptions.gas) {
       const blockGasLimit = toNumber((await this.ethLibAdapter.getBlock('latest')).gasLimit);
 
       const gasEstimateOptions = { ...sendOptions, gas: blockGasLimit };

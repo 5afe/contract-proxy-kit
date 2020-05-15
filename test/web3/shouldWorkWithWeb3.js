@@ -28,7 +28,7 @@ function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderB
       },
       waitTxReceipt: async ({ hash }) => {
         let receipt = await web3Box[0].eth.getTransactionReceipt(hash);
-        while (receipt == null) {
+        while (!receipt) {
           await new Promise((resolve) => setTimeout(resolve, 50));
           receipt = await web3Box[0].eth.getTransactionReceipt(hash);
         }

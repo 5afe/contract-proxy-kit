@@ -9,7 +9,7 @@ type JsonObject = { [property: string]: Json }
 
 export type Address = string;
 export type Abi = JsonObject[];
-export type NumberLike = number | string | bigint | object
+export type NumberLike = number | string | bigint | object;
 
 export enum OperationType {
   Call, // 0
