@@ -38,15 +38,15 @@ To use *CPK* with web3.js, supply `CPK.create` with a *Web3* instance as the val
 import Web3 from 'web3';
 const web3 = new Web3(/*...*/);
 
-const cpkProvider = new CpkWeb3Provider({ web3 });
+const ethLibAdapter = new Web3Adapter({ web3 });
 
-const cpk = await CPK.create({ cpkProvider });
+const cpk = await CPK.create({ ethLibAdapter });
 ```
 
 The proxy owner will be inferred by first trying `web3.eth.defaultAccount`, and then trying to select the 0th account from `web3.eth.getAccounts`. However, an owner account may also be explicitly set with the `ownerAccount` key:
 
 ```js
-const cpk = await CPK.create({ cpkProvider, ownerAccount: '0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1' });
+const cpk = await CPK.create({ ethLibAdapter, ownerAccount: '0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1' });
 ```
 
 #### Using with ethers.js
@@ -58,9 +58,9 @@ import { ethers } from 'ethers');
 const provider = ethers.getDefaultProvider('homestead');
 const wallet = ethers.Wallet.createRandom().connect(provider);
 
-const cpkProvider = new CpkEthersProvider({ ethers, signer: wallet });
+const ethLibAdapter = new EthersAdapter({ ethers, signer: wallet });
 
-const cpk = await CPK.create({ cpkProvider });
+const cpk = await CPK.create({ ethLibAdapter });
 ```
 
 The proxy owner will be the account associated with the signer.
