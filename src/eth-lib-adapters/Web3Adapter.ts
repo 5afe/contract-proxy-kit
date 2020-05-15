@@ -26,11 +26,7 @@ function toTxResult(
 }
 
 class Web3ContractAdapter implements Contract {
-  contract: any;
-
-  constructor(contract: any) {
-    this.contract = contract;
-  }
+  constructor(public contract: any) {}
 
   get address(): Address {
     return this.contract.options.address;

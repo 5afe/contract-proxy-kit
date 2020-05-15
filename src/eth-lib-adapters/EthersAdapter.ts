@@ -14,13 +14,7 @@ interface EthersTransactionResult extends TransactionResult {
 }
 
 class EthersContractAdapter implements Contract {
-  contract: any;
-  ethersAdapter: EthersAdapter;
-
-  constructor(contract: any, ethersAdapter: EthersAdapter) {
-    this.contract = contract;
-    this.ethersAdapter = ethersAdapter;
-  }
+  constructor(public contract: any, public ethersAdapter: EthersAdapter) {}
 
   get address(): Address {
     return this.contract.address;
