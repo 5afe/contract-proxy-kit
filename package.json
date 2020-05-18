@@ -5,9 +5,9 @@
   "main": "src/index.ts",
   "scripts": {
     "migrate": "truffle migrate",
-    "test-norpc": "truffle test",
+    "test": "truffle test --network local",
     "test-geth": "ethnode --execute='truffle test --network local'",
-    "test": "run-with-testrpc --noVMErrorsOnRPCResponse 'truffle test --network local'",
+    "test-rpc": "run-with-testrpc --noVMErrorsOnRPCResponse 'truffle test --network local'",
     "lint:check": "eslint . --ext .js,.ts",
     "lint:fix": "yarn lint:check --fix",
     "build": "tsc"
