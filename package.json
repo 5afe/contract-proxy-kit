@@ -8,7 +8,7 @@
     "test-norpc": "truffle test",
     "test-geth": "ethnode --execute='truffle test --network local'",
     "test": "run-with-testrpc --noVMErrorsOnRPCResponse 'truffle test --network local'",
-    "lint:check": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "lint:check": "eslint . --ext .js,.ts",
     "lint:fix": "yarn lint:check --fix",
     "build": "tsc"
   },
