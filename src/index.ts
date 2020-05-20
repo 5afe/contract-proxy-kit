@@ -1,29 +1,36 @@
-import { OperationType, zeroAddress, predeterminedSaltNonce } from './utils/constants';
+import { OperationType, zeroAddress, predeterminedSaltNonce, Address, NumberLike } from './utils/constants';
 import { defaultNetworks, NetworksConfig } from './utils/networks';
-import { standardizeTransactions, SafeProviderSendTransaction, NonStandardTransaction } from './utils/transactions';
-const { estimateSafeTxGas } = require('./utils');
-import CPKProvider from './providers/CPKProvider';
+import { joinHexData, getHexDataLength } from './utils/hex-data';
+import { Transaction, TransactionResult, ExecOptions, standardizeTransaction, SendOptions, StandardTransaction, normalizeGasLimit, TransactionError, NormalizeGas } from './utils/transactions';
+import EthLibAdapter, { Contract } from './eth-lib-adapters/EthLibAdapter';
+import cpkFactoryAbi from './abis/CpkFactoryAbi.json';
+import safeAbi from './abis/SafeAbi.json';
+import multiSendAbi from './abis/MultiSendAbi.json';
 
 interface CPKConfig {
-  cpkProvider: CPKProvider;
+  ethLibAdapter: EthLibAdapter;
   ownerAccount?: string;
   networks?: NetworksConfig;
+}
+
+interface ContractTxObj {
+  contract: Contract;
+  methodName: string;
+  params: any[];
 }
 
 class CPK {
   static Call = OperationType.Call;
   static DelegateCall = OperationType.DelegateCall;
 
-  cpkProvider: CPKProvider;
-  ownerAccount?: string;
+  ethLibAdapter: EthLibAdapter;
+  ownerAccount?: Address;
   networks: NetworksConfig;
-  multiSend: any;
-  contract: any;
-  viewContract: any;
-  proxyFactory: any;
-  viewProxyFactory: any;
-  masterCopyAddress?: string;
-  fallbackHandlerAddress?: string;
+  multiSend?: Contract;
+  contract?: Contract;
+  proxyFactory?: Contract;
+  masterCopyAddress?: Address;
+  fallbackHandlerAddress?: Address;
   isConnectedToSafe = false;
   
   static async create(opts: CPKConfig): Promise<CPK> {
@@ -34,24 +41,24 @@ class CPK {
   }
   
   constructor({
-    cpkProvider,
+    ethLibAdapter,
     ownerAccount,
     networks,
   }: CPKConfig) {
-    if (!cpkProvider) {
-      throw new Error('cpkProvider property missing from options');
+    if (!ethLibAdapter) {
+      throw new Error('ethLibAdapter property missing from options');
     }
-    this.cpkProvider = cpkProvider;
+    this.ethLibAdapter = ethLibAdapter;
     
     this.setOwnerAccount(ownerAccount);
     this.networks = {
       ...defaultNetworks,
-      ...(networks || {}),
+      ...networks,
     };
   }
 
   async init(): Promise<void> {
-    const networkId = await this.cpkProvider.getNetworkId();
+    const networkId = await this.ethLibAdapter.getNetworkId();
     const network = this.networks[networkId];
 
     if (!network) {
@@ -63,7 +70,7 @@ class CPK {
 
     const ownerAccount = await this.getOwnerAccount();
 
-    const provider = this.cpkProvider.getProvider();
+    const provider = this.ethLibAdapter.getProvider();
     const wc = provider && (provider.wc || (provider.connection && provider.connection.wc));
     if (
       wc && wc.peerMeta && wc.peerMeta.name
@@ -72,246 +79,269 @@ class CPK {
       this.isConnectedToSafe = true;
     }
 
-    const initializedCpkProvider = await this.cpkProvider.init({
-      isConnectedToSafe: this.isConnectedToSafe,
-      ownerAccount,
-      masterCopyAddress: network.masterCopyAddress,
-      proxyFactoryAddress: network.proxyFactoryAddress,
-      multiSendAddress: network.multiSendAddress,
-    });
+    this.multiSend = this.ethLibAdapter.getContract(multiSendAbi, network.multiSendAddress);
 
-    this.multiSend = initializedCpkProvider.multiSend;
-    this.contract = initializedCpkProvider.contract;
-    this.viewContract = initializedCpkProvider.viewContract;
-    this.proxyFactory = initializedCpkProvider.proxyFactory;
-    this.viewProxyFactory = initializedCpkProvider.viewProxyFactory;
+    if (this.isConnectedToSafe) {
+      this.contract = this.ethLibAdapter.getContract(safeAbi, ownerAccount);
+    } else {
+      this.proxyFactory = this.ethLibAdapter.getContract(
+        cpkFactoryAbi,
+        network.proxyFactoryAddress,
+      );
+
+      const salt = this.ethLibAdapter.keccak256(this.ethLibAdapter.abiEncode(
+        ['address', 'uint256'],
+        [ownerAccount, predeterminedSaltNonce],
+      ));
+      const initCode = this.ethLibAdapter.abiEncodePacked(
+        { type: 'bytes', value: await this.proxyFactory.call('proxyCreationCode', []) },
+        {
+          type: 'bytes',
+          value: this.ethLibAdapter.abiEncode(['address'], [network.masterCopyAddress]),
+        },
+      );
+      const proxyAddress = this.ethLibAdapter.calcCreate2Address(
+        this.proxyFactory.address,
+        salt,
+        initCode
+      );
+
+      this.contract = this.ethLibAdapter.getContract(safeAbi, proxyAddress);
+    }
   }
 
-  async getOwnerAccount(): Promise<string> {
+  async getOwnerAccount(): Promise<Address> {
     if (this.ownerAccount) return this.ownerAccount;
-    return this.cpkProvider.getOwnerAccount();
+    return this.ethLibAdapter.getAccount();
   }
 
-  setOwnerAccount(ownerAccount?: string): void {
+  setOwnerAccount(ownerAccount?: Address): void {
     this.ownerAccount = ownerAccount;
   }
 
-  get address(): string {
-    return this.cpkProvider.getContractAddress(this.contract);
+  get address(): Address {
+    if (!this.contract) {
+      throw new Error('CPK uninitialized');
+    }
+    return this.contract.address;
+  }
+
+  encodeMultiSendCallData(transactions: Transaction[]): string {
+    const multiSend = this.multiSend || this.ethLibAdapter.getContract(multiSendAbi);
+
+    const standardizedTxs = transactions.map(standardizeTransaction);
+
+    return multiSend.encode('multiSend', [
+      joinHexData(standardizedTxs.map((tx) => this.ethLibAdapter.abiEncodePacked(
+        { type: 'uint8', value: tx.operation },
+        { type: 'address', value: tx.to },
+        { type: 'uint256', value: tx.value },
+        { type: 'uint256', value: getHexDataLength(tx.data) },
+        { type: 'bytes', value: tx.data },
+      ))),
+    ]);
   }
 
   async execTransactions(
-    transactions: NonStandardTransaction[],
-    options: object
-  ): Promise<any> {
-    const signatureForAddress = (address: string): string => `0x000000000000000000000000${
-      address.replace(/^0x/, '').toLowerCase()
-    }000000000000000000000000000000000000000000000000000000000000000001`;
-
+    transactions: Transaction[],
+    options?: ExecOptions,
+  ): Promise<TransactionResult> {
     const ownerAccount = await this.getOwnerAccount();
-    const codeAtAddress = await this.cpkProvider.getCodeAtAddress(this.contract);
-    const sendOptions = await this.cpkProvider.getSendOptions(options, ownerAccount);
-
-    if (transactions.length === 1) {
-      const {
-        to, value, data, operation,
-      } = standardizeTransactions(transactions)[0];
-
-      if (operation === CPK.Call) {
-        await this.cpkProvider.checkSingleCall({
-          from: this.address,
-          to,
-          value,
-          data,
-        });
-
-        if (this.isConnectedToSafe) {
-          return this.cpkProvider.attemptSafeProviderSendTx({ to, value, data }, sendOptions);
-        }
-      }
-
-      if (!this.isConnectedToSafe) {
-        if (codeAtAddress !== '0x') {
-          await this.cpkProvider.checkMethod(
-            this.contract,
-            this.viewContract,
-            'execTransaction',
-            [
-              to,
-              value,
-              data,
-              operation,
-              0,
-              0,
-              0,
-              zeroAddress,
-              zeroAddress,
-              signatureForAddress(ownerAccount),
-            ],
-            sendOptions,
-            new Error('transaction execution expected to fail'),
-          );
-
-          const { safeTxGas, baseGas } = await estimateSafeTxGas(
-            this.cpkProvider,
-            this.address,
-            data,
-            to,
-            value,
-            operation,
-          );
-
-          return this.cpkProvider.execMethod(
-            this.contract,
-            'execTransaction',
-            [
-              to,
-              value,
-              data,
-              operation,
-              safeTxGas,
-              baseGas,
-              0,
-              zeroAddress,
-              zeroAddress,
-              signatureForAddress(ownerAccount),
-            ],
-            sendOptions,
-          );
-        }
-
-        await this.cpkProvider.checkMethod(
-          this.proxyFactory,
-          this.viewProxyFactory,
-          'createProxyAndExecTransaction',
-          [
-            this.masterCopyAddress,
-            predeterminedSaltNonce,
-            this.fallbackHandlerAddress,
-            to,
-            value,
-            data,
-            operation,
-          ],
-          sendOptions,
-          new Error('proxy creation and transaction execution expected to fail'),
-        );
-
-        return this.cpkProvider.execMethod(
-          this.proxyFactory,
-          'createProxyAndExecTransaction',
-          [
-            this.masterCopyAddress,
-            predeterminedSaltNonce,
-            this.fallbackHandlerAddress,
-            to,
-            value,
-            data,
-            operation,
-          ],
-          sendOptions,
-        );
-      }
-    }
+    const sendOptions = normalizeGasLimit({ ...options, from: ownerAccount });
 
     if (this.isConnectedToSafe) {
-      const standardizedTxs = standardizeTransactions(transactions);
-      const connectedSafeTxs: SafeProviderSendTransaction[] = standardizedTxs.map(({
+      return this.execTxsWhileConnectedToSafe(transactions, sendOptions);
+    }
+
+    const safeExecTxParams = this.getSafeExecTxParams(transactions);
+
+    const codeAtAddress = await this.ethLibAdapter.getCode(this.address);
+    const isDeployed = codeAtAddress !== '0x';
+
+    const txObj = isDeployed
+      ? this.getSafeProxyTxObj(safeExecTxParams, ownerAccount)
+      : this.getCPKFactoryTxObj(safeExecTxParams);
+
+    const { success, gasLimit } = await this.findGasLimit(txObj, sendOptions);
+
+    if (success) {
+      const { contract, methodName, params } = txObj;
+      sendOptions.gas = gasLimit;
+      return contract.send(methodName, params, sendOptions);
+    } else {
+      throw await this.makeTransactionError(
+        safeExecTxParams,
+        gasLimit,
+        isDeployed,
+        transactions.length === 1,
+      );
+    }
+  }
+
+  private async execTxsWhileConnectedToSafe(
+    transactions: Transaction[],
+    sendOptions: SendOptions,
+  ): Promise<TransactionResult> {
+    if (
+      transactions.length === 1 &&
+      (!transactions[0].operation || transactions[0].operation === CPK.Call)
+    ) {
+      const { to, value, data } = transactions[0];
+      return this.ethLibAdapter.ethSendTransaction({
         to, value, data,
-      }) => ({
-        data,
-        to,
-        value,
-      }));
+        ...sendOptions,
+      });
+    } else {
+      if (transactions.some(
+        ({ operation }) => operation === OperationType.DelegateCall
+      )) {
+        throw new Error('DelegateCall unsupported by WalletConnected Safe');
+      }
 
-      return this.cpkProvider.attemptSafeProviderMultiSendTxs(connectedSafeTxs);
+      return {
+        hash: await this.ethLibAdapter.providerSend(
+          'gs_multi_send',
+          transactions.map(
+            ({ to, value, data }) => ({ to, value, data }),
+          ),
+        ),
+      };
+    }
+  }
+
+  private getSafeExecTxParams(transactions: Transaction[]): StandardTransaction {
+    if (transactions.length === 1) {
+      return standardizeTransaction(transactions[0]);
+    } else {
+      if (!this.multiSend) {
+        throw new Error('CPK MultiSend uninitialized');
+      }
+      return {
+        to: this.multiSend.address,
+        value: 0,
+        data: this.encodeMultiSendCallData(transactions),
+        operation: CPK.DelegateCall,
+      };
+    }
+  }
+
+  private getSafeProxyTxObj(
+    { to, value, data, operation }: StandardTransaction,
+    ownerAccount: Address
+  ): ContractTxObj {
+    if (!this.contract) {
+      throw new Error('CPK uninitialized');
+    }
+    // (r, s, v) where v is 1 means this signature is approved by
+    // the address encoded in the value r
+    // "Hashes are automatically approved by the sender of the message"
+    const safeAutoApprovedSignature = this.ethLibAdapter.abiEncodePacked(
+      { type: 'uint256', value: ownerAccount },
+      { type: 'uint256', value: 0 },
+      { type: 'uint8', value: 1 },
+    );
+
+    return {
+      contract: this.contract,
+      methodName: 'execTransaction',
+      params: [
+        to, value, data, operation,
+        0, 0, 0, zeroAddress, zeroAddress,
+        safeAutoApprovedSignature,
+      ],
+    };
+  }
+
+  private getCPKFactoryTxObj(
+    { to, value, data, operation }: StandardTransaction,
+  ): ContractTxObj {
+    if (!this.proxyFactory) {
+      throw new Error('CPK factory uninitialized');
     }
 
-    if (codeAtAddress !== '0x') {
-      const to = this.cpkProvider.getContractAddress(this.multiSend);
-      const value = 0;
-      const data = this.cpkProvider.encodeMultiSendCallData(transactions);
-      const operation = CPK.DelegateCall;
-
-      await this.cpkProvider.checkMethod(
-        this.contract,
-        this.viewContract,
-        'execTransaction',
-        [
-          to,
-          value,
-          data,
-          operation,
-          0,
-          0,
-          0,
-          zeroAddress,
-          zeroAddress,
-          signatureForAddress(ownerAccount),
-        ],
-        sendOptions,
-        new Error('batch transaction execution expected to fail'),
-      );
-
-      const { safeTxGas, baseGas } = await estimateSafeTxGas(
-        this.cpkProvider,
-        this.address,
-        data,
+    return {
+      contract: this.proxyFactory,
+      methodName: 'createProxyAndExecTransaction',
+      params: [
+        this.masterCopyAddress,
+        predeterminedSaltNonce,
+        this.fallbackHandlerAddress,
         to,
         value,
+        data,
         operation,
-      );
+      ],
+    };
+  }
 
-      return this.cpkProvider.execMethod(
-        this.contract,
-        'execTransaction',
-        [
-          to,
-          value,
-          data,
-          operation,
-          safeTxGas,
-          baseGas,
-          0,
-          zeroAddress,
-          zeroAddress,
-          signatureForAddress(ownerAccount),
-        ],
-        sendOptions,
-      );
+  private async findGasLimit(
+    { contract, methodName, params }: ContractTxObj,
+    sendOptions: NormalizeGas<SendOptions>,
+  ): Promise<{ success: boolean; gasLimit: number }> {
+    const toNumber = (num: NumberLike): number => Number(num.toString());
+    if (!sendOptions.gas) {
+      const blockGasLimit = toNumber((await this.ethLibAdapter.getBlock('latest')).gasLimit);
+
+      const gasEstimateOptions = { ...sendOptions, gas: blockGasLimit };
+      if (!(await contract.call(methodName, params, gasEstimateOptions))) {
+        return { success: false, gasLimit: blockGasLimit };
+      }
+
+      let gasLow = await contract.estimateGas(methodName, params, sendOptions);
+      let gasHigh = blockGasLimit;
+  
+      gasEstimateOptions.gas = gasLow;
+  
+      if (!(await contract.call(methodName, params, gasEstimateOptions))) {
+        while (gasLow <= gasHigh) {
+          const testGasLimit = Math.floor((gasLow + gasHigh) * 0.5);
+          gasEstimateOptions.gas = testGasLimit;
+  
+          if (await contract.call(methodName, params, gasEstimateOptions)) {
+            // values > gasHigh will work
+            gasHigh = testGasLimit - 1;
+          } else {
+            // values <= gasLow will work
+            gasLow = testGasLimit + 1;
+          }
+        }
+        // gasLow is now our target gas value
+      }
+
+      return { success: true, gasLimit: gasLow };
     }
 
-    await this.cpkProvider.checkMethod(
-      this.proxyFactory,
-      this.viewProxyFactory,
-      'createProxyAndExecTransaction',
-      [
-        this.masterCopyAddress,
-        predeterminedSaltNonce,
-        this.fallbackHandlerAddress,
-        this.cpkProvider.getContractAddress(this.multiSend),
-        0,
-        this.cpkProvider.encodeMultiSendCallData(transactions),
-        CPK.DelegateCall,
-      ],
-      sendOptions,
-      new Error('proxy creation and batch transaction execution expected to fail'),
-    );
+    return {
+      success: await contract.call(methodName, params, sendOptions),
+      gasLimit: toNumber(sendOptions.gas),
+    };
+  }
 
-    return this.cpkProvider.execMethod(
-      this.proxyFactory,
-      'createProxyAndExecTransaction',
-      [
-        this.masterCopyAddress,
-        predeterminedSaltNonce,
-        this.fallbackHandlerAddress,
-        this.cpkProvider.getContractAddress(this.multiSend),
-        0,
-        this.cpkProvider.encodeMultiSendCallData(transactions),
-        CPK.DelegateCall,
-      ],
-      sendOptions,
-    );
+  private async makeTransactionError(
+    { to, value, data, operation }: StandardTransaction,
+    gasLimit: number,
+    isDeployed: boolean,
+    isSingleTx: boolean,
+  ): Promise<Error> {
+    let errorMessage = `${
+      isDeployed ? '' : 'proxy creation and '
+    }${
+      isSingleTx ? 'transaction' : 'batch transaction'
+    } execution expected to fail`;
+
+    let revertData, revertMessage;
+    if (isSingleTx && operation === OperationType.Call) {
+      try {
+        revertData = await this.ethLibAdapter.getCallRevertData({
+          from: this.address, to, value, data, gasLimit,
+        }, 'latest');
+        revertMessage = this.ethLibAdapter.decodeError(revertData);
+        errorMessage = `${errorMessage}: ${ revertMessage }`;
+      } catch (e) {
+        // empty
+      }
+    }
+    return new TransactionError(errorMessage, revertData, revertMessage);
   }
 }
 

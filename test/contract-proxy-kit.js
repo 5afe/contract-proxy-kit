@@ -14,8 +14,11 @@ const MultiSend = artifacts.require('MultiSend');
 const DefaultCallbackHandler = artifacts.require('DefaultCallbackHandler');
 const ProxyFactory = artifacts.require('ProxyFactory');
 
-contract('CPK', ([defaultAccount, safeOwner]) => {
-  if (safeOwner == null) {
+contract('CPK', ([coinbase, defaultAccount, safeOwner]) => {
+  if (!defaultAccount) {
+    defaultAccount = coinbase;
+  }
+  if (!safeOwner) {
     safeOwner = defaultAccount;
   }
 
@@ -62,7 +65,7 @@ contract('CPK', ([defaultAccount, safeOwner]) => {
 
         if (method === 'eth_sendTransaction') {
           const [{
-            from, to, gas, gasPrice, value, data, nonce,
+            from, to, gasPrice, value, data, nonce,
           }] = params;
 
           if (from.toLowerCase() !== safeAddress.toLowerCase()) {
@@ -76,7 +79,11 @@ contract('CPK', ([defaultAccount, safeOwner]) => {
             params: [{
               from: safeOwner,
               to: safeAddress,
-              gas,
+              // Override with 3M as gas limit in this mock provider
+              // as Safe app/gas relayer ultimately has control over
+              // this parameter, so we just set it to some value that
+              // should allow all txs in this test suite to work.
+              gas: web3.utils.toHex(3e6),
               gasPrice,
               value,
               nonce,
@@ -150,7 +157,7 @@ contract('CPK', ([defaultAccount, safeOwner]) => {
             `0x${params.map((tx) => [
               web3.eth.abi.encodeParameter('uint8', CPK.Call).slice(-2),
               web3.eth.abi.encodeParameter('address', tx.to).slice(-40),
-              web3.eth.abi.encodeParameter('uint256', tx.value).slice(-64),
+              web3.eth.abi.encodeParameter('uint256', tx.value || 0).slice(-64),
               web3.eth.abi.encodeParameter('uint256', web3.utils.hexToBytes(tx.data).length).slice(-64),
               tx.data.replace(/^0x/, ''),
             ].join('')).join('')}`,
@@ -167,8 +174,8 @@ contract('CPK', ([defaultAccount, safeOwner]) => {
             zeroAddress,
             zeroAddress,
             safeSignature,
-            { from: safeOwner },
-          ).then((result) => callback(null, { id, jsonrpc, result }), callback);
+            { from: safeOwner, gas: web3.utils.toHex(3e6) },
+          ).then(({ tx }) => callback(null, { id, jsonrpc, result: tx }), callback);
         }
 
         return web3.currentProvider.send(rpcData, callback);
@@ -186,8 +193,8 @@ contract('CPK', ([defaultAccount, safeOwner]) => {
     await CPK.create().should.be.rejectedWith('missing options');
   });
 
-  it('should not produce CPK instances when cpkProvider not provided', async () => {
-    await CPK.create({}).should.be.rejectedWith('cpkProvider property missing from options');
+  it('should not produce CPK instances when ethLibAdapter not provided', async () => {
+    await CPK.create({}).should.be.rejectedWith('ethLibAdapter property missing from options');
   });
 
   web3Versions.forEach((Web3) => {
