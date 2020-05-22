@@ -127,6 +127,17 @@ class EthersAdapter extends EthLibAdapter {
     return { transactionResponse, hash: transactionResponse.hash };
   }
 
+  toSafeRelayTxResult(txHash: string, tx: object): Promise<EthersTransactionResult> {
+    return new Promise(
+      (resolve, reject) => resolve({
+        transactionResponse: new Promise(
+          (resolve, reject) => resolve(tx),
+        ),
+        hash: txHash
+      }),
+    );
+  }
+
   getSendOptions(ownerAccount: Address, options?: CallOptions): SendOptions {
     return {
       from: ownerAccount,
