@@ -1,4 +1,3 @@
-import fetch from 'node-fetch';
 import { Address, NumberLike } from './basicTypes';
 import { defaultTxData, defaultTxOperation, defaultTxValue } from './constants';
 import { toHex } from './hexData';
