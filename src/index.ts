@@ -141,6 +141,21 @@ class CPK {
     this.ownerAccount = ownerAccount;
   }
 
+  setEthLibAdapter(ethLibAdapter: EthLibAdapter): void {
+    this.ethLibAdapter = ethLibAdapter;
+  }
+
+  setTransactionManager(transactionManager: TransactionManager): void {
+    this.transactionManager = transactionManager;
+  }
+
+  setNetworks(networks: NetworksConfig): void {
+    this.networks = {
+      ...defaultNetworks,
+      ...networks,
+    };
+  }
+
   encodeMultiSendCallData(transactions: Transaction[]): string {
     const multiSend = this.multiSend || this.ethLibAdapter.getContract(multiSendAbi);
 
