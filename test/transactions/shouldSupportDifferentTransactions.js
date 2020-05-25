@@ -16,6 +16,7 @@ function shouldSupportDifferentTransactions({
   checkTxObj,
   waitTxReceipt,
   ownerIsRecognizedContract,
+  isCpkTransactionManager,
   executor,
 }) {
   const { getConditionId } = makeConditionalTokensIdHelpers(web3.utils);
@@ -223,7 +224,9 @@ function shouldSupportDifferentTransactions({
       }]));
     });
 
-    it('can execute a single transaction with a specific gas price', async () => {
+    (
+      !isCpkTransactionManager ? it.skip : it
+    )('can execute a single transaction with a specific gas price', async () => {
       const startingBalance = await getBalance(executor || proxyOwner);
 
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
@@ -246,7 +249,7 @@ function shouldSupportDifferentTransactions({
     });
 
     (
-      ownerIsRecognizedContract ? it.skip : it
+      !isCpkTransactionManager || ownerIsRecognizedContract ? it.skip : it
     )('can execute a batch transaction with a specific gas price', async () => {
       const startingBalance = await getBalance(executor || proxyOwner);
 

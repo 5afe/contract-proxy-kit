@@ -1,5 +1,5 @@
 import CPK from '../../src';
-import Web3Adapter from '../../src/eth-lib-adapters/Web3Adapter';
+import Web3Adapter from '../../src/ethLibAdapters/Web3Adapter';
 import shouldSupportDifferentTransactions from '../transactions/shouldSupportDifferentTransactions';
 import { toConfirmationPromise } from '../utils';
 
@@ -9,7 +9,13 @@ const DefaultCallbackHandler = artifacts.require('DefaultCallbackHandler');
 const CPKFactory = artifacts.require('CPKFactory');
 const Multistep = artifacts.require('Multistep');
 
-function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderBox) {
+function shouldWorkWithWeb3(
+  Web3,
+  defaultAccount,
+  safeOwner,
+  gnosisSafeProviderBox,
+  transactionManager,
+) {
   describe(`with Web3 version ${(new Web3()).version}`, () => {
     const ueb3 = new Web3(web3.currentProvider);
 
@@ -72,6 +78,13 @@ function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderB
         should.exist(ethLibAdapter);
         should.exist(await CPK.create({ ethLibAdapter, networks }));
         should.exist(await CPK.create({ ethLibAdapter, networks, ownerAccount: defaultAccount }));
+        should.exist(await CPK.create({ ethLibAdapter, transactionManager, networks }));
+        should.exist(await CPK.create({
+          ethLibAdapter,
+          transactionManager,
+          networks,
+          ownerAccount: defaultAccount
+        }));
       });
 
       it('can encode multiSend call data', async () => {
@@ -96,7 +109,19 @@ function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderB
 
         before('create instance', async () => {
           const ethLibAdapter = new Web3Adapter({ web3: ueb3 });
-          cpk = await CPK.create({ ethLibAdapter, networks, ownerAccount: defaultAccount });
+
+          cpk = await CPK.create({
+            ethLibAdapter,
+            transactionManager,
+            networks,
+            ownerAccount: defaultAccount,
+          });
+
+          await ueb3TestHelpers.sendTransaction({
+            from: defaultAccount,
+            to: cpk.address,
+            value: `${2e18}`,
+          });
         });
 
         before('warm instance', async () => {
@@ -109,6 +134,7 @@ function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderB
         shouldSupportDifferentTransactions({
           ...ueb3TestHelpers,
           async getCPK() { return cpk; },
+          isCpkTransactionManager: !transactionManager || transactionManager.config.name === 'CpkTransactionManager'
         });
       });
 
@@ -128,10 +154,12 @@ function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderB
             const ethLibAdapter = new Web3Adapter({ web3: ueb3 });
             return CPK.create({
               ethLibAdapter,
+              transactionManager,
               networks,
               ownerAccount: newAccount.address,
             });
           },
+          isCpkTransactionManager: !transactionManager || transactionManager.config.name === 'CpkTransactionManager'
         });
       });
 
@@ -146,7 +174,7 @@ function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderB
 
         before('create instance', async () => {
           const ethLibAdapter = new Web3Adapter({ web3: safeWeb3Box[0] });
-          cpk = await CPK.create({ ethLibAdapter, networks });
+          cpk = await CPK.create({ ethLibAdapter, transactionManager, networks });
         });
 
         shouldSupportDifferentTransactions({
@@ -154,6 +182,7 @@ function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderB
           async getCPK() { return cpk; },
           ownerIsRecognizedContract: true,
           executor: safeOwner,
+          isCpkTransactionManager: !transactionManager || transactionManager.config.name === 'CpkTransactionManager'
         });
       });
     });

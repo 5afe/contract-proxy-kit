@@ -1,5 +1,5 @@
 import CPK from '../../src';
-import EthersAdapter from '../../src/eth-lib-adapters/EthersAdapter';
+import EthersAdapter from '../../src/ethLibAdapters/EthersAdapter';
 import shouldSupportDifferentTransactions from '../transactions/shouldSupportDifferentTransactions';
 import { toConfirmationPromise } from '../utils';
 
@@ -9,7 +9,13 @@ const DefaultCallbackHandler = artifacts.require('DefaultCallbackHandler');
 const CPKFactory = artifacts.require('CPKFactory');
 const Multistep = artifacts.require('Multistep');
 
-function shouldWorkWithEthers(ethers, defaultAccount, safeOwner, gnosisSafeProviderBox) {
+function shouldWorkWithEthers(
+  ethers,
+  defaultAccount,
+  safeOwner,
+  gnosisSafeProviderBox,
+  transactionManager
+) {
   describe(`with ethers version ${ethers.version}`, () => {
     const signer = ethers.Wallet.createRandom()
       .connect(new ethers.providers.Web3Provider(web3.currentProvider));
@@ -19,7 +25,7 @@ function shouldWorkWithEthers(ethers, defaultAccount, safeOwner, gnosisSafeProvi
       sendTransaction: async ({ from, gas, ...txObj }) => {
         const signer = signerBox[0];
         const expectedFrom = await signer.getAddress();
-        if (from != null && from.toLowerCase() !== expectedFrom.toLowerCase()) {
+        if (from && from.toLowerCase() !== expectedFrom.toLowerCase()) {
           throw new Error(`from ${from} doesn't match signer ${expectedFrom}`);
         }
 
@@ -86,6 +92,7 @@ function shouldWorkWithEthers(ethers, defaultAccount, safeOwner, gnosisSafeProvi
         const ethLibAdapter = new EthersAdapter({ ethers, signer });
         should.exist(ethLibAdapter);
         should.exist(await CPK.create({ ethLibAdapter, networks }));
+        should.exist(await CPK.create({ ethLibAdapter, transactionManager, networks }));
       });
 
       it('can encode multiSend call data', async () => {
@@ -119,7 +126,7 @@ function shouldWorkWithEthers(ethers, defaultAccount, safeOwner, gnosisSafeProvi
 
         before('create instance', async () => {
           const ethLibAdapter = new EthersAdapter({ ethers, signer });
-          cpk = await CPK.create({ ethLibAdapter, networks });
+          cpk = await CPK.create({ ethLibAdapter, transactionManager, networks });
         });
 
         before('warm instance', async () => {
@@ -132,11 +139,13 @@ function shouldWorkWithEthers(ethers, defaultAccount, safeOwner, gnosisSafeProvi
         shouldSupportDifferentTransactions({
           ...ethersTestHelpers([signer]),
           async getCPK() { return cpk; },
+          isCpkTransactionManager: !transactionManager || transactionManager.config.name === 'CpkTransactionManager'
         });
       });
 
       describe('with fresh accounts', () => {
         const freshSignerBox = [];
+
         shouldSupportDifferentTransactions({
           ...ethersTestHelpers(freshSignerBox),
           async getCPK() {
@@ -151,8 +160,9 @@ function shouldWorkWithEthers(ethers, defaultAccount, safeOwner, gnosisSafeProvi
             }));
 
             const ethLibAdapter = new EthersAdapter({ ethers, signer: freshSignerBox[0] });
-            return CPK.create({ ethLibAdapter, networks });
+            return CPK.create({ ethLibAdapter, transactionManager, networks });
           },
+          isCpkTransactionManager: !transactionManager || transactionManager.config.name === 'CpkTransactionManager'
         });
       });
 
@@ -168,7 +178,7 @@ function shouldWorkWithEthers(ethers, defaultAccount, safeOwner, gnosisSafeProvi
 
         before('create instance', async () => {
           const ethLibAdapter = new EthersAdapter({ ethers, signer: safeSignerBox[0] });
-          cpk = await CPK.create({ ethLibAdapter, networks });
+          cpk = await CPK.create({ ethLibAdapter, transactionManager, networks });
         });
 
         shouldSupportDifferentTransactions({
@@ -176,6 +186,7 @@ function shouldWorkWithEthers(ethers, defaultAccount, safeOwner, gnosisSafeProvi
           async getCPK() { return cpk; },
           ownerIsRecognizedContract: true,
           executor: safeOwner,
+          isCpkTransactionManager: !transactionManager || transactionManager.config.name === 'CpkTransactionManager'
         });
       });
     });
