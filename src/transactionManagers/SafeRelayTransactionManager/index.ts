@@ -1,7 +1,7 @@
 import fetch from 'node-fetch';
 import BigNumber from 'bignumber.js';
 import TransactionManager, { ExecTransactionProps, TransactionManagerConfig } from '../TransactionManager';
-import { TransactionResult, OperationType, StandardTransaction } from '../../utils/transactions';
+import { TransactionResult, OperationType } from '../../utils/transactions';
 import { zeroAddress } from '../../utils/constants';
 import { Address } from '../../utils/basicTypes';
 import EthLibAdapter from '../../ethLibAdapters/EthLibAdapter';

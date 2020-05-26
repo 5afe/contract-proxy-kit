@@ -8,7 +8,6 @@ import {
   TransactionResult,
   ExecOptions,
   standardizeTransaction,
-  SendOptions,
   StandardTransaction,
   normalizeGasLimit,
 } from './utils/transactions';
@@ -186,14 +185,9 @@ class CPK {
     const ownerAccount = await this.getOwnerAccount();
     const sendOptions = normalizeGasLimit({ ...options, from: ownerAccount });
 
-    if (this.isConnectedToSafe) {
-      return this.execTxsWhileConnectedToSafe(transactions, sendOptions);
-    }
-
     const safeExecTxParams = this.getSafeExecTxParams(transactions);
-    
-    // (r, s, v) where v is 1 means this signature is approved by
-    // the address encoded in the value r
+
+    // (r, s, v) where v is 1 means this signature is approved by the address encoded in value r
     // "Hashes are automatically approved by the sender of the message"
     const signature = this.ethLibAdapter.abiEncodePacked(
       { type: 'uint256', value: ownerAccount }, // r
@@ -216,41 +210,15 @@ class CPK {
     };
 
     return txManager.execTransactions({
+      safeExecTxParams,
+      transactions,
+      signature,
       contracts: cpkContracts,
       ethLibAdapter: this.ethLibAdapter,
-      safeExecTxParams,
-      signature,
-      isSingleTx: transactions.length === 1,
       isDeployed,
-      sendOptions
+      isConnectedToSafe: this.isConnectedToSafe,
+      sendOptions,
     });
-  }
-
-  private async execTxsWhileConnectedToSafe(
-    transactions: Transaction[],
-    sendOptions: SendOptions,
-  ): Promise<TransactionResult> {
-    if (
-      transactions.length === 1 &&
-      (!transactions[0].operation || transactions[0].operation === CPK.Call)
-    ) {
-      const { to, value, data } = transactions[0];
-      return this.ethLibAdapter.ethSendTransaction({
-        to, value, data,
-        ...sendOptions,
-      });
-    }
-
-    if (transactions.some(({ operation }) => operation === OperationType.DelegateCall)) {
-      throw new Error('DelegateCall unsupported by WalletConnected Safe');
-    }
-
-    return {
-      hash: await this.ethLibAdapter.providerSend(
-        'gs_multi_send',
-        transactions.map(({ to, value, data }) => ({ to, value, data })),
-      ),
-    };
   }
 
   private getSafeExecTxParams(transactions: Transaction[]): StandardTransaction {

@@ -8,6 +8,7 @@ import {
   StandardTransaction,
   TransactionError,
   NormalizeGas,
+  Transaction,
 } from '../../utils/transactions';
 import { NumberLike, Address } from '../../utils/basicTypes';
 
@@ -28,14 +29,20 @@ class CpkTransactionManager implements TransactionManager {
 
   async execTransactions({
     safeExecTxParams,
+    transactions,
     signature,
     contracts,
     ethLibAdapter,
-    isSingleTx,
     isDeployed,
+    isConnectedToSafe,
     sendOptions,
   }: ExecTransactionProps): Promise<TransactionResult> {
     const { safeContract, proxyFactory, masterCopyAddress, fallbackHandlerAddress } = contracts;
+    const isSingleTx = transactions.length === 1;
+
+    if (isConnectedToSafe) {
+      return this.execTxsWhileConnectedToSafe(ethLibAdapter, transactions, sendOptions);
+    }
 
     const txObj: ContractTxObj = isDeployed
       ? this.getSafeProxyTxObj(safeContract, safeExecTxParams, signature)
@@ -63,6 +70,33 @@ class CpkTransactionManager implements TransactionManager {
     const { contract, methodName, params } = txObj;
 
     return contract.send(methodName, params, sendOptions);
+  }
+
+  private async execTxsWhileConnectedToSafe(
+    ethLibAdapter: EthLibAdapter,
+    transactions: Transaction[],
+    sendOptions: SendOptions,
+  ): Promise<TransactionResult> {
+    if (
+      transactions.length === 1 && !transactions[0].operation
+    ) {
+      const { to, value, data } = transactions[0];
+      return ethLibAdapter.ethSendTransaction({
+        to, value, data,
+        ...sendOptions,
+      });
+    }
+
+    if (transactions.some(({ operation }) => operation === OperationType.DelegateCall)) {
+      throw new Error('DelegateCall unsupported by WalletConnected Safe');
+    }
+
+    return {
+      hash: await ethLibAdapter.providerSend(
+        'gs_multi_send',
+        transactions.map(({ to, value, data }) => ({ to, value, data })),
+      ),
+    };
   }
 
   private getSafeProxyTxObj(

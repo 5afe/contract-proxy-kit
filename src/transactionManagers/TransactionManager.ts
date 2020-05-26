@@ -1,4 +1,4 @@
-import { TransactionResult, StandardTransaction } from '../utils/transactions';
+import { TransactionResult, StandardTransaction, Transaction } from '../utils/transactions';
 import EthLibAdapter, { Contract } from '../ethLibAdapters/EthLibAdapter';
 import { Address } from '../utils/basicTypes';
 
@@ -16,11 +16,12 @@ export interface CPKContracts {
 
 export interface ExecTransactionProps {
   safeExecTxParams: StandardTransaction;
+  transactions: Transaction[];
   signature: string;
   contracts: CPKContracts;
   ethLibAdapter: EthLibAdapter;
-  isSingleTx: boolean;
   isDeployed: boolean;
+  isConnectedToSafe: boolean;
   sendOptions: any;
 }
 
@@ -29,11 +30,12 @@ interface TransactionManager {
 
   execTransactions({
     safeExecTxParams,
+    transactions,
     signature,
     contracts,
     ethLibAdapter,
-    isSingleTx,
     isDeployed,
+    isConnectedToSafe,
     sendOptions,
   }: ExecTransactionProps): Promise<TransactionResult>;
 }
