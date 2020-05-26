@@ -1,14 +1,34 @@
+dist: xenial
+os:
+  - linux
 language: node_js
 node_js:
   - lts/dubnium
 services:
   - docker
+before_install:
+  # Install custom docker-compose version
+  - sudo rm /usr/local/bin/docker-compose
+  - curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
+  - chmod +x docker-compose
+  - sudo mv docker-compose /usr/local/bin
+  # Shut down postgres because it blocks our db container's port map to :5432
+  # it comes enabled by default in docker-compose
+  - sudo service postgresql stop
+  # Wait for it to stop
+  - while sudo lsof -Pi :5432 -sTCP:LISTEN -t; do sleep 1; done
+before_script:
+  - git clone https://github.com/gnosis/safe-relay-service.git
+  - cd safe-relay-service
+  - git checkout master
+  - docker-compose -f docker-compose.yml -f docker-compose.dev.yml build --force-rm
+  - docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
 jobs:
   include:
   - name: Truffle's internal Ganache
-    script: yarn test-norpc
-  - name: Ganache with --noVMErrorsOnRPCResponse
     script: yarn test
+  - name: Ganache with --noVMErrorsOnRPCResponse
+    script: yarn test-rpc
   - name: Geth
     script: yarn test-geth
   - name: OpenEthereum
