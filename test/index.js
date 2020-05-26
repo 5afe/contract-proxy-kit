@@ -3,7 +3,6 @@ import { ethers as ethersMaj4 } from 'ethers-4';
 import Web3Maj1Min2 from 'web3-1-2';
 import Web3Maj2Alpha from 'web3-2-alpha';
 import CPK from '../src';
-import CpkTransactionManager from '../src/transactionManagers/CpkTransactionManager';
 import SafeRelayTransactionManager from '../src/transactionManagers/SafeRelayTransactionManager';
 import { zeroAddress } from '../src/utils/constants';
 import EmulatedSafeProvider from './utils/EmulatedSafeProvider';

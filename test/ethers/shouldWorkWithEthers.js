@@ -129,6 +129,12 @@ function shouldWorkWithEthers(
         before('create instance', async () => {
           const ethLibAdapter = new EthersAdapter({ ethers, signer });
           cpk = await CPK.create({ ethLibAdapter, transactionManager, networks });
+
+          await toConfirmationPromise(web3.eth.sendTransaction({
+            from: defaultAccount,
+            to: cpk.address,
+            value: `${2e18}`,
+          }));
         });
 
         before('warm instance', async () => {
