@@ -65,8 +65,10 @@ function shouldWorkWithWeb3(
       before('obtain addresses from artifacts', async () => {
         networks = {
           [await ueb3.eth.net.getId()]: {
-            masterCopyAddress: GnosisSafe.address,
+            //masterCopyAddress: GnosisSafe.address,
+            masterCopyAddress: '0xe78A0F7E598Cc8b0Bb87894B0F60dD2a88d6a8Ab',
             proxyFactoryAddress: CPKFactory.address,
+            // proxyFactoryAddress: '0x254dffcd3277C0b1660F6d42EFbB754edaBAbC2B',
             multiSendAddress: MultiSend.address,
             fallbackHandlerAddress: DefaultCallbackHandler.address,
           },
