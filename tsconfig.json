@@ -7,7 +7,7 @@
     "esModuleInterop": true,
     "isolatedModules": true,
     "module": "commonjs",
-    "noImplicitAny": true,
+    "noImplicitAny": false,
     "outDir": "lib",
     "resolveJsonModule": true,
     "sourceMap": true,
