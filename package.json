@@ -4,13 +4,14 @@
   "description": "Enable batched transactions and contract account interactions using a unique deterministic Gnosis Safe.",
   "main": "src/index.ts",
   "scripts": {
+    "generate-types": "typechain --target=truffle-v5 './build/contracts/*.json'",
     "migrate": "truffle migrate",
     "test-norpc": "truffle test",
     "test-geth": "ethnode --execute='truffle test --network local'",
     "test": "run-with-testrpc --noVMErrorsOnRPCResponse 'truffle test --network local'",
     "lint:check": "eslint . --ext .js,.jsx,.ts,.tsx",
     "lint:fix": "yarn lint:check --fix",
-    "build": "tsc"
+    "typecheck": "tsc"
   },
   "repository": {
     "type": "git",
@@ -39,6 +40,7 @@
     "@gnosis.pm/safe-contracts": "^1.1.1",
     "@truffle/contract": "^4.2.6",
     "@truffle/hdwallet-provider": "^1.0.34",
+    "@typechain/truffle-v5": "^2.0.2",
     "@types/chai": "^4.2.11",
     "@types/chai-as-promised": "^7.1.2",
     "@types/mocha": "^7.0.2",
@@ -52,7 +54,10 @@
     "ethnode": "^0.0.18",
     "run-with-testrpc": "^0.3.1",
     "should": "^13.2.3",
+    "truffle": "^5.1.28",
+    "truffle-typings": "^1.0.8",
     "ts-node": "^8.8.2",
+    "typechain": "^2.0.0",
     "typescript": "^3.8.3",
     "wait-port": "^0.2.7",
     "web3-1-2": "npm:web3@^1.2.6",
