@@ -3,56 +3,77 @@ import { ethers as ethersMaj4 } from 'ethers-4';
 import Web3Maj1Min2 from 'web3-1-2';
 import Web3Maj2Alpha from 'web3-2-alpha';
 import CPK from '../src';
-import { zeroAddress } from '../src/utils/constants';
-import shouldWorkWithWeb3 from './web3/shouldWorkWithWeb3';
-import shouldWorkWithEthers from './ethers/shouldWorkWithEthers';
+import { zeroAddress, Address } from '../src/utils/constants';
+import { shouldWorkWithWeb3 } from './web3/shouldWorkWithWeb3';
+import { shouldWorkWithEthers } from './ethers/shouldWorkWithEthers';
+import { Transaction } from '../src/utils/transactions';
+import {
+  initializeContracts,
+  getContracts,
+  getContractInstances,
+  TestContractInstances
+} from './utils/contracts';
+
+import chai from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+chai.use(chaiAsPromised);
 
 const web3Versions = [Web3Maj1Min2, Web3Maj2Alpha];
 
-const GnosisSafe = artifacts.require('GnosisSafe');
-const MultiSend = artifacts.require('MultiSend');
-const DefaultCallbackHandler = artifacts.require('DefaultCallbackHandler');
-const ProxyFactory = artifacts.require('ProxyFactory');
+describe('CPK', () => {
+  let web3: any;
+  const defaultAccountBox: Address[] = [];
+  // let coinbase: Address;
+  const safeOwnerBox: Address[] = [];
+  let contracts: TestContractInstances;
+  const gnosisSafeProviderBox: any[] = [];
 
-contract('CPK', ([coinbase, defaultAccount, safeOwner]) => {
-  if (!defaultAccount) {
-    defaultAccount = coinbase;
-  }
-  if (!safeOwner) {
-    safeOwner = defaultAccount;
-  }
+  before('initialize user accounts', async () => {
+    web3 = new Web3Maj1Min2('ws://localhost:8545');
+    const accounts = await web3.eth.getAccounts(console.log);
 
-  const gnosisSafeProviderBox = [];
+    // coinbase = accounts[0];
+    defaultAccountBox[0] = accounts[1];
+    safeOwnerBox[0] = accounts[2];
+  });
+  
+  before('initialize contracts', async () => {
+    await initializeContracts(safeOwnerBox[0]);
+    contracts = getContractInstances();
+  });
 
   before('emulate Gnosis Safe WalletConnect provider', async () => {
-    const proxyFactory = await ProxyFactory.deployed();
-    const safeMasterCopy = await GnosisSafe.deployed();
-    const multiSend = await MultiSend.deployed();
-    const safeSetupData = safeMasterCopy.contract.methods.setup(
-      [safeOwner],
+    const { gnosisSafe, defaultCallbackHandler, proxyFactory, multiSend } = contracts;
+    const safeSetupData = gnosisSafe.contract.methods.setup(
+      [safeOwnerBox[0]],
       1,
       zeroAddress,
       '0x',
-      DefaultCallbackHandler.address,
+      defaultCallbackHandler.address,
       zeroAddress,
       '0x',
-      zeroAddress,
+      zeroAddress
     ).encodeABI();
-    const safeCreationTx = await proxyFactory.createProxy(safeMasterCopy.address, safeSetupData);
-    const safeAddress = safeCreationTx.logs.find(({ event }) => event === 'ProxyCreation').args.proxy;
+    const { logs } = await proxyFactory.createProxy(
+      gnosisSafe.address,
+      safeSetupData,
+      { from: safeOwnerBox[0] }
+    );
+    const proxyCreationEvents = logs.find(({ event }: { event: any }) => event === 'ProxyCreation');
+    const safeAddress = proxyCreationEvents && proxyCreationEvents.args.proxy;
     const safeSignature = `0x000000000000000000000000${
-      safeOwner.replace(/^0x/, '').toLowerCase()
+      safeOwnerBox[0].replace(/^0x/, '').toLowerCase()
     }000000000000000000000000000000000000000000000000000000000000000001`;
-    const safe = await GnosisSafe.at(safeAddress);
+    const safe = await getContracts().GnosisSafe.at(safeAddress);
 
-    const emulatedSafeProvider = {
+    const emulatedSafeProvider: any = {
       ...web3.currentProvider,
       wc: {
         peerMeta: {
           name: 'Gnosis Safe - Mock',
         },
       },
-      send(rpcData, callback) {
+      send(rpcData: any, callback: any) {
         const {
           id, jsonrpc, method, params,
         } = rpcData;
@@ -77,7 +98,7 @@ contract('CPK', ([coinbase, defaultAccount, safeOwner]) => {
             jsonrpc,
             method,
             params: [{
-              from: safeOwner,
+              from: safeOwnerBox[0],
               to: safeAddress,
               // Override with 3M as gas limit in this mock provider
               // as Safe app/gas relayer ultimately has control over
@@ -87,7 +108,7 @@ contract('CPK', ([coinbase, defaultAccount, safeOwner]) => {
               gasPrice,
               value,
               nonce,
-              data: safeMasterCopy.contract.methods.execTransaction(
+              data: gnosisSafe.contract.methods.execTransaction(
                 to,
                 value || 0,
                 data,
@@ -107,7 +128,7 @@ contract('CPK', ([coinbase, defaultAccount, safeOwner]) => {
           const [account, block] = params;
           if (account === safeAddress) {
             return web3.currentProvider.send({
-              id, jsonrpc, method, params: [safeOwner, block],
+              id, jsonrpc, method, params: [safeOwnerBox[0], block],
             }, callback);
           }
         }
@@ -123,13 +144,13 @@ contract('CPK', ([coinbase, defaultAccount, safeOwner]) => {
               jsonrpc,
               method,
               params: [{
-                from: safeOwner,
+                from: safeOwnerBox[0],
                 to: safeAddress,
                 gas,
                 gasPrice,
                 value,
                 nonce,
-                data: safeMasterCopy.contract.methods.execTransaction(
+                data: gnosisSafe.contract.methods.execTransaction(
                   to,
                   value || 0,
                   data,
@@ -147,19 +168,19 @@ contract('CPK', ([coinbase, defaultAccount, safeOwner]) => {
         }
 
         if (method === 'gs_multi_send') {
-          params.forEach((tx) => {
+          params.forEach((tx: Transaction) => {
             if (typeof tx.operation !== 'undefined') {
               throw new Error('expected operation property to be unset');
             }
           });
 
           const callData = multiSend.contract.methods.multiSend(
-            `0x${params.map((tx) => [
+            `0x${params.map((tx: Transaction) => [
               web3.eth.abi.encodeParameter('uint8', CPK.Call).slice(-2),
               web3.eth.abi.encodeParameter('address', tx.to).slice(-40),
               web3.eth.abi.encodeParameter('uint256', tx.value || 0).slice(-64),
               web3.eth.abi.encodeParameter('uint256', web3.utils.hexToBytes(tx.data).length).slice(-64),
-              tx.data.replace(/^0x/, ''),
+              tx.data && tx.data.replace(/^0x/, ''),
             ].join('')).join('')}`,
           ).encodeABI();
 
@@ -174,8 +195,10 @@ contract('CPK', ([coinbase, defaultAccount, safeOwner]) => {
             zeroAddress,
             zeroAddress,
             safeSignature,
-            { from: safeOwner, gas: web3.utils.toHex(3e6) },
-          ).then(({ tx }) => callback(null, { id, jsonrpc, result: tx }), callback);
+            { from: safeOwnerBox[0], gas: web3.utils.toHex(3e6) },
+          ).then(({ tx }: { tx: any }) => (
+            callback(null, { id, jsonrpc, result: tx }), callback)
+          );
         }
 
         return web3.currentProvider.send(rpcData, callback);
@@ -190,15 +213,22 @@ contract('CPK', ([coinbase, defaultAccount, safeOwner]) => {
   });
 
   it('should not produce CPK instances when options are missing', async () => {
-    await CPK.create().should.be.rejectedWith('missing options');
+    await CPK.create(undefined as any).should.be.rejectedWith('missing options');
   });
 
   it('should not produce CPK instances when ethLibAdapter not provided', async () => {
-    await CPK.create({}).should.be.rejectedWith('ethLibAdapter property missing from options');
+    await CPK.create({} as any).should.be.rejectedWith('ethLibAdapter property missing from options');
   });
 
-  web3Versions.forEach((Web3) => {
-    shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderBox);
+  describe('start', () => {
+    web3Versions.forEach((Web3) => {
+      shouldWorkWithWeb3({ Web3, defaultAccountBox, safeOwnerBox, gnosisSafeProviderBox });
+    });
+    shouldWorkWithEthers({
+      ethers: ethersMaj4,
+      defaultAccountBox,
+      safeOwnerBox,
+      gnosisSafeProviderBox
+    });
   });
-  shouldWorkWithEthers(ethersMaj4, defaultAccount, safeOwner, gnosisSafeProviderBox);
 });

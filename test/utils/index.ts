@@ -1,8 +1,6 @@
-const toConfirmationPromise = (promiEvent) => new Promise(
+export const toConfirmationPromise = (promiEvent: any): Promise<any> => new Promise(
   (resolve, reject) => promiEvent.on('confirmation',
-    (confirmationNumber, receipt) => resolve(receipt)).catch(reject),
+    (confirmationNumber: number, receipt: any) => {
+      resolve(receipt);
+    }).catch(reject),
 );
-
-module.exports = {
-  toConfirmationPromise,
-};
