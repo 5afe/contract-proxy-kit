@@ -5,10 +5,12 @@
   "main": "src/index.ts",
   "scripts": {
     "generate-types": "typechain --target=truffle-v5 './build/contracts/*.json'",
-    "migrate": "truffle migrate",
-    "test-norpc": "truffle test",
-    "test-geth": "ethnode --execute='truffle test --network local'",
-    "test": "run-with-testrpc --noVMErrorsOnRPCResponse 'truffle test --network local'",
+    "postinstall": "truffle compile && yarn generate-types",
+    "migrate": "tsc -p ./tsconfig.migrate.json --outDir ./migrations && truffle migrate",
+    "test-ts": "mocha -r ts-node/register ./test/contract-proxy-kit.ts --exit",
+    "test": "yarn test-ts",
+    "test-geth": "ethnode --execute='yarn test-ts'",
+    "test-rpc": "run-with-testrpc --noVMErrorsOnRPCResponse 'yarn test-ts'",
     "lint:check": "eslint . --ext .js,.jsx,.ts,.tsx",
     "lint:fix": "yarn lint:check --fix",
     "typecheck": "tsc"
