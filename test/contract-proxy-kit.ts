@@ -30,7 +30,7 @@ describe('CPK', () => {
 
   before('initialize user accounts', async () => {
     web3 = new Web3Maj1Min2('ws://localhost:8545');
-    const accounts = await web3.eth.getAccounts(console.log);
+    const accounts = await web3.eth.getAccounts();
 
     // coinbase = accounts[0];
     defaultAccountBox[0] = accounts[1];
