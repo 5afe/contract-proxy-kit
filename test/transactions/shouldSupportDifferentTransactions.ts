@@ -241,7 +241,7 @@ export function shouldSupportDifferentTransactions({
     });
 
     it('can execute a single transaction with a specific gas price', async () => {
-      const startingBalance = await getBalance(executor[0] || proxyOwner);
+      const startingBalance = await getBalance((executor && executor[0]) || proxyOwner);
 
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
 
@@ -256,7 +256,7 @@ export function shouldSupportDifferentTransactions({
       const receipt = await waitTxReceipt(txObj);
       const { gasUsed } = receipt;
 
-      const endingBalance = await getBalance(executor[0] || proxyOwner);
+      const endingBalance = await getBalance((executor && executor[0]) || proxyOwner);
       const gasCosts = startingBalance.sub(endingBalance).toNumber();
 
       gasCosts.should.be.equal(gasPrice * gasUsed);
@@ -265,7 +265,7 @@ export function shouldSupportDifferentTransactions({
     (
       ownerIsRecognizedContract ? it.skip : it
     )('can execute a batch transaction with a specific gas price', async () => {
-      const startingBalance = await getBalance(executor[0] || proxyOwner);
+      const startingBalance = await getBalance((executor && executor[0]) || proxyOwner);
 
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
 
@@ -285,7 +285,7 @@ export function shouldSupportDifferentTransactions({
       const receipt = await waitTxReceipt(txObj);
       const { gasUsed } = receipt;
 
-      const endingBalance = await getBalance(executor[0] || proxyOwner);
+      const endingBalance = await getBalance((executor && executor[0]) || proxyOwner);
       const gasCosts = startingBalance.sub(endingBalance).toNumber();
 
       gasCosts.should.be.equal(gasPrice * gasUsed);

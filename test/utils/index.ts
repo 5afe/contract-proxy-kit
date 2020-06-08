@@ -1,6 +1,7 @@
-export const toConfirmationPromise = (promiEvent: any): Promise<any> => new Promise(
-  (resolve, reject) => promiEvent.on('confirmation',
-    (confirmationNumber: number, receipt: any) => {
-      resolve(receipt);
-    }).catch(reject),
-);
+export const toTxHashPromise = (promiEvent: any): Promise<any> => {
+  return new Promise(
+    (resolve, reject) => promiEvent
+      .once('transactionHash', resolve)
+      .catch(reject)
+  );
+};

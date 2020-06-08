@@ -3,7 +3,7 @@ import Web3Maj1Min2 from 'web3-1-2';
 import CPK from '../../src';
 import EthersAdapter from '../../src/eth-lib-adapters/EthersAdapter';
 import { shouldSupportDifferentTransactions } from '../transactions/shouldSupportDifferentTransactions';
-import { toConfirmationPromise } from '../utils';
+import { toTxHashPromise } from '../utils';
 import { NetworksConfig } from '../../src/utils/networks';
 import { Address } from '../../src/utils/constants';
 import { Transaction } from '../../src/utils/transactions';
@@ -131,7 +131,7 @@ export function shouldWorkWithEthers({
         let cpk: CPK;
 
         before('fund owner/signer', async () => {
-          await toConfirmationPromise(web3.eth.sendTransaction({
+          await toTxHashPromise(web3.eth.sendTransaction({
             from: defaultAccountBox[0],
             to: signer.address,
             value: `${2e18}`,
@@ -167,7 +167,7 @@ export function shouldWorkWithEthers({
             freshSignerBox[0] = ethers.Wallet.createRandom()
               .connect(new ethers.providers.Web3Provider(web3.currentProvider));
 
-            await toConfirmationPromise(web3.eth.sendTransaction({
+            await toTxHashPromise(web3.eth.sendTransaction({
               from: defaultAccountBox[0],
               to: freshSignerBox[0].address,
               value: `${2e18}`,

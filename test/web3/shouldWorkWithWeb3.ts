@@ -4,7 +4,7 @@ import Web3Maj2Alpha from 'web3-2-alpha';
 import CPK from '../../src';
 import Web3Adapter from '../../src/eth-lib-adapters/Web3Adapter';
 import { shouldSupportDifferentTransactions } from '../transactions/shouldSupportDifferentTransactions';
-import { toConfirmationPromise } from '../utils';
+import { toTxHashPromise } from '../utils';
 import { Address } from '../../src/utils/constants';
 import { Transaction } from '../../src/utils/transactions';
 import { NetworksConfig } from '../../src/utils/networks';
@@ -33,7 +33,7 @@ export function shouldWorkWithWeb3({
         web3Box[0].utils.checkAddressChecksum(address)
       ),
       sendTransaction: (txObj: any): any => (
-        toConfirmationPromise(web3Box[0].eth.sendTransaction(txObj))
+        toTxHashPromise(web3Box[0].eth.sendTransaction(txObj))
       ),
       randomHexWord: (): string => web3Box[0].utils.randomHex(32),
       fromWei: (amount: number): number => Number(web3Box[0].utils.fromWei(amount)),

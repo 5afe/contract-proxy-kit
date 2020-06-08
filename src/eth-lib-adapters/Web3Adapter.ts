@@ -77,7 +77,7 @@ class Web3Adapter extends EthLibAdapter {
   }
 
   providerSend(method: string, params: any[]): Promise<any> {
-    return this.web3.currentProvider.host === 'CustomProvider'
+    return (this.web3.currentProvider.host)
       ? this.web3.currentProvider.send(
         method,
         params,
