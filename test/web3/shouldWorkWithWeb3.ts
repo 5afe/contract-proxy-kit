@@ -24,7 +24,7 @@ export function shouldWorkWithWeb3({
   gnosisSafeProviderBox
 }: ShouldWorkWithWeb3Props): void {
   describe(`with Web3 version ${(new Web3(Web3.givenProvider)).version}`, () => {
-    const ueb3 = new Web3('ws://localhost:8545');
+    const ueb3 = new Web3('http://localhost:8545');
 
     let contracts: TestContractInstances;
 

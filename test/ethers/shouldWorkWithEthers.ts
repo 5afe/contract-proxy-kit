@@ -23,7 +23,7 @@ export function shouldWorkWithEthers({
   gnosisSafeProviderBox
 }: ShouldWorkWithEthersProps): void {
   describe(`with ethers version ${ethers.version}`, () => {
-    const web3 = new Web3Maj1Min2('ws://localhost:8545');
+    const web3 = new Web3Maj1Min2('http://localhost:8545');
 
     let contracts: TestContractInstances;
 
@@ -61,10 +61,10 @@ export function shouldWorkWithEthers({
       fromWei: (amount: number): number => (
         Number(ethers.utils.formatUnits(amount.toString(), 'ether'))
       ),
-      getTransactionCount: (address: Address): number => (
+      getTransactionCount: (address: Address): Promise<number> => (
         signer.provider.getTransactionCount(address)
       ),
-      getBalance: (address: Address): number => signer.provider.getBalance(address),
+      getBalance: (address: Address): Promise<number> => signer.provider.getBalance(address),
       testedTxObjProps: 'the TransactionResponse and the hash',
       checkTxObj:
         ({ transactionResponse, hash }: { transactionResponse: any; hash: string }): void => {

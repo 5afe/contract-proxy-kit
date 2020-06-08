@@ -29,7 +29,7 @@ describe('CPK', () => {
   const gnosisSafeProviderBox: any[] = [];
 
   before('initialize user accounts', async () => {
-    web3 = new Web3Maj1Min2('ws://localhost:8545');
+    web3 = new Web3Maj1Min2('http://localhost:8545');
     const accounts = await web3.eth.getAccounts();
 
     // coinbase = accounts[0];
