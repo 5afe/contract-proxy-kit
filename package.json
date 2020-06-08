@@ -6,11 +6,11 @@
   "scripts": {
     "generate-types": "typechain --target=truffle-v5 './build/contracts/*.json'",
     "postinstall": "truffle compile && yarn generate-types",
-    "migrate": "tsc -p ./tsconfig.migrate.json --outDir ./migrations && truffle migrate",
+    "migrate": "tsc -p ./tsconfig.migrate.json --outDir ./migrations && truffle migrate --network local",
     "test-ts": "mocha -r ts-node/register ./test/contract-proxy-kit.ts --exit",
-    "test": "yarn test-ts",
-    "test-geth": "ethnode --execute='yarn test-ts'",
-    "test-rpc": "run-with-testrpc --noVMErrorsOnRPCResponse 'yarn test-ts'",
+    "test": "yarn migrate && yarn test-ts",
+    "test-geth": "ethnode --execute='yarn migrate && yarn test-ts'",
+    "test-rpc": "run-with-testrpc --noVMErrorsOnRPCResponse 'yarn migrate && yarn test-ts'",
     "lint:check": "eslint . --ext .js,.jsx,.ts,.tsx",
     "lint:fix": "yarn lint:check --fix",
     "typecheck": "tsc"
@@ -54,6 +54,7 @@
     "eslint": "^7.2.0",
     "ethers-4": "npm:ethers@^4.0.45",
     "ethnode": "^0.0.19",
+    "ganache-cli": "^6.9.1",
     "run-with-testrpc": "^0.3.1",
     "should": "^13.2.3",
     "truffle": "^5.1.29",
