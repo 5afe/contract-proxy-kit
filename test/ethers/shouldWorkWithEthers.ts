@@ -58,9 +58,13 @@ export function shouldWorkWithEthers({
         return signer.provider.sendTransaction(signedTx);
       },
       randomHexWord: (): string => ethers.utils.hexlify(ethers.utils.randomBytes(32)),
-      fromWei: (amount: number): number => Number(ethers.utils.formatUnits(amount.toString(), 'ether')),
-      getTransactionCount: (): number => signer.provider.getTransactionCount.bind(signer.provider),
-      getBalance: (): number => signer.provider.getBalance.bind(signer.provider),
+      fromWei: (amount: number): number => (
+        Number(ethers.utils.formatUnits(amount.toString(), 'ether'))
+      ),
+      getTransactionCount: (address: Address): number => (
+        signer.provider.getTransactionCount(address)
+      ),
+      getBalance: (address: Address): number => signer.provider.getBalance(address),
       testedTxObjProps: 'the TransactionResponse and the hash',
       checkTxObj:
         ({ transactionResponse, hash }: { transactionResponse: any; hash: string }): void => {
