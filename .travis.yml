@@ -33,3 +33,5 @@ jobs:
   #     - docker logs $CONTAINER_ID
   #     - docker stop $CONTAINER_ID
   #     - docker rm $CONTAINER_ID
+
+after_success: yarn coverage
