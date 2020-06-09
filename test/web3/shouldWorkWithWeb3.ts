@@ -1,32 +1,53 @@
+import should from 'should';
+import Web3Maj1Min2 from 'web3-1-2';
+import Web3Maj2Alpha from 'web3-2-alpha';
 import CPK from '../../src';
 import Web3Adapter from '../../src/eth-lib-adapters/Web3Adapter';
-import shouldSupportDifferentTransactions from '../transactions/shouldSupportDifferentTransactions';
-import { toConfirmationPromise } from '../utils';
+import { shouldSupportDifferentTransactions } from '../transactions/shouldSupportDifferentTransactions';
+import { toTxHashPromise } from '../utils';
+import { Address } from '../../src/utils/constants';
+import { Transaction } from '../../src/utils/transactions';
+import { NetworksConfig } from '../../src/utils/networks';
+import { getContractInstances, TestContractInstances } from '../utils/contracts';
 
-const GnosisSafe = artifacts.require('GnosisSafe');
-const MultiSend = artifacts.require('MultiSend');
-const DefaultCallbackHandler = artifacts.require('DefaultCallbackHandler');
-const CPKFactory = artifacts.require('CPKFactory');
-const Multistep = artifacts.require('Multistep');
+interface ShouldWorkWithWeb3Props {
+  Web3: typeof Web3Maj1Min2 | typeof Web3Maj2Alpha;
+  defaultAccountBox: Address[];
+  safeOwnerBox: Address[];
+  gnosisSafeProviderBox: any;
+}
 
-function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderBox) {
-  describe(`with Web3 version ${(new Web3()).version}`, () => {
-    const ueb3 = new Web3(web3.currentProvider);
+export function shouldWorkWithWeb3({
+  Web3,
+  defaultAccountBox,
+  safeOwnerBox,
+  gnosisSafeProviderBox
+}: ShouldWorkWithWeb3Props): void {
+  describe(`with Web3 version ${(new Web3(Web3.givenProvider)).version}`, () => {
+    const ueb3 = new Web3('http://localhost:8545');
 
-    const testHelperMaker = (web3Box) => ({
-      checkAddressChecksum: (address) => web3Box[0].utils.checkAddressChecksum(address),
-      sendTransaction: (txObj) => toConfirmationPromise(web3Box[0].eth.sendTransaction(txObj)),
-      randomHexWord: () => web3Box[0].utils.randomHex(32),
-      fromWei: (amount) => Number(web3Box[0].utils.fromWei(amount)),
-      getTransactionCount: (account) => web3Box[0].eth.getTransactionCount(account),
+    let contracts: TestContractInstances;
+
+    const testHelperMaker = (web3Box: any): any => ({
+      checkAddressChecksum: (address: Address): boolean => (
+        web3Box[0].utils.checkAddressChecksum(address)
+      ),
+      sendTransaction: (txObj: any): any => (
+        toTxHashPromise(web3Box[0].eth.sendTransaction(txObj))
+      ),
+      randomHexWord: (): string => web3Box[0].utils.randomHex(32),
+      fromWei: (amount: number): number => Number(web3Box[0].utils.fromWei(amount)),
+      getTransactionCount: (account: Address): number => (
+        web3Box[0].eth.getTransactionCount(account)
+      ),
       testedTxObjProps: 'the PromiEvent for the transaction and the hash',
-      getBalance: (address) => web3Box[0].eth.getBalance(address)
-        .then((balance) => web3Box[0].utils.toBN(balance)),
-      checkTxObj: ({ promiEvent, hash }) => {
+      getBalance: (address: Address): number => web3Box[0].eth.getBalance(address)
+        .then((balance: number) => web3Box[0].utils.toBN(balance)),
+      checkTxObj: ({ promiEvent, hash }: { promiEvent: any; hash: string }): void => {
         should.exist(promiEvent);
         should.exist(hash);
       },
-      waitTxReceipt: async ({ hash }) => {
+      waitTxReceipt: async ({ hash }: { hash: string }): Promise<any> => {
         let receipt = await web3Box[0].eth.getTransactionReceipt(hash);
         while (!receipt) {
           await new Promise((resolve) => setTimeout(resolve, 50));
@@ -38,14 +59,12 @@ function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderB
 
     const ueb3TestHelpers = testHelperMaker([ueb3]);
 
-    let multiStep;
-
-    before('deploy mock contracts', async () => {
-      multiStep = await Multistep.new();
+    before('setup contracts', async () => {
+      contracts = getContractInstances();
     });
 
     it('should not produce ethLibAdapter instances when web3 not provided', async () => {
-      (() => new Web3Adapter({})).should.throw('web3 property missing from options');
+      ((): Web3Adapter => new Web3Adapter({} as any)).should.throw('web3 property missing from options');
     });
 
     it('should not produce CPK instances when web3 not connected to a recognized network', async () => {
@@ -54,15 +73,17 @@ function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderB
     });
 
     describe('with valid networks configuration', () => {
-      let networks;
+      let networks: NetworksConfig;
 
       before('obtain addresses from artifacts', async () => {
+        const { gnosisSafe, cpkFactory, multiSend, defaultCallbackHandler } = contracts;
+
         networks = {
           [await ueb3.eth.net.getId()]: {
-            masterCopyAddress: GnosisSafe.address,
-            proxyFactoryAddress: CPKFactory.address,
-            multiSendAddress: MultiSend.address,
-            fallbackHandlerAddress: DefaultCallbackHandler.address,
+            masterCopyAddress: gnosisSafe.address,
+            proxyFactoryAddress: cpkFactory.address,
+            multiSendAddress: multiSend.address,
+            fallbackHandlerAddress: defaultCallbackHandler.address,
           },
         };
       });
@@ -71,11 +92,16 @@ function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderB
         const ethLibAdapter = new Web3Adapter({ web3: ueb3 });
         should.exist(ethLibAdapter);
         should.exist(await CPK.create({ ethLibAdapter, networks }));
-        should.exist(await CPK.create({ ethLibAdapter, networks, ownerAccount: defaultAccount }));
+        should.exist(await CPK.create({
+          ethLibAdapter,
+          networks,
+          ownerAccount: defaultAccountBox[0]
+        }));
       });
 
       it('can encode multiSend call data', async () => {
-        const transactions = [{
+        const { multiStep } = contracts;
+        const transactions: Transaction[] = [{
           to: multiStep.address,
           data: multiStep.contract.methods.doStep(1).encodeABI(),
         }, {
@@ -92,11 +118,11 @@ function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderB
       });
 
       describe('with warm instance', () => {
-        let cpk;
+        let cpk: CPK;
 
         before('create instance', async () => {
           const ethLibAdapter = new Web3Adapter({ web3: ueb3 });
-          cpk = await CPK.create({ ethLibAdapter, networks, ownerAccount: defaultAccount });
+          cpk = await CPK.create({ ethLibAdapter, networks, ownerAccount: defaultAccountBox[0] });
         });
 
         before('warm instance', async () => {
@@ -107,6 +133,7 @@ function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderB
         });
 
         shouldSupportDifferentTransactions({
+          web3: ueb3,
           ...ueb3TestHelpers,
           async getCPK() { return cpk; },
         });
@@ -114,12 +141,13 @@ function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderB
 
       describe('with fresh accounts', () => {
         shouldSupportDifferentTransactions({
+          web3: ueb3,
           ...ueb3TestHelpers,
           async getCPK() {
             const newAccount = ueb3.eth.accounts.create();
             ueb3.eth.accounts.wallet.add(newAccount);
             await ueb3TestHelpers.sendTransaction({
-              from: defaultAccount,
+              from: defaultAccountBox[0],
               to: newAccount.address,
               value: `${2e18}`,
               gas: '0x5b8d80',
@@ -136,13 +164,13 @@ function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderB
       });
 
       describe('with mock WalletConnected Gnosis Safe provider', () => {
-        const safeWeb3Box = [];
+        const safeWeb3Box: any[] = [];
 
         before('create Web3 instance', async () => {
           safeWeb3Box[0] = new Web3(gnosisSafeProviderBox[0]);
         });
 
-        let cpk;
+        let cpk: CPK;
 
         before('create instance', async () => {
           const ethLibAdapter = new Web3Adapter({ web3: safeWeb3Box[0] });
@@ -150,14 +178,13 @@ function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderB
         });
 
         shouldSupportDifferentTransactions({
+          web3: ueb3,
           ...testHelperMaker(safeWeb3Box),
           async getCPK() { return cpk; },
           ownerIsRecognizedContract: true,
-          executor: safeOwner,
+          executor: safeOwnerBox,
         });
       });
     });
   });
 }
-
-module.exports = shouldWorkWithWeb3;

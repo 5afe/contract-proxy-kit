@@ -272,10 +272,34 @@ const { hash } = await cpk.execTransactions([
 ]);
 ```
 
+## Installation
+
+Install dependencies for the project:
+```
+yarn install
+```
+
+If at some points the contracts are modified, run the following commands to compile them again and generate their new types:
+```
+rm -R ./build/contracts
+rm -R ./types/truffle-contracts
+truffle compile
+yarn generate-types
+```
+
 ## Running the tests
 
-To run the tests locally execute the following command in the root folder of the project:
+Run an instance of `ganache-cli` deterministically:
+```
+ganache-cli -d
+```
 
+Migrate the contracts to the local network:
+```
+yarn migrate --network local
+```
+
+Run the tests against the local network:
 ```
 yarn test
 ```

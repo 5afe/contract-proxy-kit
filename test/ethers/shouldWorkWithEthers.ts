@@ -1,22 +1,42 @@
+import should from 'should';
+import Web3Maj1Min2 from 'web3-1-2';
 import CPK from '../../src';
 import EthersAdapter from '../../src/eth-lib-adapters/EthersAdapter';
-import shouldSupportDifferentTransactions from '../transactions/shouldSupportDifferentTransactions';
-import { toConfirmationPromise } from '../utils';
+import { shouldSupportDifferentTransactions } from '../transactions/shouldSupportDifferentTransactions';
+import { toTxHashPromise } from '../utils';
+import { NetworksConfig } from '../../src/utils/networks';
+import { Address } from '../../src/utils/constants';
+import { Transaction } from '../../src/utils/transactions';
+import { getContractInstances, TestContractInstances } from '../utils/contracts';
 
-const GnosisSafe = artifacts.require('GnosisSafe');
-const MultiSend = artifacts.require('MultiSend');
-const DefaultCallbackHandler = artifacts.require('DefaultCallbackHandler');
-const CPKFactory = artifacts.require('CPKFactory');
-const Multistep = artifacts.require('Multistep');
+interface ShouldWorkWithEthersProps {
+  ethers: any;
+  defaultAccountBox: Address[];
+  safeOwnerBox: Address[];
+  gnosisSafeProviderBox: any;
+}
 
-function shouldWorkWithEthers(ethers, defaultAccount, safeOwner, gnosisSafeProviderBox) {
+export function shouldWorkWithEthers({
+  ethers,
+  defaultAccountBox,
+  safeOwnerBox,
+  gnosisSafeProviderBox
+}: ShouldWorkWithEthersProps): void {
   describe(`with ethers version ${ethers.version}`, () => {
+    const web3 = new Web3Maj1Min2('http://localhost:8545');
+
+    let contracts: TestContractInstances;
+
     const signer = ethers.Wallet.createRandom()
       .connect(new ethers.providers.Web3Provider(web3.currentProvider));
 
-    const ethersTestHelpers = (signerBox) => ({
-      checkAddressChecksum: (address) => ethers.utils.getAddress(address) === address,
-      sendTransaction: async ({ from, gas, ...txObj }) => {
+    const ethersTestHelpers = (signerBox: any[]): any => ({
+      checkAddressChecksum: (address: Address): boolean => (
+        ethers.utils.getAddress(address) === address
+      ),
+      sendTransaction: async ({
+        from, gas, ...txObj
+      }: { from: Address; gas: number }): Promise<any> => {
         const signer = signerBox[0];
         const expectedFrom = await signer.getAddress();
         if (from != null && from.toLowerCase() !== expectedFrom.toLowerCase()) {
@@ -29,7 +49,7 @@ function shouldWorkWithEthers(ethers, defaultAccount, safeOwner, gnosisSafeProvi
         }
 
         // See: https://github.com/ethers-io/ethers.js/issues/299
-        const nonce = await signer.provider.getTransactionCount(await signer.getAddress());
+        const nonce: number = await signer.provider.getTransactionCount(await signer.getAddress());
         const signedTx = await signer.sign({
           nonce,
           gasLimit: gas,
@@ -37,47 +57,52 @@ function shouldWorkWithEthers(ethers, defaultAccount, safeOwner, gnosisSafeProvi
         });
         return signer.provider.sendTransaction(signedTx);
       },
-      randomHexWord: () => ethers.utils.hexlify(ethers.utils.randomBytes(32)),
-      fromWei: (amount) => Number(ethers.utils.formatUnits(amount.toString(), 'ether')),
-      getTransactionCount: signer.provider.getTransactionCount.bind(signer.provider),
-      getBalance: signer.provider.getBalance.bind(signer.provider),
+      randomHexWord: (): string => ethers.utils.hexlify(ethers.utils.randomBytes(32)),
+      fromWei: (amount: number): number => (
+        Number(ethers.utils.formatUnits(amount.toString(), 'ether'))
+      ),
+      getTransactionCount: (address: Address): Promise<number> => (
+        signer.provider.getTransactionCount(address)
+      ),
+      getBalance: (address: Address): Promise<number> => signer.provider.getBalance(address),
       testedTxObjProps: 'the TransactionResponse and the hash',
-      checkTxObj: ({ transactionResponse, hash }) => {
-        should.exist(transactionResponse);
-        should.exist(hash);
-      },
-      waitTxReceipt: ({ hash }) => signer.provider.waitForTransaction(hash),
+      checkTxObj:
+        ({ transactionResponse, hash }: { transactionResponse: any; hash: string }): void => {
+          should.exist(transactionResponse);
+          should.exist(hash);
+        },
+      waitTxReceipt: ({ hash }: { hash: string }): any => signer.provider.waitForTransaction(hash),
     });
-
-    let multiStep;
-
-    before('deploy mock contracts', async () => {
-      multiStep = await Multistep.new();
+   
+    before('setup contracts', async () => {
+      contracts = getContractInstances();
     });
 
     it('should not produce ethLibAdapter instances when ethers not provided', async () => {
-      (() => new EthersAdapter({ signer })).should.throw('ethers property missing from options');
+      ((): EthersAdapter => new EthersAdapter({ signer } as any)).should.throw('ethers property missing from options');
     });
 
     it('should not produce ethLibAdapter instances when signer not provided', async () => {
-      (() => new EthersAdapter({ ethers })).should.throw('signer property missing from options');
+      ((): EthersAdapter => new EthersAdapter({ ethers } as any)).should.throw('signer property missing from options');
     });
-
+    
     it('should not produce CPK instances when ethers not connected to a recognized network', async () => {
       const ethLibAdapter = new EthersAdapter({ ethers, signer });
       await CPK.create({ ethLibAdapter }).should.be.rejectedWith(/unrecognized network ID \d+/);
     });
 
     describe('with valid networks configuration', () => {
-      let networks;
+      let networks: NetworksConfig;
 
       before('obtain addresses from artifacts', async () => {
+        const { gnosisSafe, cpkFactory, multiSend, defaultCallbackHandler } = contracts;
+
         networks = {
           [(await signer.provider.getNetwork()).chainId]: {
-            masterCopyAddress: GnosisSafe.address,
-            proxyFactoryAddress: CPKFactory.address,
-            multiSendAddress: MultiSend.address,
-            fallbackHandlerAddress: DefaultCallbackHandler.address,
+            masterCopyAddress: gnosisSafe.address,
+            proxyFactoryAddress: cpkFactory.address,
+            multiSendAddress: multiSend.address,
+            fallbackHandlerAddress: defaultCallbackHandler.address,
           },
         };
       });
@@ -89,7 +114,8 @@ function shouldWorkWithEthers(ethers, defaultAccount, safeOwner, gnosisSafeProvi
       });
 
       it('can encode multiSend call data', async () => {
-        const transactions = [{
+        const { multiStep } = contracts;
+        const transactions: Transaction[] = [{
           to: multiStep.address,
           data: multiStep.contract.methods.doStep(1).encodeABI(),
         }, {
@@ -106,11 +132,11 @@ function shouldWorkWithEthers(ethers, defaultAccount, safeOwner, gnosisSafeProvi
       });
 
       describe('with warm instance', () => {
-        let cpk;
+        let cpk: CPK;
 
         before('fund owner/signer', async () => {
-          await toConfirmationPromise(web3.eth.sendTransaction({
-            from: defaultAccount,
+          await toTxHashPromise(web3.eth.sendTransaction({
+            from: defaultAccountBox[0],
             to: signer.address,
             value: `${2e18}`,
             gas: '0x5b8d80',
@@ -130,21 +156,23 @@ function shouldWorkWithEthers(ethers, defaultAccount, safeOwner, gnosisSafeProvi
         });
 
         shouldSupportDifferentTransactions({
+          web3,
           ...ethersTestHelpers([signer]),
           async getCPK() { return cpk; },
         });
       });
 
       describe('with fresh accounts', () => {
-        const freshSignerBox = [];
+        const freshSignerBox: any[] = [];
         shouldSupportDifferentTransactions({
+          web3,
           ...ethersTestHelpers(freshSignerBox),
           async getCPK() {
             freshSignerBox[0] = ethers.Wallet.createRandom()
               .connect(new ethers.providers.Web3Provider(web3.currentProvider));
 
-            await toConfirmationPromise(web3.eth.sendTransaction({
-              from: defaultAccount,
+            await toTxHashPromise(web3.eth.sendTransaction({
+              from: defaultAccountBox[0],
               to: freshSignerBox[0].address,
               value: `${2e18}`,
               gas: '0x5b8d80',
@@ -157,14 +185,14 @@ function shouldWorkWithEthers(ethers, defaultAccount, safeOwner, gnosisSafeProvi
       });
 
       describe('with mock WalletConnected Gnosis Safe provider', () => {
-        const safeSignerBox = [];
+        const safeSignerBox: any[] = [];
 
         before('create Web3 instance', async () => {
           const provider = new ethers.providers.Web3Provider(gnosisSafeProviderBox[0]);
           safeSignerBox[0] = provider.getSigner();
         });
 
-        let cpk;
+        let cpk: CPK;
 
         before('create instance', async () => {
           const ethLibAdapter = new EthersAdapter({ ethers, signer: safeSignerBox[0] });
@@ -172,14 +200,13 @@ function shouldWorkWithEthers(ethers, defaultAccount, safeOwner, gnosisSafeProvi
         });
 
         shouldSupportDifferentTransactions({
+          web3,
           ...ethersTestHelpers(safeSignerBox),
           async getCPK() { return cpk; },
           ownerIsRecognizedContract: true,
-          executor: safeOwner,
+          executor: safeOwnerBox,
         });
       });
     });
   });
 }
-
-module.exports = shouldWorkWithEthers;

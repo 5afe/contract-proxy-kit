@@ -77,7 +77,8 @@ class Web3Adapter extends EthLibAdapter {
   }
 
   providerSend(method: string, params: any[]): Promise<any> {
-    return this.web3.currentProvider.host === 'CustomProvider'
+    // TO-DO: Use semver comparison
+    return (this.web3.version.split('.')[0] > 1)
       ? this.web3.currentProvider.send(
         method,
         params,
