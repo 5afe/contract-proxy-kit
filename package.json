@@ -37,10 +37,14 @@
     "url": "https://github.com/gnosis/contract-proxy-kit/issues"
   },
   "homepage": "https://github.com/gnosis/contract-proxy-kit#readme",
+  "dependencies": {
+    "@truffle/contract": "^4.2.9",
+    "bignumber.js": "^9.0.0",
+    "node-fetch": "^2.6.0"
+  },
   "devDependencies": {
     "@gnosis.pm/conditional-tokens-contracts": "^0.5.4",
     "@gnosis.pm/safe-contracts": "^1.1.1",
-    "@truffle/contract": "^4.2.9",
     "@truffle/hdwallet-provider": "^1.0.35",
     "@typechain/truffle-v5": "^2.0.2",
     "@types/chai": "^4.2.11",
@@ -49,7 +53,6 @@
     "@types/node-fetch": "^2.5.7",
     "@typescript-eslint/eslint-plugin": "^3.2.0",
     "@typescript-eslint/parser": "^3.2.0",
-    "bignumber.js": "^9.0.0",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "dotenv": "^8.2.0",
@@ -57,7 +60,6 @@
     "ethers-4": "npm:ethers@^4.0.45",
     "ethnode": "^0.0.20",
     "ganache-cli": "^6.9.1",
-    "node-fetch": "^2.6.0",
     "run-with-testrpc": "^0.3.1",
     "should": "^13.2.3",
     "truffle": "^5.1.30",
