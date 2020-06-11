@@ -4,7 +4,7 @@ import Web3Maj2Alpha from 'web3-2-alpha';
 import CPK from '../../src';
 import Web3Adapter from '../../src/ethLibAdapters/Web3Adapter';
 import { shouldSupportDifferentTransactions } from '../transactions/shouldSupportDifferentTransactions';
-import { toTxHashPromise } from '../utils';
+import { toTxHashPromise, AccountType } from '../utils';
 import { Transaction } from '../../src/utils/transactions';
 import { getContractInstances, TestContractInstances } from '../utils/contracts';
 import { Address } from '../../src/utils/basicTypes';
@@ -27,9 +27,9 @@ export function shouldWorkWithWeb3({
   transactionManager
 }: ShouldWorkWithWeb3Props): void {
   describe(`with Web3 version ${(new Web3(Web3.givenProvider)).version}`, () => {
-    const ueb3 = new Web3('http://localhost:8545');
-
     let contracts: TestContractInstances;
+    const ueb3 = new Web3('http://localhost:8545');
+    const isCpkTransactionManager = !transactionManager || transactionManager.config.name === 'CpkTransactionManager';
 
     const testHelperMaker = (web3Box: any): any => ({
       checkAddressChecksum: (address: Address): boolean => (
@@ -97,7 +97,11 @@ export function shouldWorkWithWeb3({
         const ethLibAdapter = new Web3Adapter({ web3: ueb3 });
         should.exist(ethLibAdapter);
         should.exist(await CPK.create({ ethLibAdapter, networks }));
-        should.exist(await CPK.create({ ethLibAdapter, networks, ownerAccount: defaultAccountBox[0] }));
+        should.exist(await CPK.create({
+          ethLibAdapter,
+          networks,
+          ownerAccount: defaultAccountBox[0]
+        }));
         should.exist(await CPK.create({ ethLibAdapter, transactionManager, networks }));
         should.exist(await CPK.create({
           ethLibAdapter,
@@ -158,10 +162,11 @@ export function shouldWorkWithWeb3({
           web3: ueb3,
           ...ueb3TestHelpers,
           async getCPK() { return cpk; },
-          isCpkTransactionManager: !transactionManager || transactionManager.config.name === 'CpkTransactionManager'
+          isCpkTransactionManager,
+          accountType: AccountType.Warm
         });
       });
-/*
+
       describe('with fresh accounts', () => {
         shouldSupportDifferentTransactions({
           web3: ueb3,
@@ -184,7 +189,8 @@ export function shouldWorkWithWeb3({
               ownerAccount: newAccount.address,
             });
           },
-          isCpkTransactionManager: !transactionManager || transactionManager.config.name === 'CpkTransactionManager'
+          isCpkTransactionManager,
+          accountType: AccountType.Fresh,
         });
       });
 
@@ -217,9 +223,10 @@ export function shouldWorkWithWeb3({
           async getCPK() { return cpk; },
           ownerIsRecognizedContract: true,
           executor: safeOwnerBox,
-          isCpkTransactionManager: !transactionManager || transactionManager.config.name === 'CpkTransactionManager'
+          isCpkTransactionManager,
+          accountType: AccountType.Connected,
         });
-      });*/
+      });
     });
   });
 }

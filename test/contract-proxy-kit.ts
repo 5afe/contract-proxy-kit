@@ -95,7 +95,7 @@ describe('CPK', () => {
   it('should not produce SafeRelayTransactionManager instances when url not provided', async () => {
     (() => new SafeRelayTransactionManager({} as any)).should.throw('url property missing from options');
   });
-/*
+
   describe('with CPK transaction manager', () => {
     web3Versions.forEach((Web3) => {
       shouldWorkWithWeb3({
@@ -112,12 +112,12 @@ describe('CPK', () => {
       gnosisSafeProviderBox
     });
   });
-*/
+
   describe('with Safe Relay transaction manager', () => {
     const transactionManager = new SafeRelayTransactionManager({ url: 'http://localhost:8000' });
     web3Versions.forEach((Web3) => {
       shouldWorkWithWeb3({
-        Web3: Web3Maj1Min2,
+        Web3,
         defaultAccountBox,
         safeOwnerBox,
         gnosisSafeProviderBox,

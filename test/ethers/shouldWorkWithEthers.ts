@@ -6,7 +6,7 @@ import { NetworksConfig } from '../../src/config/networks';
 import { Transaction } from '../../src/utils/transactions';
 import { Address } from '../../src/utils/basicTypes';
 import { shouldSupportDifferentTransactions } from '../transactions/shouldSupportDifferentTransactions';
-import { toTxHashPromise } from '../utils';
+import { toTxHashPromise, AccountType } from '../utils';
 import { getContractInstances, TestContractInstances } from '../utils/contracts';
 import TransactionManager from '../../src/transactionManagers/TransactionManager';
 
@@ -26,9 +26,9 @@ export function shouldWorkWithEthers({
   transactionManager
 }: ShouldWorkWithEthersProps): void {
   describe(`with ethers version ${ethers.version}`, () => {
-    const web3 = new Web3Maj1Min2('http://localhost:8545');
-
     let contracts: TestContractInstances;
+    const web3 = new Web3Maj1Min2('http://localhost:8545');
+    const isCpkTransactionManager = !transactionManager || transactionManager.config.name === 'CpkTransactionManager';
 
     const signer = ethers.Wallet.createRandom()
       .connect(new ethers.providers.Web3Provider(web3.currentProvider));
@@ -178,10 +178,11 @@ export function shouldWorkWithEthers({
           web3,
           ...ethersTestHelpers([signer]),
           async getCPK() { return cpk; },
-          isCpkTransactionManager: !transactionManager || transactionManager.config.name === 'CpkTransactionManager'
+          isCpkTransactionManager,
+          accountType: AccountType.Warm,
         });
       });
-/*
+
       describe('with fresh accounts', () => {
         const freshSignerBox: any[] = [];
         shouldSupportDifferentTransactions({
@@ -201,7 +202,8 @@ export function shouldWorkWithEthers({
             const ethLibAdapter = new EthersAdapter({ ethers, signer: freshSignerBox[0] });
             return CPK.create({ ethLibAdapter, transactionManager, networks });
           },
-          isCpkTransactionManager: !transactionManager || transactionManager.config.name === 'CpkTransactionManager'
+          isCpkTransactionManager,
+          accountType: AccountType.Fresh,
         });
       });
 
@@ -234,9 +236,10 @@ export function shouldWorkWithEthers({
           async getCPK() { return cpk; },
           ownerIsRecognizedContract: true,
           executor: safeOwnerBox,
-          isCpkTransactionManager: !transactionManager || transactionManager.config.name === 'CpkTransactionManager'
+          isCpkTransactionManager,
+          accountType: AccountType.Connected,
         });
-      });*/
+      });
     });
   });
 }

@@ -2,6 +2,7 @@ import should from 'should';
 import CPK from '../../src';
 import { Address } from '../../src/utils/basicTypes';
 import { getContracts } from '../utils/contracts';
+import { AccountType } from '../utils';
 
 interface ShouldSupportDifferentTransactionsProps {
   web3: any;
@@ -18,6 +19,7 @@ interface ShouldSupportDifferentTransactionsProps {
   ownerIsRecognizedContract?: any;
   isCpkTransactionManager: boolean;
   executor?: any;
+  accountType: AccountType;
 }
 
 export function shouldSupportDifferentTransactions({
@@ -35,6 +37,7 @@ export function shouldSupportDifferentTransactions({
   ownerIsRecognizedContract,
   isCpkTransactionManager,
   executor,
+  accountType,
 }: ShouldSupportDifferentTransactionsProps): void {
   it('can get checksummed address of instance', async () => {
     const cpk = await getCPK();
@@ -204,10 +207,15 @@ export function shouldSupportDifferentTransactions({
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
       const startingTransactionCount = await getTransactionCount(proxyOwner);
 
+      const errorMessage = (
+        isCpkTransactionManager || (!isCpkTransactionManager && accountType === AccountType.Fresh)
+      ) ? /must do the next step/
+        : /CannotEstimateGas/;
+
       await cpk.execTransactions([{
         to: multiStep.address,
         data: multiStep.contract.methods.doStep(2).encodeABI(),
-      }]).should.be.rejectedWith(/must do the next step/);
+      }]).should.be.rejectedWith(errorMessage);
 
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
       await getTransactionCount(proxyOwner)
@@ -220,6 +228,11 @@ export function shouldSupportDifferentTransactions({
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
       const startingTransactionCount = await getTransactionCount(proxyOwner);
 
+      const errorMessage = (
+        isCpkTransactionManager || (!isCpkTransactionManager && accountType === AccountType.Fresh)
+      ) ? /(proxy creation and )?batch transaction execution expected to fail/
+        : /CannotEstimateGas/;
+
       await cpk.execTransactions([
         {
           to: multiStep.address,
@@ -228,7 +241,7 @@ export function shouldSupportDifferentTransactions({
           to: multiStep.address,
           data: multiStep.contract.methods.doStep(3).encodeABI(),
         },
-      ]).should.be.rejectedWith(/(proxy creation and )?batch transaction execution expected to fail/);
+      ]).should.be.rejectedWith(errorMessage);
 
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
       await getTransactionCount(proxyOwner)
