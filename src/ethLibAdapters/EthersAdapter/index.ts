@@ -12,7 +12,7 @@ interface EthersAdapterConfig {
 }
 
 export interface EthersTransactionResult extends TransactionResult {
-  transactionResponse: object;
+  transactionResponse: Record<string, any>;
 }
 
 class EthersAdapter extends EthLibAdapter {
@@ -127,7 +127,7 @@ class EthersAdapter extends EthLibAdapter {
     return { transactionResponse, hash: transactionResponse.hash };
   }
 
-  toSafeRelayTxResult(txHash: string, tx: object): Promise<EthersTransactionResult> {
+  toSafeRelayTxResult(txHash: string, tx: Record<string, any>): Promise<EthersTransactionResult> {
     return new Promise(
       (resolve, reject) => resolve({
         transactionResponse: new Promise(

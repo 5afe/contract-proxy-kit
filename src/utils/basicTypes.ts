@@ -12,4 +12,4 @@ export type Address = string;
 
 export type Abi = JsonObject[];
 
-export type NumberLike = number | string | bigint | object;
+export type NumberLike = number | string | bigint | Record<string, any>;

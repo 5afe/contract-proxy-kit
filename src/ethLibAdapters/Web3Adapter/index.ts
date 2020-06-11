@@ -142,7 +142,7 @@ class Web3Adapter extends EthLibAdapter {
     return toTxResult(this.web3.eth.sendTransaction(normalizeGasLimit(tx)), tx);
   }
 
-  toSafeRelayTxResult(txHash: string, tx: object): Promise<Web3TransactionResult> {
+  toSafeRelayTxResult(txHash: string, tx: Record<string, any>): Promise<Web3TransactionResult> {
     return new Promise(
       (resolve, reject) => resolve({
         promiEvent: new Promise(

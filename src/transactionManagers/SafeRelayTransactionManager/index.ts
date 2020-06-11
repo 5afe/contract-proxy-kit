@@ -82,6 +82,7 @@ class SafeRelayTransactionManager implements TransactionManager {
       operation,
     });
 
+    // TO-DO: dataGas will be obsolete. Check again when this endpoint is updated to v2
     const tx = {
       to,
       value,
@@ -89,7 +90,7 @@ class SafeRelayTransactionManager implements TransactionManager {
       operation,
       gasToken: relayEstimations.gasToken,
       safeTxGas: relayEstimations.safeTxGas,
-      dataGas: relayEstimations.baseGas, // TO-DO: dataGas will be obsolete. Check again when this endpoint is updated to v2
+      dataGas: relayEstimations.baseGas,
       gasPrice: relayEstimations.gasPrice,
       nonce: relayEstimations.lastUsedNonce,
       refundReceiver: zeroAddress,
