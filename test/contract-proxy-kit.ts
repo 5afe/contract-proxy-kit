@@ -1,5 +1,6 @@
 import should from 'should';
 import { ethers as ethersMaj4 } from 'ethers-4';
+import { ethers as ethersMaj5 } from 'ethers-5';
 import Web3Maj1Min2 from 'web3-1-2';
 import Web3Maj2Alpha from 'web3-2-alpha';
 import CPK from '../src';
@@ -20,6 +21,7 @@ import chaiAsPromised from 'chai-as-promised';
 chai.use(chaiAsPromised);
 
 const web3Versions = [Web3Maj1Min2, Web3Maj2Alpha];
+const ethersVersions = [ethersMaj4, ethersMaj5];
 
 describe('CPK', () => {
   let web3: any;
@@ -105,11 +107,13 @@ describe('CPK', () => {
         gnosisSafeProviderBox
       });
     });
-    shouldWorkWithEthers({
-      ethers: ethersMaj4,
-      defaultAccountBox,
-      safeOwnerBox,
-      gnosisSafeProviderBox
+    ethersVersions.forEach((ethers) => {
+      shouldWorkWithEthers({
+        ethers,
+        defaultAccountBox,
+        safeOwnerBox,
+        gnosisSafeProviderBox,
+      });
     });
   });
 
@@ -124,12 +128,14 @@ describe('CPK', () => {
         transactionManager
       });
     });
-    shouldWorkWithEthers({
-      ethers: ethersMaj4,
-      defaultAccountBox,
-      safeOwnerBox,
-      gnosisSafeProviderBox,
-      transactionManager
+    ethersVersions.forEach((ethers) => {
+      shouldWorkWithEthers({
+        ethers,
+        defaultAccountBox,
+        safeOwnerBox,
+        gnosisSafeProviderBox,
+        transactionManager,
+      });
     });
   });
 });

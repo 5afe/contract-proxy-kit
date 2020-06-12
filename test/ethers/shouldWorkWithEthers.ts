@@ -53,11 +53,17 @@ export function shouldWorkWithEthers({
 
         // See: https://github.com/ethers-io/ethers.js/issues/299
         const nonce: number = await signer.provider.getTransactionCount(await signer.getAddress());
-        const signedTx = await signer.sign({
-          nonce,
-          gasLimit: gas,
-          ...txObj,
-        });
+
+        let signedTx: string;
+        // TO-DO: Use semver comparison
+        if (ethers.version.split('.')[0] === '4') {
+          signedTx = await signer.sign({ nonce, gasLimit: gas, ...txObj });
+        }
+        else if (ethers.version.split('.')[0] === 'ethers/5') {
+          signedTx = await signer.signTransaction({ nonce, gasLimit: gas, ...txObj });
+        }
+        else throw new Error(`ethers version ${ethers.version} not supported`);
+
         return signer.provider.sendTransaction(signedTx);
       },
       randomHexWord: (): string => ethers.utils.hexlify(ethers.utils.randomBytes(32)),

@@ -64,14 +64,14 @@ class EthersAdapter extends EthLibAdapter {
 
   getContract(abi: Abi, address?: Address): Contract {
     const contract = new this.ethers.Contract(address || zeroAddress, abi, this.signer);
-    const ethersVersion = this.ethers.version
+    const ethersVersion = this.ethers.version;
 
     // TO-DO: Use semver comparison
     if (ethersVersion.split('.')[0] === '4') {
-      return new EthersV4ContractAdapter(contract, this)
+      return new EthersV4ContractAdapter(contract, this);
     }
     if (ethersVersion.split('.')[0] === 'ethers/5') {
-      return new EthersV5ContractAdapter(contract, this)
+      return new EthersV5ContractAdapter(contract, this);
     }
     throw new Error(`ethers version ${ethersVersion} not supported`);
   }
