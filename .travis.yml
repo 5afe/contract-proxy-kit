@@ -22,13 +22,12 @@ before_install:
   - sudo service postgresql stop
   # Wait for it to stop
   - while sudo lsof -Pi :5432 -sTCP:LISTEN -t; do sleep 1; done
-
-before_script:
   - git clone https://github.com/gnosis/safe-relay-service.git
   - cd safe-relay-service
   - git checkout master
   - docker-compose -f docker-compose.yml -f docker-compose.dev.yml build --force-rm
-  - docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+  - docker-compose -f docker-compose.yml -f docker-compose.dev.yml up > /dev/null &
+  - sleep 15
 
 jobs:
   include:
