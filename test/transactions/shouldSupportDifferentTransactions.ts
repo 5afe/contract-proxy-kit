@@ -1,10 +1,27 @@
-import makeConditionalTokensIdHelpers from '@gnosis.pm/conditional-tokens-contracts/utils/id-helpers';
+import should from 'should';
+import CPK from '../../src';
+import { Address } from '../../src/utils/basicTypes';
+import { getContracts } from '../utils/contracts';
 
-const Multistep = artifacts.require('Multistep');
-const ConditionalTokens = artifacts.require('ConditionalTokens');
-const ERC20Mintable = artifacts.require('ERC20Mintable');
+interface ShouldSupportDifferentTransactionsProps {
+  web3: any;
+  getCPK: any;
+  checkAddressChecksum: any;
+  sendTransaction: any;
+  randomHexWord: any;
+  fromWei: any;
+  getTransactionCount: any;
+  getBalance: any;
+  testedTxObjProps: any;
+  checkTxObj: any;
+  waitTxReceipt: any;
+  ownerIsRecognizedContract?: any;
+  isCpkTransactionManager: boolean;
+  executor?: any;
+}
 
-function shouldSupportDifferentTransactions({
+export function shouldSupportDifferentTransactions({
+  web3,
   getCPK,
   checkAddressChecksum,
   sendTransaction,
@@ -18,9 +35,7 @@ function shouldSupportDifferentTransactions({
   ownerIsRecognizedContract,
   isCpkTransactionManager,
   executor,
-}) {
-  const { getConditionId } = makeConditionalTokensIdHelpers(web3.utils);
-
+}: ShouldSupportDifferentTransactionsProps): void {
   it('can get checksummed address of instance', async () => {
     const cpk = await getCPK();
     should.exist(cpk.address);
@@ -36,25 +51,24 @@ function shouldSupportDifferentTransactions({
   }
 
   describe('with mock contracts', () => {
-    let cpk;
-    let proxyOwner;
+    let cpk: CPK;
+    let proxyOwner: Address;
+    let conditionalTokens: any;
+    let multiStep: any;
+    let erc20: any;
 
     beforeEach('rebind symbols', async () => {
       cpk = await getCPK();
       proxyOwner = await cpk.getOwnerAccount();
     });
 
-    let conditionalTokens;
-    let multiStep;
-    let erc20;
-
     before('deploy conditional tokens', async () => {
-      conditionalTokens = await ConditionalTokens.new();
+      conditionalTokens = await getContracts().ConditionalTokens.new();
     });
 
     beforeEach('deploy mock contracts', async () => {
-      multiStep = await Multistep.new();
-      erc20 = await ERC20Mintable.new();
+      multiStep = await getContracts().MultiStep.new();
+      erc20 = await getContracts().ERC20Mintable.new();
       await erc20.mint(proxyOwner, `${1e20}`);
     });
 
@@ -70,14 +84,14 @@ function shouldSupportDifferentTransactions({
 
     it('can execute a single transaction', async () => {
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
-
+      
       await waitTxReceipt(await cpk.execTransactions([{
         to: multiStep.address,
         data: multiStep.contract.methods.doStep(1).encodeABI(),
       }]));
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(1);
     });
-
+    
     it('can execute deep transactions', async () => {
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
       const numSteps = 10;
@@ -140,7 +154,11 @@ function shouldSupportDifferentTransactions({
 
     it('can batch ERC-1155 token interactions', async () => {
       const questionId = randomHexWord();
-      const conditionId = getConditionId(cpk.address, questionId, 2);
+      const conditionId: string = web3.utils.soliditySha3(
+        { t: 'address', v: cpk.address },
+        { t: 'bytes32', v: questionId },
+        { t: 'uint', v: 2 }
+      );
 
       await waitTxReceipt(await cpk.execTransactions([
         {
@@ -227,7 +245,7 @@ function shouldSupportDifferentTransactions({
     (
       !isCpkTransactionManager ? it.skip : it
     )('can execute a single transaction with a specific gas price', async () => {
-      const startingBalance = await getBalance(executor || proxyOwner);
+      const startingBalance = await getBalance((executor && executor[0]) || proxyOwner);
 
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
 
@@ -242,7 +260,7 @@ function shouldSupportDifferentTransactions({
       const receipt = await waitTxReceipt(txObj);
       const { gasUsed } = receipt;
 
-      const endingBalance = await getBalance(executor || proxyOwner);
+      const endingBalance = await getBalance((executor && executor[0]) || proxyOwner);
       const gasCosts = startingBalance.sub(endingBalance).toNumber();
 
       gasCosts.should.be.equal(gasPrice * gasUsed);
@@ -251,7 +269,7 @@ function shouldSupportDifferentTransactions({
     (
       !isCpkTransactionManager || ownerIsRecognizedContract ? it.skip : it
     )('can execute a batch transaction with a specific gas price', async () => {
-      const startingBalance = await getBalance(executor || proxyOwner);
+      const startingBalance = await getBalance((executor && executor[0]) || proxyOwner);
 
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
 
@@ -271,12 +289,10 @@ function shouldSupportDifferentTransactions({
       const receipt = await waitTxReceipt(txObj);
       const { gasUsed } = receipt;
 
-      const endingBalance = await getBalance(executor || proxyOwner);
+      const endingBalance = await getBalance((executor && executor[0]) || proxyOwner);
       const gasCosts = startingBalance.sub(endingBalance).toNumber();
 
       gasCosts.should.be.equal(gasPrice * gasUsed);
     });
   });
 }
-
-module.exports = shouldSupportDifferentTransactions;

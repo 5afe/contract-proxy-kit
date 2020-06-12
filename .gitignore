@@ -39,6 +39,7 @@ jspm_packages/
 # TypeScript
 typings/
 lib
+types/truffle-contracts
 
 # Optional npm cache directory
 .npm
@@ -61,5 +62,8 @@ lib
 # next.js build output
 .next
 
-# Truffle build artifacts
+# Truffle
 build/
+migrations/*.js
+migrations/*.js.map
+migrations/*.d.ts

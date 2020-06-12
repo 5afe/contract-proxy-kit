@@ -94,7 +94,7 @@ class SafeRelayTransactionManager implements TransactionManager {
       nonce: relayEstimations.lastUsedNonce,
       refundReceiver: zeroAddress,
     };
-
+    
     const rsvSignature = [{
       r: new BigNumber(signature.slice(0,66)).toString(),
       s: new BigNumber('0x' + signature.slice(66,130)).toString(),
@@ -141,7 +141,7 @@ class SafeRelayTransactionManager implements TransactionManager {
       throw new Error('Connection');
     }
     const jsonResponse = await response.json();
-
+    
     if (response.status !== 200) {
       throw new Error(jsonResponse.exception);
     }
