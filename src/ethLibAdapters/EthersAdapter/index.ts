@@ -1,5 +1,6 @@
 import EthLibAdapter, { Contract } from '../EthLibAdapter';
-import EthersContractAdapter from './EthersContractAdapter';
+import EthersV4ContractAdapter from './EthersV4ContractAdapter';
+import EthersV5ContractAdapter from './EthersV5ContractAdapter';
 import {
   TransactionResult, CallOptions, SendOptions, EthCallTx, formatCallTx, EthSendTx, normalizeGasLimit
 } from '../../utils/transactions';
@@ -63,7 +64,16 @@ class EthersAdapter extends EthLibAdapter {
 
   getContract(abi: Abi, address?: Address): Contract {
     const contract = new this.ethers.Contract(address || zeroAddress, abi, this.signer);
-    return new EthersContractAdapter(contract, this);
+    const ethersVersion = this.ethers.version
+
+    // TO-DO: Use semver comparison
+    if (ethersVersion.split('.')[0] === '4') {
+      return new EthersV4ContractAdapter(contract, this)
+    }
+    if (ethersVersion.split('.')[0] === 'ethers/5') {
+      return new EthersV5ContractAdapter(contract, this)
+    }
+    throw new Error(`ethers version ${ethersVersion} not supported`);
   }
 
   calcCreate2Address(deployer: Address, salt: string, initCode: string): string {

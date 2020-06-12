@@ -58,6 +58,7 @@
     "dotenv": "^8.2.0",
     "eslint": "^7.2.0",
     "ethers-4": "npm:ethers@^4.0.45",
+    "ethers-5": "npm:ethers@^5.0.2",
     "ethnode": "^0.0.20",
     "ganache-cli": "^6.9.1",
     "run-with-testrpc": "^0.3.1",
