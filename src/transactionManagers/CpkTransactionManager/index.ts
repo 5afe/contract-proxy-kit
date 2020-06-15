@@ -88,7 +88,7 @@ class CpkTransactionManager implements TransactionManager {
     }
 
     if (transactions.some(({ operation }) => operation === OperationType.DelegateCall)) {
-      throw new Error('DelegateCall unsupported by WalletConnected Safe');
+      throw new Error('DelegateCall unsupported by Gnosis Safe');
     }
 
     return {

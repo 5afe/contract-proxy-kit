@@ -127,7 +127,7 @@ Once created, the `address` property on a *CPK* instance will provide the proxy'
 
 This address is calculated even if the proxy has not been deployed yet, and it is deterministically generated from the proxy owner address. This means that for any given owner, the same proxy owner address will always be generated.
 
-#### Support for WalletConnected Gnosis Safe
+#### Support for connection to a Gnosis Safe
 
 If the provider underlying the *CPK* instance is connected to a Gnosis Safe via WalletConnect, the address will match the owner account:
 
@@ -271,9 +271,9 @@ const txObject = await cpk.execTransactions(
 );
 ```
 
-#### Support for WalletConnected Gnosis Safe
+#### Support for connection to a Gnosis Safe
 
-When WalletConnected to Gnosis Safe, `execTransactions` will use the Safe's native support for sending batch transactions (via `gs_multi_send`). In this case, the gas price option is not available, and `execTransactions` will only return a transaction hash.
+When connected to a Gnosis Safe, `execTransactions` will use the Safe's native support for sending batch transactions (via `gs_multi_send`). In this case, the gas price option is not available, and `execTransactions` will only return a transaction hash.
 
 ```js
 const { hash } = await cpk.execTransactions([

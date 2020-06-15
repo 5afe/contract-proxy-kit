@@ -47,7 +47,7 @@ export function shouldWorkWithEthers({
         }
 
         if (signer.constructor.name === 'JsonRpcSigner') {
-          // mock WalletConnected Gnosis Safe provider
+          // mock Gnosis Safe provider
           return signer.sendTransaction({ gasLimit: gas, ...txObj });
         }
 
@@ -207,7 +207,7 @@ export function shouldWorkWithEthers({
         });
       });
 
-      describe('with mock WalletConnected Gnosis Safe provider', () => {
+      describe('with mock connected to a Gnosis Safe provider', () => {
         const safeSignerBox: any[] = [];
 
         before('create Web3 instance', async () => {
