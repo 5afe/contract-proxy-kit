@@ -27,7 +27,10 @@ before_install:
   - git checkout master
   - docker-compose -f docker-compose.yml -f docker-compose.dev.yml build --force-rm
   - docker-compose -f docker-compose.yml -f docker-compose.dev.yml up > /dev/null &
-  - sleep 30
+  - sleep 20
+
+install:
+  - yarn install
 
 jobs:
   include:
