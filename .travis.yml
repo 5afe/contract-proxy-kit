@@ -27,13 +27,14 @@ before_install:
   - git checkout master
   - docker-compose -f docker-compose.yml -f docker-compose.dev.yml build --force-rm
   - docker-compose -f docker-compose.yml -f docker-compose.dev.yml up > /dev/null &
-  - sleep 15
+  - sleep 30
 
 jobs:
   include:
   - name: Ganache
+    install: yarn global add ganache-cli@6.9.1
     before_script:
-    - ganache-cli -d > /dev/null &
+    - ganache-cli -d --defaultBalanceEther 10000 > /dev/null &
     - sleep 5
     script: yarn test
 
