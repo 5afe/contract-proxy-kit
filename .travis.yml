@@ -30,12 +30,12 @@ before_install:
   - sleep 20
 
 install:
+  - yarn global add ganache-cli@6.9.1
   - yarn install
 
 jobs:
   include:
   - name: Ganache
-    install: yarn global add ganache-cli@6.9.1
     before_script:
     - ganache-cli -d --defaultBalanceEther 10000 > /dev/null &
     - sleep 5
