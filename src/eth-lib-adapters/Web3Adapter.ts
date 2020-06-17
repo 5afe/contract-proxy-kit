@@ -142,7 +142,7 @@ class Web3Adapter extends EthLibAdapter {
 
   async getCallRevertData(tx: EthCallTx, block: string | number): Promise<string> {
     try {
-      // this block handles Geth/Ganache --noVMErrorsOnRPCResponse
+      // this block handles old Geth/Ganache --noVMErrorsOnRPCResponse
       // use a low level eth_call instead of web3.eth.call so
       // full error data from eth node is available if provider is Web3 1.x
       return await this.providerSend(
@@ -156,9 +156,14 @@ class Web3Adapter extends EthLibAdapter {
         errData = JSON.parse(e.message.slice(12)).data;
       }
       
-      if (typeof errData === 'string' && errData.startsWith('Reverted 0x')) {
-        // handle OpenEthereum revert data format
-        return errData.slice(9);
+      if (typeof errData === 'string') {
+        if (errData.startsWith('Reverted 0x'))
+          // handle OpenEthereum revert data format
+          return errData.slice(9);
+
+        if (errData.startsWith('0x'))
+          // handle new Geth format
+          return errData;
       }
 
       // handle Ganache revert data format
