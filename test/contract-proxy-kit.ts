@@ -218,15 +218,18 @@ describe('CPK', () => {
     await CPK.create({} as any).should.be.rejectedWith('ethLibAdapter property missing from options');
   });
 
-  describe('start', () => {
-    web3Versions.forEach((Web3) => {
-      shouldWorkWithWeb3({ Web3, defaultAccountBox, safeOwnerBox, gnosisSafeProviderBox });
-    });
-    shouldWorkWithEthers({
-      ethers: ethersMaj4,
+  web3Versions.forEach((Web3) => {
+    shouldWorkWithWeb3({
+      Web3,
       defaultAccountBox,
       safeOwnerBox,
-      gnosisSafeProviderBox
+      gnosisSafeProviderBox,
     });
+  });
+  shouldWorkWithEthers({
+    ethers: ethersMaj4,
+    defaultAccountBox,
+    safeOwnerBox,
+    gnosisSafeProviderBox,
   });
 });
