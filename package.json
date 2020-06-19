@@ -12,7 +12,8 @@
     "coverage": "nyc report --reporter=text-lcov | coveralls",
     "lint:check": "eslint . --ext .js,.jsx,.ts,.tsx",
     "lint:fix": "yarn lint:check --fix",
-    "build": "tsc && tsc -p tsconfig.cjs.json"
+    "build": "tsc && tsc -p tsconfig.cjs.json",
+    "prepack": "yarn build"
   },
   "repository": {
     "type": "git",
