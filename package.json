@@ -5,7 +5,6 @@
   "main": "src/index.ts",
   "scripts": {
     "generate-types": "typechain --target=truffle-v5 './build/contracts/*.json'",
-    "postinstall": "truffle compile && yarn generate-types",
     "migrate": "tsc -p ./tsconfig.migrate.json --outDir ./migrations && truffle migrate --network local",
     "test-ts": "nyc mocha -t 5000 -r ts-node/register ./test/contract-proxy-kit.ts --exit",
     "test": "yarn migrate && yarn test-ts",
