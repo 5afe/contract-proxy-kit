@@ -10,28 +10,46 @@ jobs:
   include:
   - name: Ganache
     before_script:
-    - ganache-cli -d > /dev/null &
-    - sleep 5
-    script: yarn test
+      - CONTAINER_ID=$(docker run -d -p 8545:8545 trufflesuite/ganache-cli)
+      - yarn wait-port -t 10000 localhost:8545
+    script:
+      - yarn test
+    after_script:
+      - docker logs $CONTAINER_ID
+      - docker stop $CONTAINER_ID
+      - docker rm $CONTAINER_ID
 
   - name: Ganache with --noVMErrorsOnRPCResponse
-    script: yarn test-rpc
+    before_script:
+      - CONTAINER_ID=$(docker run -d -p 8545:8545 trufflesuite/ganache-cli --noVMErrorsOnRPCResponse)
+      - yarn wait-port -t 10000 localhost:8545
+    script:
+      - yarn test
+    after_script:
+      - docker logs $CONTAINER_ID
+      - docker stop $CONTAINER_ID
+      - docker rm $CONTAINER_ID
 
-  # - name: Geth
-  #   script: yarn test-geth
+  - name: Geth
+    before_script:
+      - yarn geth-dev-assistant --accounts 2 --gasLimit 6721975
+    script:
+      - yarn test
+    after_script:
+      - docker stop geth-client
 
-  # - name: OpenEthereum
-  #   before_script:
-  #     - PASSFILE=$(mktemp)
-  #     - echo '' > $PASSFILE
-  #     - chmod 644 $PASSFILE
-  #     - CONTAINER_ID=$(docker run -d -p 8545:8545 -p 8546:8546 -v $PASSFILE:$PASSFILE openethereum/openethereum --config dev --jsonrpc-interface=all --ws-interface=all --unlock 0x00a329c0648769a73afac7f9381e08fb43dbea72 --password $PASSFILE)
-  #     - yarn wait-port -t 10000 localhost:8545
-  #   script:
-  #     - yarn test
-  #   after_script:
-  #     - docker logs $CONTAINER_ID
-  #     - docker stop $CONTAINER_ID
-  #     - docker rm $CONTAINER_ID
+  - name: OpenEthereum
+    before_script:
+      - PASSFILE=$(mktemp)
+      - echo '' > $PASSFILE
+      - chmod 644 $PASSFILE
+      - CONTAINER_ID=$(docker run -d -p 8545:8545 -p 8546:8546 -v $PASSFILE:$PASSFILE openethereum/openethereum --config dev --jsonrpc-interface=all --ws-interface=all --unlock 0x00a329c0648769a73afac7f9381e08fb43dbea72 --password $PASSFILE)
+      - yarn wait-port -t 10000 localhost:8545
+    script:
+      - yarn test
+    after_script:
+      - docker logs $CONTAINER_ID
+      - docker stop $CONTAINER_ID
+      - docker rm $CONTAINER_ID
 
 after_success: yarn coverage

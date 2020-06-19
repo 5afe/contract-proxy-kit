@@ -71,13 +71,14 @@ export function shouldSupportDifferentTransactions({
     });
 
     beforeEach('give proxy ERC20 allowance', async () => {
-      await sendTransaction({
+      const hash = await sendTransaction({
         from: proxyOwner,
         to: erc20.address,
         value: 0,
         gas: '0x5b8d80',
         data: erc20.contract.methods.approve(cpk.address, `${1e20}`).encodeABI(),
       });
+      await waitTxReceipt({ hash });
     });
 
     it('can execute a single transaction', async () => {

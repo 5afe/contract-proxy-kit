@@ -23,7 +23,6 @@ const web3Versions = [Web3Maj1Min2, Web3Maj2Alpha];
 describe('CPK', () => {
   let web3: any;
   const defaultAccountBox: Address[] = [];
-  // let coinbase: Address;
   const safeOwnerBox: Address[] = [];
   let contracts: TestContractInstances;
   const gnosisSafeProviderBox: any[] = [];
@@ -32,9 +31,8 @@ describe('CPK', () => {
     web3 = new Web3Maj1Min2('http://localhost:8545');
     const accounts = await web3.eth.getAccounts();
 
-    // coinbase = accounts[0];
-    defaultAccountBox[0] = accounts[1];
-    safeOwnerBox[0] = accounts[2];
+    defaultAccountBox[0] = accounts[1] || accounts[0];
+    safeOwnerBox[0] = accounts[2] || defaultAccountBox[0];
   });
   
   before('initialize contracts', async () => {
@@ -220,15 +218,18 @@ describe('CPK', () => {
     await CPK.create({} as any).should.be.rejectedWith('ethLibAdapter property missing from options');
   });
 
-  describe('start', () => {
-    web3Versions.forEach((Web3) => {
-      shouldWorkWithWeb3({ Web3, defaultAccountBox, safeOwnerBox, gnosisSafeProviderBox });
-    });
-    shouldWorkWithEthers({
-      ethers: ethersMaj4,
+  web3Versions.forEach((Web3) => {
+    shouldWorkWithWeb3({
+      Web3,
       defaultAccountBox,
       safeOwnerBox,
-      gnosisSafeProviderBox
+      gnosisSafeProviderBox,
     });
+  });
+  shouldWorkWithEthers({
+    ethers: ethersMaj4,
+    defaultAccountBox,
+    safeOwnerBox,
+    gnosisSafeProviderBox,
   });
 });
