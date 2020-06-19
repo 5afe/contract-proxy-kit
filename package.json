@@ -13,7 +13,7 @@
     "coverage": "nyc report --reporter=text-lcov | coveralls",
     "lint:check": "eslint . --ext .js,.jsx,.ts,.tsx",
     "lint:fix": "yarn lint:check --fix",
-    "typecheck": "tsc"
+    "build": "tsc && tsc -p tsconfig.cjs.json"
   },
   "repository": {
     "type": "git",

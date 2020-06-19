@@ -64,6 +64,6 @@ types/truffle-contracts
 
 # Truffle
 build/
-migrations/*.js
-migrations/*.js.map
-migrations/*.d.ts
+
+# Typechain for migrations
+migrations/
