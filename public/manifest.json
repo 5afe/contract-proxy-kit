@@ -1,6 +1,8 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "CPK Configuration",
+  "name": "CPK Configuration App",
+  "description": "Web app to configure and try the CPK",
+  "iconPath": "logo512.png",
   "icons": [
     {
       "src": "favicon.ico",
