@@ -340,7 +340,7 @@ function shouldSupportDifferentTransactions({
 
 function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderBox) {
   describe(`with Web3 version ${(new Web3()).version}`, () => {
-    const ueb3 = new Web3(web3.currentProvider);
+    let ueb3 // = new Web3(web3.currentProvider);
 
     const testHelperMaker = (web3Box) => ({
       checkAddressChecksum: (address) => web3Box[0].utils.checkAddressChecksum(address),
@@ -362,7 +362,20 @@ function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderB
       },
     });
 
-    let ueb3TestHelpers = testHelperMaker([ueb3]);
+    const ueb3box=[]
+    const ueb3TestHelpers = testHelperMaker(ueb3box);
+
+    before('initialize ueb3, helpers after GSN started', async() => {
+
+        const gsnEnv = await GsnTestEnvironment.startGsn('localhost')
+        gsnEnv.relayProvider.config.verbose=false
+        // gsnEnv.relayProvider.relayClient.config.verbose=true
+        await (await CPKFactory.deployed()).setForwarder(gsnEnv.deploymentResult.forwarderAddress)
+        ownerAccount = gsnEnv.relayProvider.newAccount().address
+        gsnEnv.relayProvider.config.forwarderAddress = gsnEnv.deploymentResult.forwarderAddress
+        ueb3 = new Web3(gsnEnv.relayProvider);
+        ueb3box[0] = ueb3
+    })
 
     it('should not produce instances when web3 not connected to a recognized network', async () => {
       await CPK.create({ web3: ueb3 }).should.be.rejectedWith(/unrecognized network ID \d+/);
@@ -380,14 +393,6 @@ function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderB
             fallbackHandlerAddress: DefaultCallbackHandler.address,
           },
         };
-        const gsnEnv = await GsnTestEnvironment.startGsn('localhost')
-        gsnEnv.relayProvider.config.verbose=true
-        // gsnEnv.relayProvider.relayClient.config.verbose=true
-        await (await CPKFactory.deployed()).setForwarder(gsnEnv.deploymentResult.forwarderAddress)
-        ownerAccount = gsnEnv.relayProvider.newAccount().address
-        gsnEnv.relayProvider.config.forwarderAddress = gsnEnv.deploymentResult.forwarderAddress
-
-        ueb3.setProvider(gsnEnv.relayProvider);
       });
 
       it('can produce instances', async () => {
@@ -399,7 +404,6 @@ function shouldWorkWithWeb3(Web3, defaultAccount, safeOwner, gnosisSafeProviderB
 
         before('create instance', async () => {
           cpk = await CPK.create({ web3: ueb3, networks, ownerAccount });
-          ueb3TestHelpers = testHelperMaker([ueb3]);
         });
 
         before('warm instance', async () => {
