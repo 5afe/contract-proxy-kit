@@ -48,6 +48,15 @@ const safeAbi = [
       { type: 'address', name: 'newOwner' },
     ],
   },
+  {
+    type: 'function',
+    name: 'getModules',
+    constant: true,
+    payable: false,
+    stateMutability: 'pure',
+    inputs: [],
+    outputs: [{ type: 'address[]', name: '' }],
+  },
 ];
 
 const cpkFactoryAbi = [
@@ -59,6 +68,24 @@ const cpkFactoryAbi = [
     stateMutability: 'pure',
     inputs: [],
     outputs: [{ type: 'bytes', name: '' }],
+  },
+  {
+    type: 'function',
+    name: 'getTrustedForwarder',
+    constant: true,
+    payable: false,
+    stateMutability: 'pure',
+    inputs: [],
+    outputs: [{ type: 'address', name: '' }],
+  },
+  {
+    type: 'function',
+    name: 'gsnModule',
+    constant: true,
+    payable: false,
+    stateMutability: 'pure',
+    inputs: [],
+    outputs: [{ type: 'address', name: '' }],
   },
   {
     type: 'function',
@@ -78,6 +105,23 @@ const cpkFactoryAbi = [
     outputs: [
       { type: 'bool', name: 'execTransactionSuccess' },
     ],
+  },
+];
+
+const gsnModuleAbi = [
+  {
+    type: 'function',
+    name: 'execCall',
+    constant: false,
+    payable: false,
+    stateMutability: 'nonpayable',
+    inputs: [
+      { type: 'address', name: 'proxy' },
+      { type: 'address', name: 'to' },
+      { type: 'bytes', name: 'data' },
+      { type: 'uint8', name: 'operation' },
+    ],
+    outputs: [],
   },
 ];
 
@@ -128,8 +172,8 @@ const defaultNetworks = {
 
 const zeroAddress = `0x${'0'.repeat(40)}`;
 
-// keccak256(toUtf8Bytes('Contract Proxy Kit'))
-const predeterminedSaltNonce = '0xcfe33a586323e7325be6aa6ecd8b4600d232a9037e83c8ece69413b777dabe65';
+// keccak256(toUtf8Bytes('GSN-Enabled Contract Proxy Kit'))
+const predeterminedSaltNonce = '0x0395fb8072f4de4c9fd6376efe6d78a657a188789beaa8c7fb048253662a28c7';
 
 const CPK = class CPK {
   static async create(opts) {
@@ -206,6 +250,8 @@ const CPK = class CPK {
         this.contract = new this.web3.eth.Contract(safeAbi, ownerAccount);
       } else {
         this.proxyFactory = new this.web3.eth.Contract(cpkFactoryAbi, proxyFactoryAddress);
+        const gsmModuleAddress = await this.proxyFactory.methods.gsnModule().call();
+        this.gsnModule = new this.web3.eth.Contract(gsnModuleAbi, gsmModuleAddress);
         const create2Salt = this.web3.utils.keccak256(this.web3.eth.abi.encodeParameters(
           ['address', 'uint256'],
           [ownerAccount, predeterminedSaltNonce],
@@ -458,15 +504,24 @@ const CPK = class CPK {
       if (!this.isConnectedToSafe) {
         if (codeAtAddress !== '0x') {
           return attemptTransaction(
-            this.contract, this.viewContract,
-            'execTransaction',
+            this.gsnModule, this.viewContract,
+            'execCall',
             [
-              to, value, data, operation,
-              0, 0, 0, zeroAddress, zeroAddress,
-              signatureForAddress(ownerAccount),
+              this.contract.options.address, to, data, operation,
             ],
             new Error('transaction execution expected to fail'),
           );
+
+          // return attemptTransaction(
+          //   this.contract, this.viewContract,
+          //   'execTransaction',
+          //   [
+          //     to, value, data, operation,
+          //     0, 0, 0, zeroAddress, zeroAddress,
+          //     signatureForAddress(ownerAccount),
+          //   ],
+          //   new Error('transaction execution expected to fail'),
+          // );
         }
 
         return attemptTransaction(
@@ -489,17 +544,29 @@ const CPK = class CPK {
 
     if (codeAtAddress !== '0x') {
       return attemptTransaction(
-        this.contract, this.viewContract,
-        'execTransaction',
+        this.gsnModule, this.viewContract,
+        'execCall',
         [
-          getContractAddress(this.multiSend), 0,
+          this.contract.options.address,
+          getContractAddress(this.multiSend),
           encodeMultiSendCalldata(transactions),
           CPK.DELEGATECALL,
-          0, 0, 0, zeroAddress, zeroAddress,
-          signatureForAddress(ownerAccount),
         ],
         new Error('transaction execution expected to fail'),
       );
+
+      // return attemptTransaction(
+      //   this.contract, this.viewContract,
+      //   'execTransaction',
+      //   [
+      //     getContractAddress(this.multiSend), 0,
+      //     encodeMultiSendCalldata(transactions),
+      //     CPK.DELEGATECALL,
+      //     0, 0, 0, zeroAddress, zeroAddress,
+      //     signatureForAddress(ownerAccount),
+      //   ],
+      //   new Error('transaction execution expected to fail'),
+      // );
     }
 
     return attemptTransaction(
