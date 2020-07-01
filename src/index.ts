@@ -6,6 +6,7 @@ import EthLibAdapter, { Contract } from './eth-lib-adapters/EthLibAdapter';
 import cpkFactoryAbi from './abis/CpkFactoryAbi.json';
 import safeAbi from './abis/SafeAbi.json';
 import multiSendAbi from './abis/MultiSendAbi.json';
+import gsnModuleAbi from './abis/GsnModuleAbi.json';
 
 interface CPKConfig {
   ethLibAdapter: EthLibAdapter;
@@ -29,6 +30,7 @@ class CPK {
   multiSend?: Contract;
   contract?: Contract;
   proxyFactory?: Contract;
+  gsnModule?: Contract;
   masterCopyAddress?: Address;
   fallbackHandlerAddress?: Address;
   isConnectedToSafe = false;
@@ -88,6 +90,10 @@ class CPK {
         cpkFactoryAbi,
         network.proxyFactoryAddress,
       );
+
+      const gsmModuleAddress = await this.proxyFactory.call('gsnModule', []);
+
+      this.gsnModule = this.ethLibAdapter.getContract(multiSendAbi, gsmModuleAddress);
 
       const salt = this.ethLibAdapter.keccak256(this.ethLibAdapter.abiEncode(
         ['address', 'uint256'],

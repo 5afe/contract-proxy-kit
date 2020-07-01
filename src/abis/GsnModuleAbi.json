@@ -1,26 +1,39 @@
 [
   {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "masterCopy",
+        "type": "address"
+      }
+    ],
+    "name": "ChangedMasterCopy",
+    "type": "event"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_masterCopy",
+        "type": "address"
+      }
+    ],
+    "name": "changeMasterCopy",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "constant": true,
     "inputs": [],
     "name": "getTrustedForwarder",
     "outputs": [
       {
         "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "gsnModule",
-    "outputs": [
-      {
-        "internalType": "contract GsnModule",
         "name": "",
         "type": "address"
       }
@@ -51,6 +64,21 @@
     "type": "function"
   },
   {
+    "constant": true,
+    "inputs": [],
+    "name": "manager",
+    "outputs": [
+      {
+        "internalType": "contract ModuleManager",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "constant": false,
     "inputs": [
       {
@@ -66,47 +94,17 @@
     "type": "function"
   },
   {
-    "constant": true,
-    "inputs": [],
-    "name": "proxyCreationCode",
-    "outputs": [
-      {
-        "internalType": "bytes",
-        "name": "",
-        "type": "bytes"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "pure",
-    "type": "function"
-  },
-  {
     "constant": false,
     "inputs": [
       {
-        "internalType": "address",
-        "name": "masterCopy",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "saltNonce",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "fallbackHandler",
+        "internalType": "contract GnosisSafe",
+        "name": "proxy",
         "type": "address"
       },
       {
         "internalType": "address",
         "name": "to",
         "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "value",
-        "type": "uint256"
       },
       {
         "internalType": "bytes",
@@ -119,14 +117,23 @@
         "type": "uint8"
       }
     ],
-    "name": "createProxyAndExecTransaction",
-    "outputs": [
+    "name": "execCall",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
       {
-        "internalType": "bool",
-        "name": "execTransactionSuccess",
-        "type": "bool"
+        "internalType": "contract GsnModule",
+        "name": "gsnModule",
+        "type": "address"
       }
     ],
+    "name": "setup",
+    "outputs": [],
     "payable": false,
     "stateMutability": "nonpayable",
     "type": "function"
