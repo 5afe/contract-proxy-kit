@@ -93,7 +93,7 @@ class CPK {
 
       const gsmModuleAddress = await this.proxyFactory.call('gsnModule', []);
 
-      this.gsnModule = this.ethLibAdapter.getContract(multiSendAbi, gsmModuleAddress);
+      this.gsnModule = this.ethLibAdapter.getContract(gsnModuleAbi, gsmModuleAddress);
 
       const salt = this.ethLibAdapter.keccak256(this.ethLibAdapter.abiEncode(
         ['address', 'uint256'],

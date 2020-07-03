@@ -41,9 +41,10 @@ contract BaseRelayRecipient is IRelayRecipient, IKnowForwarderAddress {
             // so we trust that the last bytes of msg.data are the verified sender address.
             // extract sender address from the end of msg.data
             assembly {
-                ret := calldataload(sub(calldatasize(),20))
+                ret := shr(96,calldataload(sub(calldatasize(),20)))
             }
+        } else {
+            return msg.sender;
         }
-        return msg.sender;
     }
 }

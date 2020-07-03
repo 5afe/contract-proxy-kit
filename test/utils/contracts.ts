@@ -50,8 +50,7 @@ export interface TestContracts {
   ConditionalTokens: any;
 }
 
-export const initializeContracts = async (safeOwner: Address): Promise<void> => {
-  const provider = new Web3Maj1Min2.providers.HttpProvider('http://localhost:8545');
+export const initializeContracts = async (safeOwner: Address, provider:any): Promise<void> => {
 
   CPKFactory = TruffleContract(CPKFactoryJson);
   CPKFactory.setProvider(provider);

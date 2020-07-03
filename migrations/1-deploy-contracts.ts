@@ -1,5 +1,7 @@
+// import {address as forwarder} from '/Users/dror/Downloads/gnosis/dror-contract-proxy-kit/build/gsn/Forwarder.json';
 
-import {address as forwarder} from '../build/gsn/Forwarder.json';
+import fs from 'fs';
+const forwarder = JSON.parse(fs.readFileSync('/Users/dror/Downloads/gnosis/dror-contract-proxy-kit/build/gsn/Forwarder.json', 'utf-8')).address
 
 module.exports = function(deployer: Truffle.Deployer, network: string) {
   const deploy = (
@@ -8,7 +10,7 @@ module.exports = function(deployer: Truffle.Deployer, network: string) {
 
   ['Migrations'].forEach(deploy);
 
-  (deployer.deploy as any)(artifacts.require('CPKFactory'), forwarder);
+  (deployer.deploy as any)(artifacts.require('CPKFactory'), forwarder).catch(console.log);
 
   if (network === 'test' || network === 'local') {
     [
