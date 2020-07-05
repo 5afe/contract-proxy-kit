@@ -1,7 +1,5 @@
-// import {address as forwarder} from '/Users/dror/Downloads/gnosis/dror-contract-proxy-kit/build/gsn/Forwarder.json';
-
 import fs from 'fs';
-const forwarder = JSON.parse(fs.readFileSync('/Users/dror/Downloads/gnosis/dror-contract-proxy-kit/build/gsn/Forwarder.json', 'utf-8')).address
+const forwarder = JSON.parse(fs.readFileSync(__dirname+'/../build/gsn/Forwarder.json', 'utf-8')).address
 
 module.exports = function(deployer: Truffle.Deployer, network: string) {
   const deploy = (

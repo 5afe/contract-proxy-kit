@@ -20,52 +20,42 @@ import {
 import chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 import 'source-map-support/register';
+import {initProvider, loggingProvider} from './initProvider';
 
 chai.use(chaiAsPromised);
 
 const web3Versions = [Web3Maj1Min2]; //DT: temp disable, Web3Maj2Alpha];
+const usingGSN = true;
 
-function initGsnProvider(): any {
-  const provider = new Web3Maj1Min2.providers.HttpProvider('http://localhost:8545');
 
-  function gsnAddr(name:string): string {
-    return require( `../build/gsn/${name}.json` ).address;
-  }
-
-  const gsnProvider = new RelayProvider(provider, {
-    verbose:true,
-    relayHubAddress: gsnAddr('RelayHub'),
-    stakeManagerAddress: gsnAddr('StakeManager'),
-    paymasterAddress: gsnAddr('Paymaster'),
-    forwarderAddress: gsnAddr('Forwarder')
-  });
-
-  return gsnProvider;
-}
-
-describe('CPK', () => {
+describe('CPK'+(usingGSN?' with GSN':''), () => {
   let web3: any;
   const defaultAccountBox: Address[] = [];
   const safeOwnerBox: Address[] = [];
   let contracts: TestContractInstances;
   const gnosisSafeProviderBox: any[] = [];
-  const gsnProvider = initGsnProvider()
+  const usingProvider = loggingProvider( initProvider(usingGSN));
 
   before('initialize user accounts', async () => {
-    web3 = new Web3Maj1Min2(gsnProvider);
+    web3 = new Web3Maj1Min2(usingProvider);
     const accounts = await web3.eth.getAccounts();
 
-    //use gasless account
-    defaultAccountBox[0] = await web3.eth.personal.newAccount('password');
-    await web3.eth.personal.unlockAccount(defaultAccountBox[0],'password');
-    // defaultAccountBox[0] = accounts[1];
+    if ( usingGSN ) {
+      console.log('=== usingGsn: gasless account');
+      //use gasless account
+      defaultAccountBox[0] = await web3.eth.personal.newAccount('password');
+      await web3.eth.personal.unlockAccount(defaultAccountBox[0], 'password',1000);
+    } else {
+      console.log('=== owner is gasful account');
+      defaultAccountBox[0] = accounts[1];
+    }
 
     //not gasless (used to createProxy)
     safeOwnerBox[0] =  accounts[2];
   });
 
   before('initialize contracts', async () => {
-    await initializeContracts(safeOwnerBox[0], gsnProvider);
+    await initializeContracts(safeOwnerBox[0], usingProvider);
     contracts = getContractInstances();
   });
 
@@ -84,7 +74,7 @@ describe('CPK', () => {
     const { logs } = await proxyFactory.createProxy(
       gnosisSafe.address,
       safeSetupData,
-      { from: safeOwnerBox[0] }
+      { from: safeOwnerBox[0], useGSN:false }
     );
     const proxyCreationEvents = logs.find(({ event }: { event: any }) => event === 'ProxyCreation');
     const safeAddress = proxyCreationEvents && proxyCreationEvents.args.proxy;
@@ -250,7 +240,7 @@ describe('CPK', () => {
   web3Versions.forEach((Web3) => {
     shouldWorkWithWeb3({
       Web3,
-      gsnProvider,
+      usingProvider,
       defaultAccountBox,
       safeOwnerBox,
       gnosisSafeProviderBox,
@@ -258,7 +248,7 @@ describe('CPK', () => {
   });
 
   // DT: temp disable
-  false &&
+  !usingGSN &&
   shouldWorkWithEthers({
     ethers: ethersMaj4,
     defaultAccountBox,

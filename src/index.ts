@@ -7,6 +7,7 @@ import cpkFactoryAbi from './abis/CpkFactoryAbi.json';
 import safeAbi from './abis/SafeAbi.json';
 import multiSendAbi from './abis/MultiSendAbi.json';
 import gsnModuleAbi from './abis/GsnModuleAbi.json';
+import 'source-map-support/register';
 
 interface CPKConfig {
   ethLibAdapter: EthLibAdapter;
@@ -91,10 +92,6 @@ class CPK {
         network.proxyFactoryAddress,
       );
 
-      const gsmModuleAddress = await this.proxyFactory.call('gsnModule', []);
-
-      this.gsnModule = this.ethLibAdapter.getContract(gsnModuleAbi, gsmModuleAddress);
-
       const salt = this.ethLibAdapter.keccak256(this.ethLibAdapter.abiEncode(
         ['address', 'uint256'],
         [ownerAccount, predeterminedSaltNonce],
@@ -111,6 +108,20 @@ class CPK {
         salt,
         initCode
       );
+
+      if ( this.ethLibAdapter.getProvider().origProvider != null ) {
+        //TODO: better query the module using GnosisSafe.getModules(). the only tricky part is
+        // is it the only one? how we find the right one?
+        if ( !this.proxyFactory) {
+          this.proxyFactory = this.ethLibAdapter.getContract(
+            cpkFactoryAbi,
+            network.proxyFactoryAddress,
+          );
+        }
+        const gsnModuleAddress = await this.proxyFactory.call('gsnModule', []);
+        console.log('=== gsnModule initialize',gsnModuleAddress);
+        this.gsnModule = this.ethLibAdapter.getContract(gsnModuleAbi, gsnModuleAddress);
+      }
 
       this.contract = this.ethLibAdapter.getContract(safeAbi, proxyAddress);
     }
@@ -173,6 +184,7 @@ class CPK {
     if (success) {
       const { contract, methodName, params } = txObj;
       sendOptions.gas = gasLimit;
+      console.log('=== xxx', methodName, contract.address, sendOptions);
       return contract.send(methodName, params, sendOptions);
     } else {
       throw await this.makeTransactionError(
@@ -188,6 +200,7 @@ class CPK {
     transactions: Transaction[],
     sendOptions: SendOptions,
   ): Promise<TransactionResult> {
+
     if (
       transactions.length === 1 &&
       (!transactions[0].operation || transactions[0].operation === CPK.Call)
@@ -237,6 +250,19 @@ class CPK {
   ): ContractTxObj {
     if (!this.contract) {
       throw new Error('CPK uninitialized');
+    }
+
+    if ( this.gsnModule!=null ) {
+      console.log('=== gsnModule calling through execCall');
+      return {
+        contract: this.gsnModule,
+        methodName: 'execCall',
+        params: [
+          this.contract.address, to, data, operation
+        ]
+      };
+    } else {
+      console.log('=== gsnModule: NOT using gsnModule.exeCall');
     }
     // (r, s, v) where v is 1 means this signature is approved by
     // the address encoded in the value r

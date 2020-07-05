@@ -34,6 +34,8 @@ export function shouldSupportDifferentTransactions({
   ownerIsRecognizedContract,
   executor,
 }: ShouldSupportDifferentTransactionsProps): void {
+
+  const usingGSN = web3.currentProvider.origProvider!=null;
   it('can get checksummed address of instance', async () => {
     const cpk = await getCPK();
     should.exist(cpk.address);
@@ -62,15 +64,15 @@ export function shouldSupportDifferentTransactions({
     });
 
     before('deploy conditional tokens', async () => {
-      conditionalTokens = await getContracts().ConditionalTokens.new();
+      conditionalTokens = await getContracts().ConditionalTokens.new({value:0, useGSN:false});
       const accounts = await web3.eth.getAccounts();
       tokenOwner = accounts[2];
     });
 
     beforeEach('deploy mock contracts', async () => {
-      multiStep = await getContracts().MultiStep.new();
-      erc20 = await getContracts().ERC20Mintable.new();
-      await erc20.mint(tokenOwner, `${1e20}`);
+      multiStep = await getContracts().MultiStep.new({value: 0, useGSN: false});
+      erc20 = await getContracts().ERC20Mintable.new({value: 0, useGSN: false});
+      await erc20.mint(tokenOwner, `${1e20}`, {value: 0, useGSN: false});
     });
 
     beforeEach('give proxy ERC20 allowance', async () => {
@@ -202,7 +204,7 @@ export function shouldSupportDifferentTransactions({
     });
 
     (
-      true || // GSN: see why error not handled the same
+      usingGSN || // GSN: see why error not handled the same
       ownerIsRecognizedContract ? it.skip : it
     )('by default errors without transacting when single transaction would fail', async () => {
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
@@ -219,7 +221,7 @@ export function shouldSupportDifferentTransactions({
     });
 
     (
-      true || // GSN: see why error not handled the same
+      usingGSN || // GSN: see why error not handled the same
       ownerIsRecognizedContract ? it.skip : it
     )('by default errors without transacting when any transaction in batch would fail', async () => {
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
@@ -247,7 +249,9 @@ export function shouldSupportDifferentTransactions({
       }]));
     });
 
-    it.skip('can execute a single transaction with a specific gas price', async () => {
+    (
+      usingGSN ? it.skip : it
+    )('can execute a single transaction with a specific gas price', async () => {
       const startingBalance = await getBalance((executor && executor[0]) || proxyOwner);
 
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
@@ -270,7 +274,7 @@ export function shouldSupportDifferentTransactions({
     });
 
     (
-      true || // GSN gas price for sender is zero.
+      usingGSN || // GSN gas price for sender is zero.
       ownerIsRecognizedContract ? it.skip : it
     )('can execute a batch transaction with a specific gas price', async () => {
       const startingBalance = await getBalance((executor && executor[0]) || proxyOwner);

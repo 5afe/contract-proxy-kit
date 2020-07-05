@@ -56,7 +56,23 @@ export const initializeContracts = async (safeOwner: Address, provider:any): Pro
   CPKFactory.setProvider(provider);
   CPKFactory.defaults({ from: safeOwner });
   cpkFactory = await CPKFactory.deployed();
-  
+
+  //other contracts use "readonly" provider:
+  const origSend = provider.send.bind(provider);
+  const readOnlyProvider = {
+    send(req:any, cb:any) {
+      if ( req.method==='eth_sendRawTransaction' || req.method==='eth_sendTransaction') {
+        throw new Error( 'readOnly provider: not calling '+JSON.stringify(req));
+      }
+      origSend(req, cb);
+    }
+  };
+
+  if ( provider.origProvider ) {
+    console.log('== only cpkfactory is relayRecipient. others use native provider');
+    provider = provider.origProvider;
+  }
+
   GnosisSafe = TruffleContract(GnosisSafeJson);
   GnosisSafe.setProvider(provider);
   GnosisSafe.defaults({ from: safeOwner });
@@ -91,6 +107,7 @@ export const initializeContracts = async (safeOwner: Address, provider:any): Pro
   ConditionalTokens.setProvider(provider);
   ConditionalTokens.defaults({ from: safeOwner });
   conditionalTokens = await ConditionalTokens.deployed();
+
 };
 
 export const getContracts = (): TestContracts => ({

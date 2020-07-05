@@ -5,6 +5,7 @@
   "main": "src/index.ts",
   "scripts": {
     "gsn-ganache": "run-with-testrpc 'gsn start'",
+    "gsn-ganache": "run-with-testrpc -e 10000 'gsn start'",
     "generate-types": "typechain --target=truffle-v5 './build/contracts/*.json'",
     "postinstall": "truffle compile && yarn generate-types",
     "migrate": "tsc -p ./tsconfig.migrate.json --outDir ./migrations && truffle migrate --network local",
