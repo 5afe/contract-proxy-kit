@@ -281,19 +281,20 @@ class CPK {
     const toNumber = (num: NumberLike): number => Number(num.toString());
     if (!sendOptions.gas) {
       const blockGasLimit = toNumber((await this.ethLibAdapter.getBlock('latest')).gasLimit);
-
+      
       const gasEstimateOptions = { ...sendOptions, gas: blockGasLimit };
       if (!(await contract.call(methodName, params, gasEstimateOptions))) {
         return { success: false, gasLimit: blockGasLimit };
       }
-
+      
+      const gasSearchError = 10000;
       let gasLow = await contract.estimateGas(methodName, params, sendOptions);
       let gasHigh = blockGasLimit;
   
       gasEstimateOptions.gas = gasLow;
   
       if (!(await contract.call(methodName, params, gasEstimateOptions))) {
-        while (gasLow <= gasHigh) {
+        while (gasLow + gasSearchError <= gasHigh) {
           const testGasLimit = Math.floor((gasLow + gasHigh) * 0.5);
           gasEstimateOptions.gas = testGasLimit;
   
@@ -305,10 +306,12 @@ class CPK {
             gasLow = testGasLimit + 1;
           }
         }
-        // gasLow is now our target gas value
+        // the final target gas value is in the interval [gasLow, gasHigh)
       }
 
-      return { success: true, gasLimit: gasLow };
+      const gasLimit = Math.min(Math.ceil((gasHigh + 1) * 1.1), blockGasLimit);
+
+      return { success: true, gasLimit };
     }
 
     return {
