@@ -2,6 +2,10 @@
   "name": "contract-proxy-kit",
   "version": "1.1.1",
   "description": "Enable batched transactions and contract account interactions using a unique deterministic Gnosis Safe.",
+  "main": "lib/index.js",
+  "files": [
+    "lib/"
+  ],
   "scripts": {
     "generate-types": "typechain --target=truffle-v5 './build/contracts/*.json'",
     "postinstall": "truffle compile && yarn generate-types",
