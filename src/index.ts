@@ -278,12 +278,20 @@ class CPK {
     { contract, methodName, params }: ContractTxObj,
     sendOptions: NormalizeGas<SendOptions>,
   ): Promise<{ success: boolean; gasLimit: number }> {
+    async function checkOptions(options: NormalizeGas<SendOptions>): Promise<boolean> {
+      try {
+        return await contract.call(methodName, params, options);
+      } catch (e) {
+        return false;
+      }
+    }
+
     const toNumber = (num: NumberLike): number => Number(num.toString());
     if (!sendOptions.gas) {
       const blockGasLimit = toNumber((await this.ethLibAdapter.getBlock('latest')).gasLimit);
       
       const gasEstimateOptions = { ...sendOptions, gas: blockGasLimit };
-      if (!(await contract.call(methodName, params, gasEstimateOptions))) {
+      if (!(await checkOptions(gasEstimateOptions))) {
         return { success: false, gasLimit: blockGasLimit };
       }
       
@@ -293,12 +301,12 @@ class CPK {
   
       gasEstimateOptions.gas = gasLow;
   
-      if (!(await contract.call(methodName, params, gasEstimateOptions))) {
+      if (!(await checkOptions(gasEstimateOptions))) {
         while (gasLow + gasSearchError <= gasHigh) {
           const testGasLimit = Math.floor((gasLow + gasHigh) * 0.5);
           gasEstimateOptions.gas = testGasLimit;
   
-          if (await contract.call(methodName, params, gasEstimateOptions)) {
+          if (await checkOptions(gasEstimateOptions)) {
             // values > gasHigh will work
             gasHigh = testGasLimit - 1;
           } else {
@@ -315,7 +323,7 @@ class CPK {
     }
 
     return {
-      success: await contract.call(methodName, params, sendOptions),
+      success: await checkOptions(sendOptions),
       gasLimit: toNumber(sendOptions.gas),
     };
   }
