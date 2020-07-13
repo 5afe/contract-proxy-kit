@@ -28,9 +28,9 @@ class CpkTransactionManager implements TransactionManager {
   }
 
   async execTransactions({
+    ownerAccount,
     safeExecTxParams,
     transactions,
-    signature,
     contracts,
     ethLibAdapter,
     isDeployed,
@@ -44,8 +44,16 @@ class CpkTransactionManager implements TransactionManager {
       return this.execTxsWhileConnectedToSafe(ethLibAdapter, transactions, sendOptions);
     }
 
+    // (r, s, v) where v is 1 means this signature is approved by the address encoded in value r
+    // "Hashes are automatically approved by the sender of the message"
+    const autoApprovedSignature = ethLibAdapter.abiEncodePacked(
+      { type: 'uint256', value: ownerAccount }, // r
+      { type: 'uint256', value: 0 }, // s
+      { type: 'uint8', value: 1 }, // v
+    );
+
     const txObj: ContractTxObj = isDeployed
-      ? this.getSafeProxyTxObj(safeContract, safeExecTxParams, signature)
+      ? this.getSafeProxyTxObj(safeContract, safeExecTxParams, autoApprovedSignature)
       : this.getCPKFactoryTxObj(
         masterCopyAddress,
         fallbackHandlerAddress,
