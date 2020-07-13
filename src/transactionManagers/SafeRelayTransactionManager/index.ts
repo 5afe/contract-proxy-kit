@@ -62,51 +62,55 @@ class SafeRelayTransactionManager implements TransactionManager {
   }
 
   async execTransactions({
+    ownerAccount,
     safeExecTxParams,
-    signature,
     contracts,
     ethLibAdapter,
   }: ExecTransactionProps): Promise<TransactionResult> {
     const { safeContract } = contracts;
-  
-    const to = safeExecTxParams.to;
-    const value = safeExecTxParams.value;
-    const data = safeExecTxParams.data;
-    const operation = safeExecTxParams.operation;
 
     const relayEstimations = await this.getTransactionEstimations({
       safe: safeContract.address,
-      to,
-      value,
-      data,
-      operation,
+      to: safeExecTxParams.to,
+      value: safeExecTxParams.value,
+      data: safeExecTxParams.data,
+      operation: safeExecTxParams.operation,
     });
 
     // TO-DO: dataGas will be obsolete. Check again when this endpoint is updated to v2
     const tx = {
-      to,
-      value,
-      data,
-      operation,
-      gasToken: relayEstimations.gasToken,
+      to: safeExecTxParams.to,
+      value: safeExecTxParams.value,
+      data: safeExecTxParams.data,
+      operation: safeExecTxParams.operation,
       safeTxGas: relayEstimations.safeTxGas,
       dataGas: relayEstimations.baseGas,
       gasPrice: relayEstimations.gasPrice,
-      nonce: relayEstimations.lastUsedNonce,
+      gasToken: relayEstimations.gasToken,
       refundReceiver: zeroAddress,
+      nonce: relayEstimations.lastUsedNonce + 1,
     };
-    
-    const rsvSignature = [{
-      r: new BigNumber(signature.slice(0,66)).toString(),
-      s: new BigNumber('0x' + signature.slice(66,130)).toString(),
-      v: new BigNumber('0x' + signature.slice(130,132)).toString(),
-    }];
+
+    const txHash = await contracts.safeContract.call('getTransactionHash', [
+      tx.to,
+      tx.value,
+      tx.data,
+      tx.operation,
+      tx.safeTxGas,
+      tx.dataGas,
+      tx.gasPrice,
+      tx.gasToken,
+      tx.refundReceiver,
+      tx.nonce
+    ]);
+
+    const rsvSignature = await this.signTransactionHash(ethLibAdapter, ownerAccount, txHash);
 
     return this.sendTransactionToRelay({
       url: this.url,
       safe: safeContract.address,
       tx,
-      signatures: rsvSignature,
+      signatures: [rsvSignature],
       ethLibAdapter,
     });
   }
@@ -181,6 +185,32 @@ class SafeRelayTransactionManager implements TransactionManager {
       throw new Error(jsonResponse.exception);
     }
     return ethLibAdapter.toSafeRelayTxResult(jsonResponse.txHash, jsonResponse.ethereumTx);
+  }
+
+  private async signTransactionHash(ethLibAdapter: EthLibAdapter, ownerAccount: Address, txHash: string) {
+    let sig = await ethLibAdapter.providerSend('eth_sign', [ownerAccount, txHash]);
+    let sigV = parseInt(sig.slice(-2), 16);
+
+    switch (sigV) {
+    case 0:
+    case 1:
+      sigV += 31;
+      break;
+    case 27:
+    case 28:
+      sigV += 4;
+      break;
+    default:
+      throw new Error('Invalid signature');
+    }
+
+    sig = sig.slice(0, -2) + sigV.toString(16);
+
+    return {
+      r: (new BigNumber('0x' + sig.slice(2, 66))).toString(10),
+      s: (new BigNumber('0x' + sig.slice(66, 130))).toString(10),
+      v: (new BigNumber('0x' + sig.slice(130, 132))).toString(10),
+    };
   }
 }
 
