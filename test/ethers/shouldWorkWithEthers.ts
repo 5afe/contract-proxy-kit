@@ -103,9 +103,7 @@ export function shouldWorkWithEthers({
         networks = {
           [(await signer.provider.getNetwork()).chainId]: {
             masterCopyAddress: gnosisSafe.address,
-            //masterCopyAddress: '0xe78A0F7E598Cc8b0Bb87894B0F60dD2a88d6a8Ab',
             proxyFactoryAddress: cpkFactory.address,
-            //proxyFactoryAddress: '0x254dffcd3277C0b1660F6d42EFbB754edaBAbC2B',
             multiSendAddress: multiSend.address,
             fallbackHandlerAddress: defaultCallbackHandler.address,
           },
