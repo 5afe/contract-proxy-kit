@@ -48,7 +48,7 @@ export function shouldWorkWithEthers({
 
         if (signer.constructor.name === 'JsonRpcSigner') {
           // mock WalletConnected Gnosis Safe provider
-          return signer.sendTransaction({ gasLimit: gas, ...txObj });
+          return (await signer.sendTransaction({ gasLimit: gas, ...txObj })).hash;
         }
 
         // See: https://github.com/ethers-io/ethers.js/issues/299
@@ -58,7 +58,7 @@ export function shouldWorkWithEthers({
           gasLimit: gas,
           ...txObj,
         });
-        return signer.provider.sendTransaction(signedTx);
+        return (await signer.provider.sendTransaction(signedTx)).hash;
       },
       randomHexWord: (): string => ethers.utils.hexlify(ethers.utils.randomBytes(32)),
       fromWei: (amount: number): number => (
