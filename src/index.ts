@@ -126,6 +126,9 @@ class CPK {
     if (this.ownerAccount) {
       return this.ownerAccount;
     }
+    if (!this.ethLibAdapter) {
+      throw new Error('CPK uninitialized ethLibAdapter');
+    }
     return this.ethLibAdapter.getAccount();
   }
 
@@ -156,8 +159,11 @@ class CPK {
   }
 
   encodeMultiSendCallData(transactions: Transaction[]): string {
-    const multiSend = this.multiSend || this.ethLibAdapter.getContract(multiSendAbi);
+    if (!this.ethLibAdapter) {
+      throw new Error('CPK ethLibAdapter uninitialized');
+    }
 
+    const multiSend = this.multiSend || this.ethLibAdapter.getContract(multiSendAbi);
     const standardizedTxs = transactions.map(standardizeTransaction);
 
     return multiSend.encode('multiSend', [
@@ -175,11 +181,20 @@ class CPK {
     transactions: Transaction[],
     options?: ExecOptions,
   ): Promise<TransactionResult> {
-    if (
-      !this.contract || !this.masterCopyAddress ||
-      !this.fallbackHandlerAddress || !this.transactionManager
-    ) {
-      throw new Error('CPK uninitialized');
+    if (!this.contract) {
+      throw new Error('CPK contract uninitialized');
+    }
+    if (!this.masterCopyAddress) {
+      throw new Error('CPK masterCopyAddress uninitialized');
+    }
+    if (!this.fallbackHandlerAddress) {
+      throw new Error('CPK fallbackHandlerAddress uninitialized');
+    }
+    if (!this.transactionManager) {
+      throw new Error('CPK transactionManager uninitialized');
+    }
+    if (!this.ethLibAdapter) {
+      throw new Error('CPK ethLibAdapter uninitialized');
     }
 
     const ownerAccount = await this.getOwnerAccount();
