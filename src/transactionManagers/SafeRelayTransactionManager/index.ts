@@ -1,6 +1,6 @@
 import fetch from 'node-fetch';
 import BigNumber from 'bignumber.js';
-import TransactionManager, { ExecTransactionProps, TransactionManagerConfig } from '../TransactionManager';
+import TransactionManager, { ExecTransactionProps, TransactionManagerConfig, TransactionManagerNames } from '../TransactionManager';
 import { TransactionResult, OperationType } from '../../utils/transactions';
 import { zeroAddress } from '../../utils/constants';
 import { Address } from '../../utils/basicTypes';
@@ -51,7 +51,7 @@ class SafeRelayTransactionManager implements TransactionManager {
 
   get config(): TransactionManagerConfig {
     return {
-      name: 'SafeRelayTransactionManager',
+      name: TransactionManagerNames.SafeRelayTransactionManager,
       url: this.url,
     };
   }

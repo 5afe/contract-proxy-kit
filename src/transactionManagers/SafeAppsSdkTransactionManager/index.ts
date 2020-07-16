@@ -1,11 +1,11 @@
-import TransactionManager, { TransactionManagerConfig, ExecTransactionSafeAppsProps } from '../TransactionManager';
+import TransactionManager, { TransactionManagerConfig, ExecTransactionSafeAppsProps, TransactionManagerNames } from '../TransactionManager';
 import { TransactionResult } from '../../utils/transactions';
 
 class SafeAppsSdkTransactionManager implements TransactionManager  {
 
   get config(): TransactionManagerConfig {
     return {
-      name: 'SafeAppsSdkTransactionManager',
+      name: TransactionManagerNames.SafeAppsSdkTransactionManager,
       url: undefined,
     };
   }

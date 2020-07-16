@@ -1,5 +1,5 @@
 import { zeroAddress, predeterminedSaltNonce } from '../../utils/constants';
-import TransactionManager, { ExecTransactionProps, TransactionManagerConfig } from '../TransactionManager';
+import TransactionManager, { ExecTransactionProps, TransactionManagerConfig, TransactionManagerNames } from '../TransactionManager';
 import EthLibAdapter, { Contract } from '../../ethLibAdapters/EthLibAdapter';
 import {
   OperationType,
@@ -22,7 +22,7 @@ class CpkTransactionManager implements TransactionManager {
 
   get config(): TransactionManagerConfig {
     return {
-      name: 'CpkTransactionManager',
+      name: TransactionManagerNames.CpkTransactionManager,
       url: undefined,
     };
   }
