@@ -1,6 +1,7 @@
+import initSdk, { SafeInfo, SdkInstance } from '@gnosis.pm/safe-apps-sdk';
 import { predeterminedSaltNonce } from './utils/constants';
 import { Address } from './utils/basicTypes';
-import { OperationType } from './utils/transactions';
+import { OperationType, standardizeSafeAppsTransaction } from './utils/transactions';
 import { defaultNetworks, NetworksConfig } from './config/networks';
 import { joinHexData, getHexDataLength } from './utils/hexData';
 import {
@@ -12,11 +13,12 @@ import {
   normalizeGasLimit,
 } from './utils/transactions';
 import EthLibAdapter, { Contract } from './ethLibAdapters/EthLibAdapter';
-import TransactionManager, { CPKContracts } from './transactionManagers/TransactionManager';
+import TransactionManager, { CPKContracts, TransactionManagerNames } from './transactionManagers/TransactionManager';
 import CpkTransactionManager from './transactionManagers/CpkTransactionManager';
 import cpkFactoryAbi from './abis/CpkFactoryAbi.json';
 import safeAbi from './abis/SafeAbi.json';
 import multiSendAbi from './abis/MultiSendAbi.json';
+import SafeAppsSdkTransactionManager from './transactionManagers/SafeAppsSdkTransactionManager';
 
 interface CPKConfig {
   ethLibAdapter: EthLibAdapter;
@@ -29,10 +31,14 @@ class CPK {
   static Call = OperationType.Call;
   static DelegateCall = OperationType.DelegateCall;
 
-  ethLibAdapter: EthLibAdapter;
-  transactionManager: TransactionManager;
+  appsSdk: SdkInstance;
+  safeAppInfo?: SafeInfo;
+
+  ethLibAdapter?: EthLibAdapter;
+  transactionManager?: TransactionManager;
   networks: NetworksConfig;
   ownerAccount?: Address;
+  isConnectedToSafe = false;
 
   contract?: Contract;
   multiSend?: Contract;
@@ -40,21 +46,40 @@ class CPK {
   masterCopyAddress?: Address;
   fallbackHandlerAddress?: Address;
 
-  isConnectedToSafe = false;
-  
-  static async create(opts: CPKConfig): Promise<CPK> {
-    if (!opts) throw new Error('missing options');
+  private setSafeInfo = (safeInfo: SafeInfo): void => {
+    this.safeAppInfo = safeInfo;
+
+    this.setOwnerAccount(safeInfo.safeAddress);
+
+    //if (!this.transactionManager) {
+    this.transactionManager = new SafeAppsSdkTransactionManager();
+    this.isConnectedToSafe = true;
+    //}
+  }
+
+  static async create(opts?: CPKConfig): Promise<CPK> {
     const cpk = new CPK(opts);
-    await cpk.init();
+    
+    if (opts) {
+      await cpk.init();
+    }
     return cpk;
   }
   
-  constructor({
-    ethLibAdapter,
-    transactionManager,
-    ownerAccount,
-    networks,
-  }: CPKConfig) {
+  constructor(opts?: CPKConfig) {
+    this.appsSdk = initSdk();
+    this.appsSdk.addListeners({
+      onSafeInfo: this.setSafeInfo,
+    });
+
+    this.networks = {
+      ...defaultNetworks
+    };
+    if (!opts) {
+      return;
+    }
+
+    const { ethLibAdapter, transactionManager, ownerAccount, networks } = opts;
     if (!ethLibAdapter) {
       throw new Error('ethLibAdapter property missing from options');
     }
@@ -62,7 +87,7 @@ class CPK {
     this.transactionManager = transactionManager
       ? transactionManager
       : new CpkTransactionManager();
-    this.setOwnerAccount(ownerAccount);
+    this.ownerAccount = ownerAccount;
     this.networks = {
       ...defaultNetworks,
       ...networks,
@@ -70,9 +95,12 @@ class CPK {
   }
 
   async init(): Promise<void> {
+    if (!this.ethLibAdapter) {
+      throw new Error('CPK uninitialized ethLibAdapter');
+    }
+
     const networkId = await this.ethLibAdapter.getNetworkId();
     const network = this.networks[networkId];
-
     if (!network) {
       throw new Error(`unrecognized network ID ${networkId}`);
     }
@@ -122,6 +150,11 @@ class CPK {
     }
   }
 
+  isSafeApp(): boolean {
+    return !!this.safeAppInfo &&
+      this.transactionManager?.config.name === TransactionManagerNames.SafeAppsSdkTransactionManager;
+  }
+
   async getOwnerAccount(): Promise<Address> {
     if (this.ownerAccount) {
       return this.ownerAccount;
@@ -132,9 +165,12 @@ class CPK {
     return this.ethLibAdapter.getAccount();
   }
 
-  get address(): Address {
+  get address(): Address | undefined {
+    if (this.isSafeApp()) {
+      return this.safeAppInfo?.safeAddress;
+    }
     if (!this.contract) {
-      throw new Error('CPK uninitialized address');
+      return undefined;
     }
     return this.contract.address;
   }
@@ -166,8 +202,9 @@ class CPK {
     const multiSend = this.multiSend || this.ethLibAdapter.getContract(multiSendAbi);
     const standardizedTxs = transactions.map(standardizeTransaction);
 
+    const ethLibAdapter = this.ethLibAdapter;
     return multiSend.encode('multiSend', [
-      joinHexData(standardizedTxs.map((tx) => this.ethLibAdapter.abiEncodePacked(
+      joinHexData(standardizedTxs.map((tx) => ethLibAdapter.abiEncodePacked(
         { type: 'uint8', value: tx.operation },
         { type: 'address', value: tx.to },
         { type: 'uint256', value: tx.value },
@@ -181,6 +218,21 @@ class CPK {
     transactions: Transaction[],
     options?: ExecOptions,
   ): Promise<TransactionResult> {
+    if (!this.transactionManager) {
+      throw new Error('CPK transactionManager uninitialized');
+    }
+
+    if (this.isSafeApp() && transactions.length >= 1) {
+      const standardizedTxs = transactions.map(standardizeSafeAppsTransaction);
+      return this.transactionManager.execTransactions({
+        appsSdk: this.appsSdk,
+        transactions: standardizedTxs
+      });
+    }
+
+    if (!this.address) {
+      throw new Error('CPK address uninitialized');
+    }
     if (!this.contract) {
       throw new Error('CPK contract uninitialized');
     }
@@ -190,16 +242,21 @@ class CPK {
     if (!this.fallbackHandlerAddress) {
       throw new Error('CPK fallbackHandlerAddress uninitialized');
     }
-    if (!this.transactionManager) {
-      throw new Error('CPK transactionManager uninitialized');
-    }
     if (!this.ethLibAdapter) {
       throw new Error('CPK ethLibAdapter uninitialized');
     }
 
     const ownerAccount = await this.getOwnerAccount();
-    const sendOptions = normalizeGasLimit({ ...options, from: ownerAccount });
     const safeExecTxParams = this.getSafeExecTxParams(transactions);
+    const sendOptions = normalizeGasLimit({ ...options, from: ownerAccount });
+
+    const codeAtAddress = await this.ethLibAdapter.getCode(this.address);
+    const isDeployed = codeAtAddress !== '0x';
+
+    const txManager = !isDeployed
+      ? new CpkTransactionManager()
+      : this.transactionManager;
+
     const cpkContracts: CPKContracts = {
       safeContract: this.contract,
       proxyFactory: this.proxyFactory,
@@ -207,14 +264,9 @@ class CPK {
       fallbackHandlerAddress: this.fallbackHandlerAddress,
     };
 
-    const codeAtAddress = await this.ethLibAdapter.getCode(this.address);
-    const isDeployed = codeAtAddress !== '0x';
-    const txManager = !isDeployed
-      ? new CpkTransactionManager()
-      : this.transactionManager;
 
     return txManager.execTransactions({
-      ownerAccount: ownerAccount,
+      ownerAccount,
       safeExecTxParams,
       transactions,
       contracts: cpkContracts,
