@@ -6,7 +6,7 @@ import { getContracts } from '../utils/contracts';
 interface TestConnectedSafeTransactionsWithRelayProps {
   web3: any;
   getCPK: () => CPK;
-  checkAddressChecksum: (address: Address) => any;
+  checkAddressChecksum: (address?: Address) => any;
   sendTransaction: (txObj: any) => any;
   randomHexWord: () => string;
   fromWei: (amount: number) => number;

@@ -1,14 +1,14 @@
 import should from 'should';
 import CPK from '../../src';
+import { TransactionResult } from '../../src/utils/transactions';
 import { Address } from '../../src/utils/basicTypes';
 import { getContracts } from '../utils/contracts';
 import { AccountType } from '../utils';
-import { TransactionResult } from '../../src/utils/transactions';
 
 interface TestSafeTransactionsProps {
   web3: any;
   getCPK: () => CPK;
-  checkAddressChecksum: (address: Address) => any;
+  checkAddressChecksum: (address?: Address) => any;
   sendTransaction: (txObj: any) => any;
   randomHexWord: () => string;
   fromWei: (amount: number) => number;

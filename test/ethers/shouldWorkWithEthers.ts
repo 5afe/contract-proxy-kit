@@ -35,9 +35,12 @@ export function shouldWorkWithEthers({
       .connect(new ethers.providers.Web3Provider(web3.currentProvider));
 
     const ethersTestHelpers = (signerBox: any[]): any => ({
-      checkAddressChecksum: (address: Address): boolean => (
-        ethers.utils.getAddress(address) === address
-      ),
+      checkAddressChecksum: (address?: Address): boolean => {
+        if (!address) {
+          return false;
+        }
+        return ethers.utils.getAddress(address) === address;
+      },
       sendTransaction: async ({
         from, gas, ...txObj
       }: { from: Address; gas: number }): Promise<any> => {

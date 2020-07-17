@@ -33,9 +33,12 @@ export function shouldWorkWithWeb3({
     const isCpkTransactionManager = !transactionManager || transactionManager.config.name === 'CpkTransactionManager';
 
     const testHelperMaker = (web3Box: any): any => ({
-      checkAddressChecksum: (address: Address): boolean => (
-        web3Box[0].utils.checkAddressChecksum(address)
-      ),
+      checkAddressChecksum: (address?: Address): boolean => {
+        if (!address) {
+          return false;
+        }
+        return web3Box[0].utils.checkAddressChecksum(address);
+      },
       sendTransaction: (txObj: any): any => (
         toTxHashPromise(web3Box[0].eth.sendTransaction(txObj))
       ),
