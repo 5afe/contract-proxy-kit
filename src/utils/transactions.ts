@@ -73,13 +73,20 @@ export function standardizeTransaction(tx: Transaction): StandardTransaction {
   };
 }
 
-export interface RpcCallTx {
-  from?: Address;
+export interface StandardSafeAppsTransaction {
+  operation: OperationType;
   to: Address;
-  gas?: string;
-  gasPrice?: string;
-  value?: string;
-  data?: string;
+  value: string;
+  data: string;
+}
+
+export function standardizeSafeAppsTransaction(tx: Transaction): StandardSafeAppsTransaction {
+  return {
+    operation: tx.operation ? tx.operation : defaultTxOperation,
+    to: tx.to,
+    value: tx.value ? tx.value.toString() : defaultTxValue.toString(),
+    data: tx.data ? tx.data : defaultTxData,
+  };
 }
 
 export type NormalizeGas<T> = Pick<T, Exclude<keyof T, 'gasLimit'>>
@@ -95,6 +102,15 @@ export function normalizeGasLimit<T extends GasLimitOptions>(
     ...rest,
     gas: gas || gasLimit,
   } as NormalizeGas<T>;
+}
+
+export interface RpcCallTx {
+  from?: Address;
+  to: Address;
+  gas?: string;
+  gasPrice?: string;
+  value?: string;
+  data?: string;
 }
 
 export function formatCallTx(tx: EthCallTx): RpcCallTx {
