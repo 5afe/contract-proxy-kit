@@ -22,7 +22,7 @@ export function toTxResult(
   );
 }
 
-interface Web3AdapterConfig {
+export interface Web3AdapterConfig {
   web3: any;
 }
 

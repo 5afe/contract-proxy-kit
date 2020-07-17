@@ -7,7 +7,7 @@ import {
 import { zeroAddress } from '../../utils/constants';
 import { Address, Abi } from '../../utils/basicTypes';
 
-interface EthersAdapterConfig {
+export interface EthersAdapterConfig {
   ethers: any;
   signer: any;
 }

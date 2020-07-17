@@ -20,7 +20,7 @@ import safeAbi from './abis/SafeAbi.json';
 import multiSendAbi from './abis/MultiSendAbi.json';
 import SafeAppsSdkTransactionManager from './transactionManagers/SafeAppsSdkTransactionManager';
 
-interface CPKConfig {
+export interface CPKConfig {
   ethLibAdapter: EthLibAdapter;
   transactionManager?: TransactionManager;
   ownerAccount?: string;
