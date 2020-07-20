@@ -1,6 +1,6 @@
 {
-  "short_name": "CPK Configuration",
-  "name": "CPK Configuration App",
+  "short_name": "CPK Manager",
+  "name": "CPK Manager",
   "description": "Web app to configure and try the CPK",
   "iconPath": "logo512.png",
   "icons": [
