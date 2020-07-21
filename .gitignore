@@ -67,3 +67,4 @@ build/
 migrations/*.js
 migrations/*.js.map
 migrations/*.d.ts
+/migrations/migrations/

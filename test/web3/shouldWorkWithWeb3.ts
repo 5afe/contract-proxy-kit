@@ -12,6 +12,7 @@ import { getContractInstances, TestContractInstances } from '../utils/contracts'
 
 interface ShouldWorkWithWeb3Props {
   Web3: typeof Web3Maj1Min2 | typeof Web3Maj2Alpha;
+  usingProvider: any;
   defaultAccountBox: Address[];
   safeOwnerBox: Address[];
   gnosisSafeProviderBox: any;
@@ -19,12 +20,16 @@ interface ShouldWorkWithWeb3Props {
 
 export function shouldWorkWithWeb3({
   Web3,
+  usingProvider,
   defaultAccountBox,
   safeOwnerBox,
   gnosisSafeProviderBox
 }: ShouldWorkWithWeb3Props): void {
+
+  const usingGSN = usingProvider.origProvider != null;
   describe(`with Web3 version ${(new Web3(Web3.givenProvider)).version}`, () => {
-    const ueb3 = new Web3('http://localhost:8545');
+
+    const ueb3 = new Web3(usingProvider);
 
     let contracts: TestContractInstances;
 
@@ -146,12 +151,16 @@ export function shouldWorkWithWeb3({
           async getCPK() {
             const newAccount = ueb3.eth.accounts.create();
             ueb3.eth.accounts.wallet.add(newAccount);
-            await ueb3TestHelpers.sendTransaction({
-              from: defaultAccountBox[0],
-              to: newAccount.address,
-              value: `${2e18}`,
-              gas: '0x5b8d80',
-            });
+            if (!usingGSN) {
+
+              //with GSN, keep new accounts gasless
+              await ueb3TestHelpers.sendTransaction({
+                from: defaultAccountBox[0],
+                to: newAccount.address,
+                value: `${2e18}`,
+                gas: '0x5b8d80',
+              });
+            }
 
             const ethLibAdapter = new Web3Adapter({ web3: ueb3 });
             return CPK.create({
