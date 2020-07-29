@@ -66,8 +66,13 @@ class SafeRelayTransactionManager implements TransactionManager {
     safeExecTxParams,
     contracts,
     ethLibAdapter,
+    isConnectedToSafe,
   }: ExecTransactionProps): Promise<TransactionResult> {
     const { safeContract } = contracts;
+
+    if (isConnectedToSafe) {
+      throw new Error('The use of the relay service is not supported when the CPK is connected to a Gnosis Safe')
+    }
 
     const relayEstimations = await this.getTransactionEstimations({
       safe: safeContract.address,
@@ -142,9 +147,6 @@ class SafeRelayTransactionManager implements TransactionManager {
       body: JSON.stringify(body),
     });
 
-    if (!response) {
-      throw new Error('Connection');
-    }
     const jsonResponse = await response.json();
     
     if (response.status !== 200) {
@@ -176,9 +178,6 @@ class SafeRelayTransactionManager implements TransactionManager {
       body: JSON.stringify(body),
     });
 
-    if (!response) {
-      throw new Error('Connection');
-    }
     const jsonResponse = await response.json();
 
     if (response.status !== 201) {
