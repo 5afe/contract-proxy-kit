@@ -5,7 +5,8 @@ import EthersAdapter from '../../src/ethLibAdapters/EthersAdapter';
 import { NetworksConfig } from '../../src/config/networks';
 import { Transaction } from '../../src/utils/transactions';
 import { Address } from '../../src/utils/basicTypes';
-import { shouldSupportDifferentTransactions } from '../transactions/shouldSupportDifferentTransactions';
+import { testSafeTransactions } from '../transactions/testSafeTransactions';
+import { testConnectedSafeTransactionsWithRelay } from '../transactions/testConnectedSafeTransactionsWithRelay';
 import { toTxHashPromise, AccountType } from '../utils';
 import { getContractInstances, TestContractInstances } from '../utils/contracts';
 import TransactionManager from '../../src/transactionManagers/TransactionManager';
@@ -172,7 +173,7 @@ export function shouldWorkWithEthers({
           }]);
         });
 
-        shouldSupportDifferentTransactions({
+        testSafeTransactions({
           web3,
           ...ethersTestHelpers([signer]),
           async getCPK() { return cpk; },
@@ -183,7 +184,7 @@ export function shouldWorkWithEthers({
 
       describe('with fresh accounts', () => {
         const freshSignerBox: any[] = [];
-        shouldSupportDifferentTransactions({
+        testSafeTransactions({
           web3,
           ...ethersTestHelpers(freshSignerBox),
           async getCPK() {
@@ -228,7 +229,20 @@ export function shouldWorkWithEthers({
           }
         });
 
-        shouldSupportDifferentTransactions({
+        if (!isCpkTransactionManager) {
+          testConnectedSafeTransactionsWithRelay({
+            web3,
+            ...ethersTestHelpers(safeSignerBox),
+            async getCPK() { return cpk; },
+            ownerIsRecognizedContract: true,
+            executor: safeOwnerBox,
+            isCpkTransactionManager,
+            accountType: AccountType.Connected,
+          });
+          return;
+        }
+
+        testSafeTransactions({
           web3,
           ...ethersTestHelpers(safeSignerBox),
           async getCPK() { return cpk; },

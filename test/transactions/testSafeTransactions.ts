@@ -4,7 +4,7 @@ import { Address } from '../../src/utils/basicTypes';
 import { getContracts } from '../utils/contracts';
 import { AccountType } from '../utils';
 
-interface ShouldSupportDifferentTransactionsProps {
+interface TestSafeTransactionsProps {
   web3: any;
   getCPK: any;
   checkAddressChecksum: any;
@@ -22,7 +22,7 @@ interface ShouldSupportDifferentTransactionsProps {
   accountType: AccountType;
 }
 
-export function shouldSupportDifferentTransactions({
+export function testSafeTransactions({
   web3,
   getCPK,
   checkAddressChecksum,
@@ -38,7 +38,7 @@ export function shouldSupportDifferentTransactions({
   isCpkTransactionManager,
   executor,
   accountType,
-}: ShouldSupportDifferentTransactionsProps): void {
+}: TestSafeTransactionsProps): void {
   it('can get checksummed address of instance', async () => {
     const cpk = await getCPK();
     should.exist(cpk.address);
@@ -93,18 +93,21 @@ export function shouldSupportDifferentTransactions({
         to: multiStep.address,
         data: multiStep.contract.methods.doStep(1).encodeABI(),
       }]));
+
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(1);
     });
     
     it('can execute deep transactions', async () => {
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
       const numSteps = 10;
+
       await waitTxReceipt(await cpk.execTransactions([
         {
           to: multiStep.address,
           data: multiStep.contract.methods.doDeepStep(numSteps, numSteps, cpk.address).encodeABI(),
         }
       ]));
+
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(numSteps);
     });
 
@@ -120,6 +123,7 @@ export function shouldSupportDifferentTransactions({
           data: multiStep.contract.methods.doStep(2).encodeABI(),
         },
       ]));
+
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(2);
     });
 

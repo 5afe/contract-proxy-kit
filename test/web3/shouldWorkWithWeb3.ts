@@ -3,7 +3,8 @@ import Web3Maj1Min2 from 'web3-1-2';
 import Web3Maj2Alpha from 'web3-2-alpha';
 import CPK from '../../src';
 import Web3Adapter from '../../src/ethLibAdapters/Web3Adapter';
-import { shouldSupportDifferentTransactions } from '../transactions/shouldSupportDifferentTransactions';
+import { testSafeTransactions } from '../transactions/testSafeTransactions';
+import { testConnectedSafeTransactionsWithRelay } from '../transactions/testConnectedSafeTransactionsWithRelay';
 import { toTxHashPromise, AccountType } from '../utils';
 import { Transaction } from '../../src/utils/transactions';
 import { getContractInstances, TestContractInstances } from '../utils/contracts';
@@ -156,7 +157,7 @@ export function shouldWorkWithWeb3({
           }]);
         });
 
-        shouldSupportDifferentTransactions({
+        testSafeTransactions({
           web3: ueb3,
           ...ueb3TestHelpers,
           async getCPK() { return cpk; },
@@ -166,7 +167,7 @@ export function shouldWorkWithWeb3({
       });
 
       describe('with fresh accounts', () => {
-        shouldSupportDifferentTransactions({
+        testSafeTransactions({
           web3: ueb3,
           ...ueb3TestHelpers,
           async getCPK() {
@@ -215,7 +216,18 @@ export function shouldWorkWithWeb3({
           }
         });
 
-        shouldSupportDifferentTransactions({
+        if (!isCpkTransactionManager) {
+          testConnectedSafeTransactionsWithRelay({
+            web3: ueb3,
+            ...testHelperMaker(safeWeb3Box),
+            async getCPK() { return cpk; },
+            ownerIsRecognizedContract: true,
+            executor: safeOwnerBox,
+          });
+          return;
+        }
+
+        testSafeTransactions({
           web3: ueb3,
           ...testHelperMaker(safeWeb3Box),
           async getCPK() { return cpk; },
