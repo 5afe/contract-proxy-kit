@@ -39,11 +39,6 @@ interface TransactionToRelayProps {
   ethLibAdapter: EthLibAdapter;
 }
 
-interface SafeBalance {
-  tokenAddress: Address;
-  balance: string;
-}
-
 class SafeRelayTransactionManager implements TransactionManager {
   url: string
 
@@ -186,7 +181,11 @@ class SafeRelayTransactionManager implements TransactionManager {
     return ethLibAdapter.toSafeRelayTxResult(jsonResponse.txHash, jsonResponse.ethereumTx);
   }
 
-  private async signTransactionHash(ethLibAdapter: EthLibAdapter, ownerAccount: Address, txHash: string) {
+  private async signTransactionHash(
+    ethLibAdapter: EthLibAdapter,
+    ownerAccount: Address,
+    txHash: string
+  ) {
     let sig = await ethLibAdapter.signMessage(txHash, ownerAccount);
     let sigV = parseInt(sig.slice(-2), 16);
 

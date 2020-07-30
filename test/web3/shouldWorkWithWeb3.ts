@@ -6,7 +6,7 @@ import Web3Adapter from '../../src/ethLibAdapters/Web3Adapter';
 import { testSafeTransactions } from '../transactions/testSafeTransactions';
 import { testConnectedSafeTransactionsWithRelay } from '../transactions/testConnectedSafeTransactionsWithRelay';
 import { toTxHashPromise, AccountType } from '../utils';
-import { Transaction } from '../../src/utils/transactions';
+import { Transaction, TransactionResult } from '../../src/utils/transactions';
 import { getContractInstances, TestContractInstances } from '../utils/contracts';
 import { Address } from '../../src/utils/basicTypes';
 import { NetworksConfig } from '../../src/config/networks';
@@ -47,9 +47,8 @@ export function shouldWorkWithWeb3({
       testedTxObjProps: 'the PromiEvent for the transaction and the hash',
       getBalance: (address: Address): number => web3Box[0].eth.getBalance(address)
         .then((balance: number) => web3Box[0].utils.toBN(balance)),
-      checkTxObj: ({ promiEvent, hash }: { promiEvent: any; hash: string }): void => {
-        should.exist(promiEvent);
-        should.exist(hash);
+      checkTxObj: (txResult: TransactionResult): void => {
+        should.exist(txResult.hash);
       },
       waitTxReceipt: async ({ hash }: { hash: string }): Promise<any> => {
         let receipt = await web3Box[0].eth.getTransactionReceipt(hash);

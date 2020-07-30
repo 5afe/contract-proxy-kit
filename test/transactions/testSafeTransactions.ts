@@ -3,22 +3,23 @@ import CPK from '../../src';
 import { Address } from '../../src/utils/basicTypes';
 import { getContracts } from '../utils/contracts';
 import { AccountType } from '../utils';
+import { TransactionResult } from '../../src/utils/transactions';
 
 interface TestSafeTransactionsProps {
   web3: any;
-  getCPK: any;
-  checkAddressChecksum: any;
-  sendTransaction: any;
-  randomHexWord: any;
-  fromWei: any;
-  getTransactionCount: any;
-  getBalance: any;
-  testedTxObjProps: any;
-  checkTxObj: any;
-  waitTxReceipt: any;
-  ownerIsRecognizedContract?: any;
+  getCPK: () => CPK;
+  checkAddressChecksum: (address: Address) => boolean;
+  sendTransaction: (txObj: any) => any;
+  randomHexWord: () => string;
+  fromWei: (amount: number) => number;
+  getTransactionCount: (account: Address) => number;
+  getBalance: (address: Address) => any;
+  testedTxObjProps: string;
+  checkTxObj: (txResult: TransactionResult) => void;
+  waitTxReceipt: ({ hash }: { hash: string }) => Promise<any>;
+  ownerIsRecognizedContract?: boolean;
   isCpkTransactionManager: boolean;
-  executor?: any;
+  executor?: Address[];
   accountType: AccountType;
 }
 
@@ -42,7 +43,7 @@ export function testSafeTransactions({
   it('can get checksummed address of instance', async () => {
     const cpk = await getCPK();
     should.exist(cpk.address);
-    checkAddressChecksum(cpk.address).should.be.true();
+    checkAddressChecksum(cpk.address).should.be.true;
   });
 
   if (ownerIsRecognizedContract) {

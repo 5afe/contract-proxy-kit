@@ -5,14 +5,14 @@ import { getContracts } from '../utils/contracts';
 
 interface TestConnectedSafeTransactionsWithRelayProps {
   web3: any;
-  getCPK: any;
-  checkAddressChecksum: any;
-  sendTransaction: any;
-  randomHexWord: any;
-  fromWei: any;
-  testedTxObjProps: any;
-  waitTxReceipt: any;
-  ownerIsRecognizedContract?: any;
+  getCPK: () => CPK;
+  checkAddressChecksum: (address: Address) => boolean;
+  sendTransaction: (txObj: any) => any;
+  randomHexWord: () => string;
+  fromWei: (amount: number) => number;
+  testedTxObjProps: string;
+  waitTxReceipt: ({ hash }: { hash: string }) => Promise<any>;
+  ownerIsRecognizedContract?: boolean;
 }
 
 export function testConnectedSafeTransactionsWithRelay({
@@ -29,7 +29,7 @@ export function testConnectedSafeTransactionsWithRelay({
   it('can get checksummed address of instance', async () => {
     const cpk = await getCPK();
     should.exist(cpk.address);
-    checkAddressChecksum(cpk.address).should.be.true();
+    checkAddressChecksum(cpk.address).should.be.true;
   });
 
   if (ownerIsRecognizedContract) {
