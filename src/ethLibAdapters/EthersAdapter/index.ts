@@ -41,6 +41,11 @@ class EthersAdapter extends EthLibAdapter {
     return this.signer.provider.send(method, params);
   }
 
+  signMessage(message: string): Promise<string> {
+    const messageArray = this.ethers.utils.arrayify(message);
+    return this.signer.signMessage(messageArray);
+  }
+
   async getNetworkId(): Promise<number> {
     return (await this.signer.provider.getNetwork()).chainId;
   }

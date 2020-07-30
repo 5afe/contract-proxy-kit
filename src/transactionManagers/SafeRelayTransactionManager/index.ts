@@ -71,7 +71,7 @@ class SafeRelayTransactionManager implements TransactionManager {
     const { safeContract } = contracts;
 
     if (isConnectedToSafe) {
-      throw new Error('The use of the relay service is not supported when the CPK is connected to a Gnosis Safe')
+      throw new Error('The use of the relay service is not supported when the CPK is connected to a Gnosis Safe');
     }
 
     const relayEstimations = await this.getTransactionEstimations({
@@ -187,7 +187,7 @@ class SafeRelayTransactionManager implements TransactionManager {
   }
 
   private async signTransactionHash(ethLibAdapter: EthLibAdapter, ownerAccount: Address, txHash: string) {
-    let sig = await ethLibAdapter.providerSend('eth_sign', [ownerAccount, txHash]);
+    let sig = await ethLibAdapter.signMessage(txHash, ownerAccount);
     let sigV = parseInt(sig.slice(-2), 16);
 
     switch (sigV) {

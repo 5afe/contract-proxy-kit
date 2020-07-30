@@ -67,6 +67,10 @@ class Web3Adapter extends EthLibAdapter {
       );
   }
 
+  signMessage(message: string, ownerAccount: Address): Promise<string> {
+    return this.providerSend('eth_sign', [ownerAccount, message]);    
+  }
+
   async getNetworkId(): Promise<number> {
     return this.web3.eth.net.getId();
   }
