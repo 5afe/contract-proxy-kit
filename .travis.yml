@@ -21,7 +21,7 @@ jobs:
   - name: Ganache
     before_script:
       - CONTAINER_ID=$(docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d)
-      - ganache-cli -d --defaultBalanceEther 10000 > /dev/null &
+      - ganache-cli -d --defaultBalanceEther 10000 -h 0.0.0.0 --noVMErrorsOnRPCResponse > /dev/null &
       - sleep 60
     script:
       - yarn test
@@ -30,16 +30,16 @@ jobs:
       - docker stop $CONTAINER_ID
       - docker rm $CONTAINER_ID
 
-  - name: Ganache with --noVMErrorsOnRPCResponse
-    before_script:
-      - CONTAINER_ID=$(docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d)
-      - sleep 60
-    script:
-      - yarn test-rpc
-    after_script:
-      - docker logs $CONTAINER_ID
-      - docker stop $CONTAINER_ID
-      - docker rm $CONTAINER_ID
+  #- name: Ganache with --noVMErrorsOnRPCResponse
+  #  before_script:
+  #    - CONTAINER_ID=$(docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d)
+  #    - sleep 60
+  #  script:
+  #    - yarn test-rpc
+  #  after_script:
+  #    - docker logs $CONTAINER_ID
+  #    - docker stop $CONTAINER_ID
+  #    - docker rm $CONTAINER_ID
 
   #- name: Geth
   #  before_script:
