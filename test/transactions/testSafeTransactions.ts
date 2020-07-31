@@ -3,26 +3,27 @@ import CPK from '../../src';
 import { Address } from '../../src/utils/basicTypes';
 import { getContracts } from '../utils/contracts';
 import { AccountType } from '../utils';
+import { TransactionResult } from '../../src/utils/transactions';
 
-interface ShouldSupportDifferentTransactionsProps {
+interface TestSafeTransactionsProps {
   web3: any;
-  getCPK: any;
-  checkAddressChecksum: any;
-  sendTransaction: any;
-  randomHexWord: any;
-  fromWei: any;
-  getTransactionCount: any;
-  getBalance: any;
-  testedTxObjProps: any;
-  checkTxObj: any;
-  waitTxReceipt: any;
-  ownerIsRecognizedContract?: any;
+  getCPK: () => CPK;
+  checkAddressChecksum: (address: Address) => boolean;
+  sendTransaction: (txObj: any) => any;
+  randomHexWord: () => string;
+  fromWei: (amount: number) => number;
+  getTransactionCount: (account: Address) => number;
+  getBalance: (address: Address) => any;
+  testedTxObjProps: string;
+  checkTxObj: (txResult: TransactionResult) => void;
+  waitTxReceipt: ({ hash }: { hash: string }) => Promise<any>;
+  ownerIsRecognizedContract?: boolean;
   isCpkTransactionManager: boolean;
-  executor?: any;
+  executor?: Address[];
   accountType: AccountType;
 }
 
-export function shouldSupportDifferentTransactions({
+export function testSafeTransactions({
   web3,
   getCPK,
   checkAddressChecksum,
@@ -38,11 +39,11 @@ export function shouldSupportDifferentTransactions({
   isCpkTransactionManager,
   executor,
   accountType,
-}: ShouldSupportDifferentTransactionsProps): void {
+}: TestSafeTransactionsProps): void {
   it('can get checksummed address of instance', async () => {
     const cpk = await getCPK();
     should.exist(cpk.address);
-    checkAddressChecksum(cpk.address).should.be.true();
+    checkAddressChecksum(cpk.address).should.be.true;
   });
 
   if (ownerIsRecognizedContract) {
@@ -76,13 +77,14 @@ export function shouldSupportDifferentTransactions({
     });
 
     beforeEach('give proxy ERC20 allowance', async () => {
-      await sendTransaction({
+      const hash = await sendTransaction({
         from: proxyOwner,
         to: erc20.address,
         value: 0,
         gas: '0x5b8d80',
         data: erc20.contract.methods.approve(cpk.address, `${1e20}`).encodeABI(),
       });
+      await waitTxReceipt({ hash });
     });
 
     it('can execute a single transaction', async () => {
@@ -92,18 +94,21 @@ export function shouldSupportDifferentTransactions({
         to: multiStep.address,
         data: multiStep.contract.methods.doStep(1).encodeABI(),
       }]));
+
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(1);
     });
     
     it('can execute deep transactions', async () => {
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
       const numSteps = 10;
+
       await waitTxReceipt(await cpk.execTransactions([
         {
           to: multiStep.address,
           data: multiStep.contract.methods.doDeepStep(numSteps, numSteps, cpk.address).encodeABI(),
         }
       ]));
+
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(numSteps);
     });
 
@@ -119,6 +124,7 @@ export function shouldSupportDifferentTransactions({
           data: multiStep.contract.methods.doStep(2).encodeABI(),
         },
       ]));
+
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(2);
     });
 

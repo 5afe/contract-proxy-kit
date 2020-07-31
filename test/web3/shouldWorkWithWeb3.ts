@@ -3,9 +3,10 @@ import Web3Maj1Min2 from 'web3-1-2';
 import Web3Maj2Alpha from 'web3-2-alpha';
 import CPK from '../../src';
 import Web3Adapter from '../../src/ethLibAdapters/Web3Adapter';
-import { shouldSupportDifferentTransactions } from '../transactions/shouldSupportDifferentTransactions';
+import { testSafeTransactions } from '../transactions/testSafeTransactions';
+import { testConnectedSafeTransactionsWithRelay } from '../transactions/testConnectedSafeTransactionsWithRelay';
 import { toTxHashPromise, AccountType } from '../utils';
-import { Transaction } from '../../src/utils/transactions';
+import { Transaction, TransactionResult } from '../../src/utils/transactions';
 import { getContractInstances, TestContractInstances } from '../utils/contracts';
 import { Address } from '../../src/utils/basicTypes';
 import { NetworksConfig } from '../../src/config/networks';
@@ -46,9 +47,8 @@ export function shouldWorkWithWeb3({
       testedTxObjProps: 'the PromiEvent for the transaction and the hash',
       getBalance: (address: Address): number => web3Box[0].eth.getBalance(address)
         .then((balance: number) => web3Box[0].utils.toBN(balance)),
-      checkTxObj: ({ promiEvent, hash }: { promiEvent: any; hash: string }): void => {
-        should.exist(promiEvent);
-        should.exist(hash);
+      checkTxObj: (txResult: TransactionResult): void => {
+        should.exist(txResult.hash);
       },
       waitTxReceipt: async ({ hash }: { hash: string }): Promise<any> => {
         let receipt = await web3Box[0].eth.getTransactionReceipt(hash);
@@ -84,9 +84,7 @@ export function shouldWorkWithWeb3({
         networks = {
           [await ueb3.eth.net.getId()]: {
             masterCopyAddress: gnosisSafe.address,
-            //masterCopyAddress: '0xe78A0F7E598Cc8b0Bb87894B0F60dD2a88d6a8Ab',
             proxyFactoryAddress: cpkFactory.address,
-            //proxyFactoryAddress: '0x254dffcd3277C0b1660F6d42EFbB754edaBAbC2B',
             multiSendAddress: multiSend.address,
             fallbackHandlerAddress: defaultCallbackHandler.address,
           },
@@ -158,7 +156,7 @@ export function shouldWorkWithWeb3({
           }]);
         });
 
-        shouldSupportDifferentTransactions({
+        testSafeTransactions({
           web3: ueb3,
           ...ueb3TestHelpers,
           async getCPK() { return cpk; },
@@ -168,7 +166,7 @@ export function shouldWorkWithWeb3({
       });
 
       describe('with fresh accounts', () => {
-        shouldSupportDifferentTransactions({
+        testSafeTransactions({
           web3: ueb3,
           ...ueb3TestHelpers,
           async getCPK() {
@@ -217,7 +215,18 @@ export function shouldWorkWithWeb3({
           }
         });
 
-        shouldSupportDifferentTransactions({
+        if (!isCpkTransactionManager) {
+          testConnectedSafeTransactionsWithRelay({
+            web3: ueb3,
+            ...testHelperMaker(safeWeb3Box),
+            async getCPK() { return cpk; },
+            ownerIsRecognizedContract: true,
+            executor: safeOwnerBox,
+          });
+          return;
+        }
+
+        testSafeTransactions({
           web3: ueb3,
           ...testHelperMaker(safeWeb3Box),
           async getCPK() { return cpk; },

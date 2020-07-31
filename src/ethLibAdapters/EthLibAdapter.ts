@@ -29,6 +29,8 @@ abstract class EthLibAdapter {
 
   abstract providerSend(method: string, params: any[]): Promise<any>;
 
+  abstract signMessage(message: string, ownerAccount: Address): Promise<string>;
+
   abstract getNetworkId(): Promise<number>;
 
   abstract getAccount(): Promise<Address>;

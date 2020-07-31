@@ -28,11 +28,6 @@
     ]
   },
   "include": [
-    "**/*.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "build",
-    "lib",
+    "src/**/*.ts",
   ]
 }
