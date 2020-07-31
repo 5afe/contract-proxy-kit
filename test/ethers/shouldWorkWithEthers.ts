@@ -5,7 +5,8 @@ import EthersAdapter from '../../src/ethLibAdapters/EthersAdapter';
 import { NetworksConfig } from '../../src/config/networks';
 import { Transaction } from '../../src/utils/transactions';
 import { Address } from '../../src/utils/basicTypes';
-import { shouldSupportDifferentTransactions } from '../transactions/shouldSupportDifferentTransactions';
+import { testSafeTransactions } from '../transactions/testSafeTransactions';
+import { testConnectedSafeTransactionsWithRelay } from '../transactions/testConnectedSafeTransactionsWithRelay';
 import { toTxHashPromise, AccountType } from '../utils';
 import { getContractInstances, TestContractInstances } from '../utils/contracts';
 import TransactionManager from '../../src/transactionManagers/TransactionManager';
@@ -48,7 +49,7 @@ export function shouldWorkWithEthers({
 
         if (signer.constructor.name === 'JsonRpcSigner') {
           // mock Gnosis Safe provider
-          return signer.sendTransaction({ gasLimit: gas, ...txObj });
+          return (await signer.sendTransaction({ gasLimit: gas, ...txObj })).hash;
         }
 
         // See: https://github.com/ethers-io/ethers.js/issues/299
@@ -64,7 +65,7 @@ export function shouldWorkWithEthers({
         }
         else throw new Error(`ethers version ${ethers.version} not supported`);
 
-        return signer.provider.sendTransaction(signedTx);
+        return (await signer.provider.sendTransaction(signedTx)).hash;
       },
       randomHexWord: (): string => ethers.utils.hexlify(ethers.utils.randomBytes(32)),
       fromWei: (amount: number): number => (
@@ -109,9 +110,7 @@ export function shouldWorkWithEthers({
         networks = {
           [(await signer.provider.getNetwork()).chainId]: {
             masterCopyAddress: gnosisSafe.address,
-            //masterCopyAddress: '0xe78A0F7E598Cc8b0Bb87894B0F60dD2a88d6a8Ab',
             proxyFactoryAddress: cpkFactory.address,
-            //proxyFactoryAddress: '0x254dffcd3277C0b1660F6d42EFbB754edaBAbC2B',
             multiSendAddress: multiSend.address,
             fallbackHandlerAddress: defaultCallbackHandler.address,
           },
@@ -180,7 +179,7 @@ export function shouldWorkWithEthers({
           }]);
         });
 
-        shouldSupportDifferentTransactions({
+        testSafeTransactions({
           web3,
           ...ethersTestHelpers([signer]),
           async getCPK() { return cpk; },
@@ -191,7 +190,7 @@ export function shouldWorkWithEthers({
 
       describe('with fresh accounts', () => {
         const freshSignerBox: any[] = [];
-        shouldSupportDifferentTransactions({
+        testSafeTransactions({
           web3,
           ...ethersTestHelpers(freshSignerBox),
           async getCPK() {
@@ -236,7 +235,20 @@ export function shouldWorkWithEthers({
           }
         });
 
-        shouldSupportDifferentTransactions({
+        if (!isCpkTransactionManager) {
+          testConnectedSafeTransactionsWithRelay({
+            web3,
+            ...ethersTestHelpers(safeSignerBox),
+            async getCPK() { return cpk; },
+            ownerIsRecognizedContract: true,
+            executor: safeOwnerBox,
+            isCpkTransactionManager,
+            accountType: AccountType.Connected,
+          });
+          return;
+        }
+
+        testSafeTransactions({
           web3,
           ...ethersTestHelpers(safeSignerBox),
           async getCPK() { return cpk; },

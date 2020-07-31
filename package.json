@@ -2,18 +2,22 @@
   "name": "contract-proxy-kit",
   "version": "1.1.1",
   "description": "Enable batched transactions and contract account interactions using a unique deterministic Gnosis Safe.",
-  "main": "src/index.ts",
+  "main": "lib/index.js",
+  "files": [
+    "lib/"
+  ],
   "scripts": {
     "generate-types": "typechain --target=truffle-v5 './build/contracts/*.json'",
     "postinstall": "truffle compile && yarn generate-types",
+    "build": "tsc",
+    "prepare": "yarn build",
     "migrate": "tsc -p ./tsconfig.migrate.json --outDir ./migrations && truffle migrate --network local",
-    "test-ts": "mocha -t 5000 -r ts-node/register ./test/contract-proxy-kit.ts --exit",
+    "test-ts": "nyc mocha -t 20000 -r ts-node/register ./test/contract-proxy-kit.ts --exit",
     "test": "yarn migrate && yarn test-ts",
-    "test-geth": "ethnode --execute='yarn migrate && yarn test-ts'",
     "test-rpc": "run-with-testrpc --noVMErrorsOnRPCResponse 'yarn migrate && yarn test-ts'",
+    "coverage": "nyc report --reporter=text-lcov | coveralls",
     "lint:check": "eslint . --ext .js,.jsx,.ts,.tsx",
-    "lint:fix": "yarn lint:check --fix",
-    "typecheck": "tsc"
+    "lint:fix": "yarn lint:check --fix"
   },
   "repository": {
     "type": "git",
@@ -55,12 +59,14 @@
     "@typescript-eslint/parser": "^3.2.0",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
+    "coveralls": "^3.1.0",
     "dotenv": "^8.2.0",
     "eslint": "^7.2.0",
     "ethers-4": "npm:ethers@^4.0.45",
     "ethers-5": "npm:ethers@^5.0.2",
-    "ethnode": "^0.0.20",
     "ganache-cli": "^6.9.1",
+    "geth-dev-assistant": "^0.1.4",
+    "nyc": "^15.1.0",
     "run-with-testrpc": "^0.3.1",
     "should": "^13.2.3",
     "truffle": "^5.1.30",

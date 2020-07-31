@@ -15,9 +15,9 @@ export interface CPKContracts {
 }
 
 export interface ExecTransactionProps {
+  ownerAccount: Address,
   safeExecTxParams: StandardTransaction;
   transactions: Transaction[];
-  signature: string;
   contracts: CPKContracts;
   ethLibAdapter: EthLibAdapter;
   isDeployed: boolean;
@@ -29,9 +29,9 @@ interface TransactionManager {
   config: TransactionManagerConfig;
 
   execTransactions({
+    ownerAccount,
     safeExecTxParams,
     transactions,
-    signature,
     contracts,
     ethLibAdapter,
     isDeployed,

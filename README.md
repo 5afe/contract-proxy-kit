@@ -1,6 +1,7 @@
 # Contract Proxy Kit
 
 [![Build Status](https://travis-ci.org/gnosis/contract-proxy-kit.svg?branch=master)](https://travis-ci.org/gnosis/contract-proxy-kit)
+[![Coverage Status](https://coveralls.io/repos/github/gnosis/contract-proxy-kit/badge.svg?branch=master)](https://coveralls.io/github/gnosis/contract-proxy-kit?branch=master)
 
 **Warning:** This documentation is for the 2.x series development version of the contract proxy kit. For documentation on the current stable 1.x series, go [here](https://github.com/gnosis/contract-proxy-kit/tree/v1.1.1#contract-proxy-kit).
 

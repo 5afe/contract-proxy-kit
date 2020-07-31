@@ -42,6 +42,11 @@ class EthersAdapter extends EthLibAdapter {
     return this.signer.provider.send(method, params);
   }
 
+  signMessage(message: string): Promise<string> {
+    const messageArray = this.ethers.utils.arrayify(message);
+    return this.signer.signMessage(messageArray);
+  }
+
   async getNetworkId(): Promise<number> {
     return (await this.signer.provider.getNetwork()).chainId;
   }
@@ -97,12 +102,17 @@ class EthersAdapter extends EthLibAdapter {
 
   async getCallRevertData(tx: EthCallTx, block: string | number): Promise<string> {
     try {
-      // Handle Geth/Ganache --noVMErrorsOnRPCResponse revert data
+      // Handle old Geth/Ganache --noVMErrorsOnRPCResponse revert data
       return await this.ethCall(tx, block);
     } catch (e) {
-      if (typeof e.data === 'string' && e.data.startsWith('Reverted 0x')) {
-        // handle OpenEthereum revert data format
-        return e.data.slice(9);
+      if (typeof e.data === 'string') {
+        if (e.data.startsWith('Reverted 0x'))
+          // handle OpenEthereum revert data format
+          return e.data.slice(9);
+
+        if (e.data.startsWith('0x'))
+          // handle new Geth format
+          return e.data;
       }
 
       // handle Ganache revert data format

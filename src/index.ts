@@ -184,24 +184,7 @@ class CPK {
 
     const ownerAccount = await this.getOwnerAccount();
     const sendOptions = normalizeGasLimit({ ...options, from: ownerAccount });
-
     const safeExecTxParams = this.getSafeExecTxParams(transactions);
-
-    // (r, s, v) where v is 1 means this signature is approved by the address encoded in value r
-    // "Hashes are automatically approved by the sender of the message"
-    const signature = this.ethLibAdapter.abiEncodePacked(
-      { type: 'uint256', value: ownerAccount }, // r
-      { type: 'uint256', value: 0 }, // s
-      { type: 'uint8', value: 1 }, // v
-    );
-
-    const codeAtAddress = await this.ethLibAdapter.getCode(this.address);
-    const isDeployed = codeAtAddress !== '0x';
-
-    const txManager = !isDeployed
-      ? new CpkTransactionManager()
-      : this.transactionManager;
-
     const cpkContracts: CPKContracts = {
       safeContract: this.contract,
       proxyFactory: this.proxyFactory,
@@ -209,10 +192,16 @@ class CPK {
       fallbackHandlerAddress: this.fallbackHandlerAddress,
     };
 
+    const codeAtAddress = await this.ethLibAdapter.getCode(this.address);
+    const isDeployed = codeAtAddress !== '0x';
+    const txManager = !isDeployed
+      ? new CpkTransactionManager()
+      : this.transactionManager;
+
     return txManager.execTransactions({
+      ownerAccount: ownerAccount,
       safeExecTxParams,
       transactions,
-      signature,
       contracts: cpkContracts,
       ethLibAdapter: this.ethLibAdapter,
       isDeployed,

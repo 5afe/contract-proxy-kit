@@ -26,7 +26,6 @@ const ethersVersions = [ethersMaj4, ethersMaj5];
 describe('CPK', () => {
   let web3: any;
   const defaultAccountBox: Address[] = [];
-  // let coinbase: Address;
   const safeOwnerBox: Address[] = [];
   let contracts: TestContractInstances;
   const gnosisSafeProviderBox: any[] = [];
@@ -35,9 +34,9 @@ describe('CPK', () => {
     web3 = new Web3Maj1Min2('http://localhost:8545');
     const accounts = await web3.eth.getAccounts();
 
-    // coinbase = accounts[0];
-    defaultAccountBox[0] = accounts[1];
-    safeOwnerBox[0] = accounts[2];
+    // First account is used as the Safe relayer account
+    defaultAccountBox[0] = accounts[2];
+    safeOwnerBox[0] = accounts[3];
   });
   
   before('initialize contracts', async () => {
