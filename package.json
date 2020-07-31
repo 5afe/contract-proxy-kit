@@ -12,7 +12,7 @@
     "build": "tsc",
     "prepare": "yarn build",
     "migrate": "tsc -p ./tsconfig.migrate.json --outDir ./migrations && truffle migrate --network local",
-    "test-ts": "nyc mocha -t 10000 -r ts-node/register ./test/contract-proxy-kit.ts --exit",
+    "test-ts": "nyc mocha -t 20000 -r ts-node/register ./test/contract-proxy-kit.ts --exit",
     "test": "yarn migrate && yarn test-ts",
     "test-rpc": "run-with-testrpc --noVMErrorsOnRPCResponse 'yarn migrate && yarn test-ts'",
     "coverage": "nyc report --reporter=text-lcov | coveralls",
