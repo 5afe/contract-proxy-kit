@@ -1,25 +1,16 @@
-import EthLibAdapter, { Contract } from './EthLibAdapter';
+import EthLibAdapter, { Contract } from '../EthLibAdapter';
+import Web3ContractAdapter from './Web3ContractAdapter';
 import {
   TransactionResult,
   SendOptions,
-  CallOptions,
   EthCallTx,
   formatCallTx,
   EthSendTx,
   normalizeGasLimit,
-} from '../utils/transactions';
-import { Address, Abi } from '../utils/constants';
+} from '../../utils/transactions';
+import { Address, Abi } from '../../utils/basicTypes';
 
-interface Web3AdapterConfig {
-  web3: any;
-}
-
-interface Web3TransactionResult extends TransactionResult {
-  sendOptions?: SendOptions;
-  promiEvent: Promise<any>;
-}
-
-function toTxResult(
+export function toTxResult(
   promiEvent: any,
   sendOptions?: SendOptions,
 ): Promise<Web3TransactionResult> {
@@ -31,33 +22,13 @@ function toTxResult(
   );
 }
 
-class Web3ContractAdapter implements Contract {
-  constructor(public contract: any) {}
+interface Web3AdapterConfig {
+  web3: any;
+}
 
-  get address(): Address {
-    return this.contract.options.address;
-  }
-
-  call(methodName: string, params: any[], options?: CallOptions): Promise<any> {
-    return this.contract.methods[methodName](...params).call(options && normalizeGasLimit(options));
-  }
-
-  send(methodName: string, params: any[], options?: SendOptions): Promise<Web3TransactionResult> {
-    const promiEvent = this.contract.methods[methodName](...params).send(
-      options && normalizeGasLimit(options)
-    );
-    return toTxResult(promiEvent, options);
-  }
-
-  async estimateGas(methodName: string, params: any[], options?: CallOptions): Promise<number> {
-    return Number(await this.contract.methods[methodName](...params).estimateGas(
-      options && normalizeGasLimit(options)
-    ));
-  }
-
-  encode(methodName: string, params: any[]): string {
-    return this.contract.methods[methodName](...params).encodeABI();
-  }
+export interface Web3TransactionResult extends TransactionResult {
+  sendOptions?: SendOptions;
+  promiEvent: Promise<any>;
 }
 
 class Web3Adapter extends EthLibAdapter {
@@ -94,6 +65,10 @@ class Web3Adapter extends EthLibAdapter {
           return resolve(result.result);
         }),
       );
+  }
+
+  signMessage(message: string, ownerAccount: Address): Promise<string> {
+    return this.providerSend('eth_sign', [ownerAccount, message]);    
   }
 
   async getNetworkId(): Promise<number> {
@@ -174,6 +149,17 @@ class Web3Adapter extends EthLibAdapter {
 
   ethSendTransaction(tx: EthSendTx): Promise<Web3TransactionResult> {
     return toTxResult(this.web3.eth.sendTransaction(normalizeGasLimit(tx)), tx);
+  }
+
+  toSafeRelayTxResult(txHash: string, tx: Record<string, any>): Promise<Web3TransactionResult> {
+    return new Promise(
+      (resolve, reject) => resolve({
+        promiEvent: new Promise(
+          (resolve, reject) => resolve(tx),
+        ),
+        hash: txHash
+      }),
+    );
   }
 }
 

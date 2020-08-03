@@ -1,20 +1,4 @@
-type Json =
-  | string
-  | number
-  | boolean
-  | null
-  | JsonObject
-  | Json[];
-type JsonObject = { [property: string]: Json }
-
-export type Address = string;
-export type Abi = JsonObject[];
-export type NumberLike = number | string | bigint | object;
-
-export enum OperationType {
-  Call, // 0
-  DelegateCall // 1
-}
+import { OperationType } from './transactions';
 
 export const zeroAddress = `0x${'0'.repeat(40)}`;
 

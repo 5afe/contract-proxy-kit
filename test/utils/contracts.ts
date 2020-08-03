@@ -8,7 +8,7 @@ import ProxyFactoryJson from '../../build/contracts/ProxyFactory.json';
 import MultistepJson from '../../build/contracts/Multistep.json';
 import ERC20MintableJson from '../../build/contracts/ERC20Mintable.json';
 import ConditionalTokensJson from '../../build/contracts/ConditionalTokens.json';
-import { Address } from '../../src/utils/constants';
+import { Address } from '../../src/utils/basicTypes';
 
 let CPKFactory: any;
 let GnosisSafe: any;
@@ -62,7 +62,7 @@ export const initializeContracts = async (safeOwner: Address): Promise<void> => 
   GnosisSafe.setProvider(provider);
   GnosisSafe.defaults({ from: safeOwner });
   gnosisSafe = await GnosisSafe.deployed();
-
+  
   ProxyFactory = TruffleContract(ProxyFactoryJson);
   ProxyFactory.setProvider(provider);
   ProxyFactory.defaults({ from: safeOwner });
@@ -77,17 +77,17 @@ export const initializeContracts = async (safeOwner: Address): Promise<void> => 
   DefaultCallbackHandler.setProvider(provider);
   DefaultCallbackHandler.defaults({ from: safeOwner });
   defaultCallbackHandler = await DefaultCallbackHandler.deployed();
-  
+
   MultiStep = TruffleContract(MultistepJson);
   MultiStep.setProvider(provider);
   MultiStep.defaults({ from: safeOwner });
   multiStep = await MultiStep.deployed();
-  
+
   ERC20Mintable = TruffleContract(ERC20MintableJson);
   ERC20Mintable.setProvider(provider);
   ERC20Mintable.defaults({ from: safeOwner });
   erc20 = await ERC20Mintable.deployed();
-  
+
   ConditionalTokens = TruffleContract(ConditionalTokensJson);
   ConditionalTokens.setProvider(provider);
   ConditionalTokens.defaults({ from: safeOwner });

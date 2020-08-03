@@ -1,31 +1,35 @@
 import should from 'should';
 import Web3Maj1Min2 from 'web3-1-2';
 import CPK from '../../src';
-import EthersAdapter from '../../src/eth-lib-adapters/EthersAdapter';
-import { shouldSupportDifferentTransactions } from '../transactions/shouldSupportDifferentTransactions';
-import { toTxHashPromise } from '../utils';
-import { NetworksConfig } from '../../src/utils/networks';
-import { Address } from '../../src/utils/constants';
+import EthersAdapter from '../../src/ethLibAdapters/EthersAdapter';
+import { NetworksConfig } from '../../src/config/networks';
 import { Transaction } from '../../src/utils/transactions';
+import { Address } from '../../src/utils/basicTypes';
+import { testSafeTransactions } from '../transactions/testSafeTransactions';
+import { testConnectedSafeTransactionsWithRelay } from '../transactions/testConnectedSafeTransactionsWithRelay';
+import { toTxHashPromise, AccountType } from '../utils';
 import { getContractInstances, TestContractInstances } from '../utils/contracts';
+import TransactionManager from '../../src/transactionManagers/TransactionManager';
 
 interface ShouldWorkWithEthersProps {
   ethers: any;
   defaultAccountBox: Address[];
   safeOwnerBox: Address[];
   gnosisSafeProviderBox: any;
+  transactionManager?: TransactionManager;
 }
 
 export function shouldWorkWithEthers({
   ethers,
   defaultAccountBox,
   safeOwnerBox,
-  gnosisSafeProviderBox
+  gnosisSafeProviderBox,
+  transactionManager
 }: ShouldWorkWithEthersProps): void {
   describe(`with ethers version ${ethers.version}`, () => {
-    const web3 = new Web3Maj1Min2('http://localhost:8545');
-
     let contracts: TestContractInstances;
+    const web3 = new Web3Maj1Min2('http://localhost:8545');
+    const isCpkTransactionManager = !transactionManager || transactionManager.config.name === 'CpkTransactionManager';
 
     const signer = ethers.Wallet.createRandom()
       .connect(new ethers.providers.Web3Provider(web3.currentProvider));
@@ -39,7 +43,7 @@ export function shouldWorkWithEthers({
       }: { from: Address; gas: number }): Promise<any> => {
         const signer = signerBox[0];
         const expectedFrom = await signer.getAddress();
-        if (from != null && from.toLowerCase() !== expectedFrom.toLowerCase()) {
+        if (from && from.toLowerCase() !== expectedFrom.toLowerCase()) {
           throw new Error(`from ${from} doesn't match signer ${expectedFrom}`);
         }
 
@@ -111,6 +115,7 @@ export function shouldWorkWithEthers({
         const ethLibAdapter = new EthersAdapter({ ethers, signer });
         should.exist(ethLibAdapter);
         should.exist(await CPK.create({ ethLibAdapter, networks }));
+        should.exist(await CPK.create({ ethLibAdapter, transactionManager, networks }));
       });
 
       it('can encode multiSend call data', async () => {
@@ -145,7 +150,20 @@ export function shouldWorkWithEthers({
 
         before('create instance', async () => {
           const ethLibAdapter = new EthersAdapter({ ethers, signer });
-          cpk = await CPK.create({ ethLibAdapter, networks });
+
+          cpk = await CPK.create({
+            ethLibAdapter,
+            transactionManager,
+            networks,
+          });
+
+          if (transactionManager) {
+            await toTxHashPromise(web3.eth.sendTransaction({
+              from: defaultAccountBox[0],
+              to: cpk.address,
+              value: `${2e18}`,
+            }));
+          }
         });
 
         before('warm instance', async () => {
@@ -155,16 +173,18 @@ export function shouldWorkWithEthers({
           }]);
         });
 
-        shouldSupportDifferentTransactions({
+        testSafeTransactions({
           web3,
           ...ethersTestHelpers([signer]),
           async getCPK() { return cpk; },
+          isCpkTransactionManager,
+          accountType: AccountType.Warm,
         });
       });
 
       describe('with fresh accounts', () => {
         const freshSignerBox: any[] = [];
-        shouldSupportDifferentTransactions({
+        testSafeTransactions({
           web3,
           ...ethersTestHelpers(freshSignerBox),
           async getCPK() {
@@ -179,8 +199,10 @@ export function shouldWorkWithEthers({
             }));
 
             const ethLibAdapter = new EthersAdapter({ ethers, signer: freshSignerBox[0] });
-            return CPK.create({ ethLibAdapter, networks });
+            return CPK.create({ ethLibAdapter, transactionManager, networks });
           },
+          isCpkTransactionManager,
+          accountType: AccountType.Fresh,
         });
       });
 
@@ -196,15 +218,38 @@ export function shouldWorkWithEthers({
 
         before('create instance', async () => {
           const ethLibAdapter = new EthersAdapter({ ethers, signer: safeSignerBox[0] });
-          cpk = await CPK.create({ ethLibAdapter, networks });
+          cpk = await CPK.create({ ethLibAdapter, transactionManager, networks });
+
+          if (transactionManager) {
+            await toTxHashPromise(web3.eth.sendTransaction({
+              from: defaultAccountBox[0],
+              to: cpk.address,
+              value: `${2e18}`,
+            }));
+          }
         });
 
-        shouldSupportDifferentTransactions({
+        if (!isCpkTransactionManager) {
+          testConnectedSafeTransactionsWithRelay({
+            web3,
+            ...ethersTestHelpers(safeSignerBox),
+            async getCPK() { return cpk; },
+            ownerIsRecognizedContract: true,
+            executor: safeOwnerBox,
+            isCpkTransactionManager,
+            accountType: AccountType.Connected,
+          });
+          return;
+        }
+
+        testSafeTransactions({
           web3,
           ...ethersTestHelpers(safeSignerBox),
           async getCPK() { return cpk; },
           ownerIsRecognizedContract: true,
           executor: safeOwnerBox,
+          isCpkTransactionManager,
+          accountType: AccountType.Connected,
         });
       });
     });

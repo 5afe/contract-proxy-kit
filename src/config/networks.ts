@@ -30,6 +30,7 @@ export const defaultNetworks: NetworksConfig = {
     proxyFactoryAddress: '0xfC7577774887aAE7bAcdf0Fc8ce041DA0b3200f7',
     multiSendAddress: '0xB522a9f781924eD250A11C54105E51840B138AdD',
     fallbackHandlerAddress: '0x40A930851BD2e590Bd5A5C981b436de25742E980',
+    // There is no Safe Relay API currently running on this network
   },
   // kovan
   42: {
@@ -37,5 +38,6 @@ export const defaultNetworks: NetworksConfig = {
     proxyFactoryAddress: '0xfC7577774887aAE7bAcdf0Fc8ce041DA0b3200f7',
     multiSendAddress: '0xB522a9f781924eD250A11C54105E51840B138AdD',
     fallbackHandlerAddress: '0x40A930851BD2e590Bd5A5C981b436de25742E980',
+    // There is no Safe Relay API currently running on this network
   },
 };

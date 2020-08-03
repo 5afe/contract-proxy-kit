@@ -1,76 +1,18 @@
-import EthLibAdapter, { Contract } from './EthLibAdapter';
+import EthLibAdapter, { Contract } from '../EthLibAdapter';
+import EthersContractAdapter from './EthersContractAdapter';
 import {
   TransactionResult, CallOptions, SendOptions, EthCallTx, formatCallTx, EthSendTx, normalizeGasLimit
-} from '../utils/transactions';
-import { zeroAddress, Address, Abi } from '../utils/constants';
+} from '../../utils/transactions';
+import { zeroAddress } from '../../utils/constants';
+import { Address, Abi } from '../../utils/basicTypes';
 
 interface EthersAdapterConfig {
   ethers: any;
   signer: any;
 }
 
-interface EthersTransactionResult extends TransactionResult {
-  transactionResponse: object;
-}
-
-class EthersContractAdapter implements Contract {
-  constructor(public contract: any, public ethersAdapter: EthersAdapter) {}
-
-  get address(): Address {
-    return this.contract.address;
-  }
-
-  async call(methodName: string, params: any[], options?: CallOptions): Promise<any> {
-    const data = this.encode(methodName, params);
-    const resHex = await this.ethersAdapter.ethCall({
-      ...options,
-      to: this.address,
-      data,
-    }, 'latest');
-    const rets = this.contract.interface.functions[methodName].decode(resHex);
-
-    if (rets.length === 1)
-      return rets[0];
-
-    return rets;
-  }
-
-  async send(
-    methodName: string,
-    params: any[],
-    options?: SendOptions,
-  ): Promise<EthersTransactionResult> {
-    let transactionResponse;
-    if (options != null) {
-      const { from, gas, ...sendOptions } = normalizeGasLimit(options);
-      await this.ethersAdapter.checkFromAddress(from);
-      transactionResponse = await this.contract.functions[methodName](
-        ...params,
-        { gasLimit: gas, ...sendOptions },
-      );
-    } else {
-      transactionResponse = await this.contract.functions[methodName](
-        ...params,
-      );
-    }
-    return { transactionResponse, hash: transactionResponse.hash };
-  }
-
-  async estimateGas(methodName: string, params: any[], options?: CallOptions): Promise<number> {
-    if (!options) {
-      return (await this.contract.estimate[methodName](...params)).toNumber();
-    } else {
-      const { gas, ...callOptions } = normalizeGasLimit(options);
-      return (await this.contract.estimate[methodName](
-        ...params,
-        { gasLimit: gas, ...callOptions },
-      )).toNumber();
-    }
-  }
-
-  encode(methodName: string, params: any[]): string {
-    return this.contract.interface.functions[methodName].encode(params);
-  }
+export interface EthersTransactionResult extends TransactionResult {
+  transactionResponse: Record<string, any>;
 }
 
 class EthersAdapter extends EthLibAdapter {
@@ -97,6 +39,11 @@ class EthersAdapter extends EthLibAdapter {
 
   providerSend(method: string, params: any[]): Promise<any> {
     return this.signer.provider.send(method, params);
+  }
+
+  signMessage(message: string): Promise<string> {
+    const messageArray = this.ethers.utils.arrayify(message);
+    return this.signer.signMessage(messageArray);
   }
 
   async getNetworkId(): Promise<number> {
@@ -188,6 +135,17 @@ class EthersAdapter extends EthLibAdapter {
     await this.checkFromAddress(from);
     const transactionResponse = await this.signer.sendTransaction({ gasLimit: gas, ...sendTx });
     return { transactionResponse, hash: transactionResponse.hash };
+  }
+
+  toSafeRelayTxResult(txHash: string, tx: Record<string, any>): Promise<EthersTransactionResult> {
+    return new Promise(
+      (resolve, reject) => resolve({
+        transactionResponse: new Promise(
+          (resolve, reject) => resolve(tx),
+        ),
+        hash: txHash
+      }),
+    );
   }
 
   getSendOptions(ownerAccount: Address, options?: CallOptions): SendOptions {

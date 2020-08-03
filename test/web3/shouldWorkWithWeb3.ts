@@ -2,31 +2,35 @@ import should from 'should';
 import Web3Maj1Min2 from 'web3-1-2';
 import Web3Maj2Alpha from 'web3-2-alpha';
 import CPK from '../../src';
-import Web3Adapter from '../../src/eth-lib-adapters/Web3Adapter';
-import { shouldSupportDifferentTransactions } from '../transactions/shouldSupportDifferentTransactions';
-import { toTxHashPromise } from '../utils';
-import { Address } from '../../src/utils/constants';
-import { Transaction } from '../../src/utils/transactions';
-import { NetworksConfig } from '../../src/utils/networks';
+import Web3Adapter from '../../src/ethLibAdapters/Web3Adapter';
+import { testSafeTransactions } from '../transactions/testSafeTransactions';
+import { testConnectedSafeTransactionsWithRelay } from '../transactions/testConnectedSafeTransactionsWithRelay';
+import { toTxHashPromise, AccountType } from '../utils';
+import { Transaction, TransactionResult } from '../../src/utils/transactions';
 import { getContractInstances, TestContractInstances } from '../utils/contracts';
+import { Address } from '../../src/utils/basicTypes';
+import { NetworksConfig } from '../../src/config/networks';
+import TransactionManager from '../../src/transactionManagers/TransactionManager';
 
 interface ShouldWorkWithWeb3Props {
   Web3: typeof Web3Maj1Min2 | typeof Web3Maj2Alpha;
   defaultAccountBox: Address[];
   safeOwnerBox: Address[];
   gnosisSafeProviderBox: any;
+  transactionManager?: TransactionManager;
 }
 
 export function shouldWorkWithWeb3({
   Web3,
   defaultAccountBox,
   safeOwnerBox,
-  gnosisSafeProviderBox
+  gnosisSafeProviderBox,
+  transactionManager
 }: ShouldWorkWithWeb3Props): void {
   describe(`with Web3 version ${(new Web3(Web3.givenProvider)).version}`, () => {
-    const ueb3 = new Web3('http://localhost:8545');
-
     let contracts: TestContractInstances;
+    const ueb3 = new Web3('http://localhost:8545');
+    const isCpkTransactionManager = !transactionManager || transactionManager.config.name === 'CpkTransactionManager';
 
     const testHelperMaker = (web3Box: any): any => ({
       checkAddressChecksum: (address: Address): boolean => (
@@ -43,9 +47,8 @@ export function shouldWorkWithWeb3({
       testedTxObjProps: 'the PromiEvent for the transaction and the hash',
       getBalance: (address: Address): number => web3Box[0].eth.getBalance(address)
         .then((balance: number) => web3Box[0].utils.toBN(balance)),
-      checkTxObj: ({ promiEvent, hash }: { promiEvent: any; hash: string }): void => {
-        should.exist(promiEvent);
-        should.exist(hash);
+      checkTxObj: (txResult: TransactionResult): void => {
+        should.exist(txResult.hash);
       },
       waitTxReceipt: async ({ hash }: { hash: string }): Promise<any> => {
         let receipt = await web3Box[0].eth.getTransactionReceipt(hash);
@@ -97,6 +100,13 @@ export function shouldWorkWithWeb3({
           networks,
           ownerAccount: defaultAccountBox[0]
         }));
+        should.exist(await CPK.create({ ethLibAdapter, transactionManager, networks }));
+        should.exist(await CPK.create({
+          ethLibAdapter,
+          transactionManager,
+          networks,
+          ownerAccount: defaultAccountBox[0]
+        }));
       });
 
       it('can encode multiSend call data', async () => {
@@ -122,7 +132,21 @@ export function shouldWorkWithWeb3({
 
         before('create instance', async () => {
           const ethLibAdapter = new Web3Adapter({ web3: ueb3 });
-          cpk = await CPK.create({ ethLibAdapter, networks, ownerAccount: defaultAccountBox[0] });
+
+          cpk = await CPK.create({
+            ethLibAdapter,
+            transactionManager,
+            networks,
+            ownerAccount: defaultAccountBox[0],
+          });
+
+          if (transactionManager) {
+            await ueb3TestHelpers.sendTransaction({
+              from: defaultAccountBox[0],
+              to: cpk.address,
+              value: `${2e18}`,
+            });
+          }
         });
 
         before('warm instance', async () => {
@@ -132,15 +156,17 @@ export function shouldWorkWithWeb3({
           }]);
         });
 
-        shouldSupportDifferentTransactions({
+        testSafeTransactions({
           web3: ueb3,
           ...ueb3TestHelpers,
           async getCPK() { return cpk; },
+          isCpkTransactionManager,
+          accountType: AccountType.Warm
         });
       });
 
       describe('with fresh accounts', () => {
-        shouldSupportDifferentTransactions({
+        testSafeTransactions({
           web3: ueb3,
           ...ueb3TestHelpers,
           async getCPK() {
@@ -156,10 +182,13 @@ export function shouldWorkWithWeb3({
             const ethLibAdapter = new Web3Adapter({ web3: ueb3 });
             return CPK.create({
               ethLibAdapter,
+              transactionManager,
               networks,
               ownerAccount: newAccount.address,
             });
           },
+          isCpkTransactionManager,
+          accountType: AccountType.Fresh,
         });
       });
 
@@ -174,15 +203,37 @@ export function shouldWorkWithWeb3({
 
         before('create instance', async () => {
           const ethLibAdapter = new Web3Adapter({ web3: safeWeb3Box[0] });
-          cpk = await CPK.create({ ethLibAdapter, networks });
+
+          cpk = await CPK.create({ ethLibAdapter, transactionManager, networks });
+
+          if (transactionManager) {
+            await ueb3TestHelpers.sendTransaction({
+              from: defaultAccountBox[0],
+              to: cpk.address,
+              value: `${2e18}`,
+            });
+          }
         });
 
-        shouldSupportDifferentTransactions({
+        if (!isCpkTransactionManager) {
+          testConnectedSafeTransactionsWithRelay({
+            web3: ueb3,
+            ...testHelperMaker(safeWeb3Box),
+            async getCPK() { return cpk; },
+            ownerIsRecognizedContract: true,
+            executor: safeOwnerBox,
+          });
+          return;
+        }
+
+        testSafeTransactions({
           web3: ueb3,
           ...testHelperMaker(safeWeb3Box),
           async getCPK() { return cpk; },
           ownerIsRecognizedContract: true,
           executor: safeOwnerBox,
+          isCpkTransactionManager,
+          accountType: AccountType.Connected,
         });
       });
     });
