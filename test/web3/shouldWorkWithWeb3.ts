@@ -192,7 +192,7 @@ export function shouldWorkWithWeb3({
         });
       });
 
-      describe('with mock WalletConnected Gnosis Safe provider', () => {
+      describe('with mock connected to a Gnosis Safe provider', () => {
         const safeWeb3Box: any[] = [];
 
         before('create Web3 instance', async () => {
