@@ -6,7 +6,7 @@ import { getContracts } from '../utils/contracts';
 interface TestConnectedSafeTransactionsWithRelayProps {
   web3: any;
   getCPK: () => CPK;
-  checkAddressChecksum: (address: Address) => boolean;
+  checkAddressChecksum: (address: Address) => any;
   sendTransaction: (txObj: any) => any;
   randomHexWord: () => string;
   fromWei: (amount: number) => number;
@@ -29,7 +29,7 @@ export function testConnectedSafeTransactionsWithRelay({
   it('can get checksummed address of instance', async () => {
     const cpk = await getCPK();
     should.exist(cpk.address);
-    checkAddressChecksum(cpk.address).should.be.true;
+    checkAddressChecksum(cpk.address).should.be.true();
   });
 
   if (ownerIsRecognizedContract) {
