@@ -5,3 +5,9 @@ export const toTxHashPromise = (promiEvent: any): Promise<any> => {
       .catch(reject)
   );
 };
+
+export enum AccountType {
+  Warm,
+  Fresh,
+  Connected
+}

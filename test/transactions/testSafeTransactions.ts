@@ -1,25 +1,29 @@
 import should from 'should';
-import { Address } from '../../src/utils/constants';
 import CPK from '../../src';
+import { Address } from '../../src/utils/basicTypes';
 import { getContracts } from '../utils/contracts';
+import { AccountType } from '../utils';
+import { TransactionResult } from '../../src/utils/transactions';
 
-interface ShouldSupportDifferentTransactionsProps {
+interface TestSafeTransactionsProps {
   web3: any;
-  getCPK: any;
-  checkAddressChecksum: any;
-  sendTransaction: any;
-  randomHexWord: any;
-  fromWei: any;
-  getTransactionCount: any;
-  getBalance: any;
-  testedTxObjProps: any;
-  checkTxObj: any;
-  waitTxReceipt: any;
-  ownerIsRecognizedContract?: any;
-  executor?: any;
+  getCPK: () => CPK;
+  checkAddressChecksum: (address: Address) => boolean;
+  sendTransaction: (txObj: any) => any;
+  randomHexWord: () => string;
+  fromWei: (amount: number) => number;
+  getTransactionCount: (account: Address) => number;
+  getBalance: (address: Address) => any;
+  testedTxObjProps: string;
+  checkTxObj: (txResult: TransactionResult) => void;
+  waitTxReceipt: ({ hash }: { hash: string }) => Promise<any>;
+  ownerIsRecognizedContract?: boolean;
+  isCpkTransactionManager: boolean;
+  executor?: Address[];
+  accountType: AccountType;
 }
 
-export function shouldSupportDifferentTransactions({
+export function testSafeTransactions({
   web3,
   getCPK,
   checkAddressChecksum,
@@ -32,12 +36,14 @@ export function shouldSupportDifferentTransactions({
   checkTxObj,
   waitTxReceipt,
   ownerIsRecognizedContract,
+  isCpkTransactionManager,
   executor,
-}: ShouldSupportDifferentTransactionsProps): void {
+  accountType,
+}: TestSafeTransactionsProps): void {
   it('can get checksummed address of instance', async () => {
     const cpk = await getCPK();
     should.exist(cpk.address);
-    checkAddressChecksum(cpk.address).should.be.true();
+    checkAddressChecksum(cpk.address).should.be.true;
   });
 
   if (ownerIsRecognizedContract) {
@@ -83,23 +89,26 @@ export function shouldSupportDifferentTransactions({
 
     it('can execute a single transaction', async () => {
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
-
+      
       await waitTxReceipt(await cpk.execTransactions([{
         to: multiStep.address,
         data: multiStep.contract.methods.doStep(1).encodeABI(),
       }]));
+
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(1);
     });
-
+    
     it('can execute deep transactions', async () => {
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
       const numSteps = 10;
+
       await waitTxReceipt(await cpk.execTransactions([
         {
           to: multiStep.address,
           data: multiStep.contract.methods.doDeepStep(numSteps, numSteps, cpk.address).encodeABI(),
         }
       ]));
+
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(numSteps);
     });
 
@@ -115,6 +124,7 @@ export function shouldSupportDifferentTransactions({
           data: multiStep.contract.methods.doStep(2).encodeABI(),
         },
       ]));
+
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(2);
     });
 
@@ -203,10 +213,15 @@ export function shouldSupportDifferentTransactions({
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
       const startingTransactionCount = await getTransactionCount(proxyOwner);
 
+      const errorMessage = (
+        isCpkTransactionManager || (!isCpkTransactionManager && accountType === AccountType.Fresh)
+      ) ? /must do the next step/
+        : /CannotEstimateGas/;
+
       await cpk.execTransactions([{
         to: multiStep.address,
         data: multiStep.contract.methods.doStep(2).encodeABI(),
-      }]).should.be.rejectedWith(/must do the next step/);
+      }]).should.be.rejectedWith(errorMessage);
 
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
       await getTransactionCount(proxyOwner)
@@ -219,6 +234,11 @@ export function shouldSupportDifferentTransactions({
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
       const startingTransactionCount = await getTransactionCount(proxyOwner);
 
+      const errorMessage = (
+        isCpkTransactionManager || (!isCpkTransactionManager && accountType === AccountType.Fresh)
+      ) ? /(proxy creation and )?batch transaction execution expected to fail/
+        : /CannotEstimateGas/;
+
       await cpk.execTransactions([
         {
           to: multiStep.address,
@@ -227,7 +247,7 @@ export function shouldSupportDifferentTransactions({
           to: multiStep.address,
           data: multiStep.contract.methods.doStep(3).encodeABI(),
         },
-      ]).should.be.rejectedWith(/(proxy creation and )?batch transaction execution expected to fail/);
+      ]).should.be.rejectedWith(errorMessage);
 
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
       await getTransactionCount(proxyOwner)
@@ -241,7 +261,9 @@ export function shouldSupportDifferentTransactions({
       }]));
     });
 
-    it('can execute a single transaction with a specific gas price', async () => {
+    (
+      !isCpkTransactionManager ? it.skip : it
+    )('can execute a single transaction with a specific gas price', async () => {
       const startingBalance = await getBalance((executor && executor[0]) || proxyOwner);
 
       (await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0);
@@ -264,7 +286,7 @@ export function shouldSupportDifferentTransactions({
     });
 
     (
-      ownerIsRecognizedContract ? it.skip : it
+      !isCpkTransactionManager || ownerIsRecognizedContract ? it.skip : it
     )('can execute a batch transaction with a specific gas price', async () => {
       const startingBalance = await getBalance((executor && executor[0]) || proxyOwner);
 
