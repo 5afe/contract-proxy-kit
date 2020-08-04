@@ -64,7 +64,7 @@ describe('CPK', () => {
     const proxyCreationEvents = (
       logs.find(({ event }: { event: any }) => event === 'ProxyCreation')
     );
-    const safeAddress: string = proxyCreationEvents && proxyCreationEvents.args.proxy;
+    const safeAddress: Address = proxyCreationEvents && proxyCreationEvents.args.proxy;
     const safeSignature = `0x000000000000000000000000${
       safeOwnerBox[0].replace(/^0x/, '').toLowerCase()
     }000000000000000000000000000000000000000000000000000000000000000001`;
