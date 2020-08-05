@@ -88,7 +88,7 @@ export function normalizeGasLimit<T extends GasLimitOptions>(
   options: T,
 ): NormalizeGas<T> {
   const { gas, gasLimit, ...rest } = options;
-  if (gas && gasLimit) {
+  if (gas != null && gasLimit != null) {
     throw new Error(`specified both gas and gasLimit on options: ${options}`);
   }
   return {
