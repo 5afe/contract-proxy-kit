@@ -153,26 +153,35 @@ class CpkTransactionManager implements TransactionManager {
     { contract, methodName, params }: ContractTxObj,
     sendOptions: NormalizeGas<SendOptions>,
   ): Promise<{ success: boolean; gasLimit: number }> {
+    async function checkOptions(options: NormalizeGas<SendOptions>): Promise<boolean> {
+      try {
+        return await contract.call(methodName, params, options);
+      } catch (e) {
+        return false;
+      }
+    }
+
     const toNumber = (num: NumberLike): number => Number(num.toString());
     if (!sendOptions.gas) {
       const blockGasLimit = toNumber((await ethLibAdapter.getBlock('latest')).gasLimit);
-      const gasEstimateOptions = { ...sendOptions, gas: blockGasLimit };
 
-      if (!(await contract.call(methodName, params, gasEstimateOptions))) {
+      const gasEstimateOptions = { ...sendOptions, gas: blockGasLimit };
+      if (!(await checkOptions(gasEstimateOptions))) {
         return { success: false, gasLimit: blockGasLimit };
       }
-
+      
+      const gasSearchError = 10000;
       let gasLow = await contract.estimateGas(methodName, params, sendOptions);
       let gasHigh = blockGasLimit;
 
       gasEstimateOptions.gas = gasLow;
 
-      if (!(await contract.call(methodName, params, gasEstimateOptions))) {
-        while (gasLow <= gasHigh) {
+      if (!(await checkOptions(gasEstimateOptions))) {
+        while (gasLow + gasSearchError <= gasHigh) {
           const testGasLimit = Math.floor((gasLow + gasHigh) * 0.5);
           gasEstimateOptions.gas = testGasLimit;
   
-          if (await contract.call(methodName, params, gasEstimateOptions)) {
+          if (await checkOptions(gasEstimateOptions)) {
             // values > gasHigh will work
             gasHigh = testGasLimit - 1;
           } else {
@@ -180,14 +189,16 @@ class CpkTransactionManager implements TransactionManager {
             gasLow = testGasLimit + 1;
           }
         }
-        // gasLow is now our target gas value
+        // the final target gas value is in the interval [gasLow, gasHigh)
       }
 
-      return { success: true, gasLimit: gasLow };
+      const gasLimit = Math.min(Math.ceil((gasHigh + 1) * 1.1), blockGasLimit);
+
+      return { success: true, gasLimit };
     }
 
     return {
-      success: await contract.call(methodName, params, sendOptions),
+      success: await checkOptions(sendOptions),
       gasLimit: toNumber(sendOptions.gas),
     };
   }

@@ -1,17 +1,18 @@
 import { OperationType, Transaction } from '../../src/utils/transactions';
 import { zeroAddress } from '../../src/utils/constants';
+import { Address } from '../../src/utils/basicTypes';
 
 interface EmulatedSafeProviderProps {
   web3: any;
   safe: any;
-  safeAddress: string;
-  safeOwnerBox: string[];
+  safeAddress: Address;
+  safeOwnerBox: Address[];
   safeMasterCopy: any;
   multiSend: any;
   safeSignature: string;
 }
 
-const EmulatedSafeProvider: any = ({
+const makeEmulatedSafeProvider: any = ({
   web3,
   safe,
   safeAddress,
@@ -158,4 +159,4 @@ const EmulatedSafeProvider: any = ({
   };
 };
 
-export default EmulatedSafeProvider;
+export default makeEmulatedSafeProvider;
