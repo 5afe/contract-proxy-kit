@@ -7,7 +7,7 @@ import CPK from '../src';
 import { zeroAddress } from '../src/utils/constants';
 import { Address } from '../src/utils/basicTypes';
 import SafeRelayTransactionManager from '../src/transactionManagers/SafeRelayTransactionManager';
-import EmulatedSafeProvider from './utils/EmulatedSafeProvider';
+import makeEmulatedSafeProvider from './utils/makeEmulatedSafeProvider';
 import { shouldWorkWithWeb3 } from './web3/shouldWorkWithWeb3';
 import { shouldWorkWithEthers } from './ethers/shouldWorkWithEthers';
 import {
@@ -69,7 +69,7 @@ describe('CPK', () => {
       safeOwnerBox[0].replace(/^0x/, '').toLowerCase()
     }000000000000000000000000000000000000000000000000000000000000000001`;
     const safe = await getContracts().GnosisSafe.at(safeAddress);
-    const emulatedSafeProvider = new EmulatedSafeProvider({
+    const emulatedSafeProvider = makeEmulatedSafeProvider({
       web3,
       safe,
       safeAddress,

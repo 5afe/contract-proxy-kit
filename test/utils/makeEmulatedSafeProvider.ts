@@ -12,7 +12,7 @@ interface EmulatedSafeProviderProps {
   safeSignature: string;
 }
 
-const EmulatedSafeProvider: any = ({
+const makeEmulatedSafeProvider: any = ({
   web3,
   safe,
   safeAddress,
@@ -159,4 +159,4 @@ const EmulatedSafeProvider: any = ({
   };
 };
 
-export default EmulatedSafeProvider;
+export default makeEmulatedSafeProvider;
