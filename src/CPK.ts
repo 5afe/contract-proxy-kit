@@ -49,7 +49,7 @@ class CPK {
   masterCopyAddress?: Address
   fallbackHandlerAddress?: Address
 
-  private setSafeInfo = (safeInfo: SafeInfo): void => {
+  private setSafeInfo(safeInfo: SafeInfo): void {
     this.safeAppInfo = safeInfo
     this.isConnectedToSafe = true
     this.setOwnerAccount(safeInfo.safeAddress)
