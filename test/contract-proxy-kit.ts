@@ -3,9 +3,12 @@ import { ethers as ethersMaj4 } from 'ethers-4';
 import { ethers as ethersMaj5 } from 'ethers-5';
 import Web3Maj1Min2 from 'web3-1-2';
 import Web3Maj2Alpha from 'web3-2-alpha';
+import { SafeInfo } from '@gnosis.pm/safe-apps-sdk';
 import CPK from '../src';
 import { zeroAddress } from '../src/utils/constants';
 import { Address } from '../src/utils/basicTypes';
+import Web3Adapter from '../src/ethLibAdapters/Web3Adapter';
+import { TransactionManagerNames } from '../src/transactionManagers/TransactionManager';
 import SafeRelayTransactionManager from '../src/transactionManagers/SafeRelayTransactionManager';
 import makeEmulatedSafeProvider from './utils/makeEmulatedSafeProvider';
 import { shouldWorkWithWeb3 } from './web3/shouldWorkWithWeb3';
@@ -85,8 +88,67 @@ describe('CPK', () => {
     should.exist(CPK);
   });
 
-  it('should not produce CPK instances when options are missing', async () => {
-    await CPK.create(undefined as any).should.be.rejectedWith('missing options');
+  it('should produce uninitialized CPK instances when running standalone and options are missing', async () => {
+    const cpk = await CPK.create(undefined as any)
+    should.exist(cpk);
+    should.not.exist(cpk.safeAppInfo)
+    should.not.exist(cpk.ethLibAdapter)
+    should.not.exist(cpk.transactionManager)
+    should.not.exist(cpk.contract)
+    should.not.exist(cpk.multiSend)
+    should.not.exist(cpk.proxyFactory)
+    should.not.exist(cpk.masterCopyAddress)
+    should.not.exist(cpk.fallbackHandlerAddress)
+  });
+
+  
+  it.skip('should produce CPK instances when running as a Safe App and options are missing', async () => {
+    // Test fails because the window.postMessage is not received in the safe-apps-sdk
+    const cpk = await CPK.create(undefined as any)
+
+    const message: SafeInfo = {
+      safeAddress: '0x0000000000000000000000000000000000000001',
+      network: 'rinkeby',
+      ethBalance: '1.0000000',
+    }
+    window.postMessage({ messageId: 'ON_SAFE_INFO', message }, '*')
+    
+    should.exist(cpk);
+    should.exist(cpk.safeAppInfo);
+    should.exist(cpk.ethLibAdapter);
+    (cpk.transactionManager.config.name).should.equal(TransactionManagerNames.SafeAppsSdkTransactionManager);
+    (cpk.address).should.equal(message.safeAddress);
+    should.not.exist(cpk.contract);
+    should.not.exist(cpk.multiSend);
+    should.not.exist(cpk.proxyFactory);
+    should.not.exist(cpk.masterCopyAddress);
+    should.not.exist(cpk.fallbackHandlerAddress);
+  });
+  
+  it.skip('should produce CPK instances when running as a Safe App', async () => {
+    // Test fails because the window.postMessage is not received in the safe-apps-sdk
+    const cpk = await CPK.create({
+      ethLibAdapter: new Web3Adapter({ web3 }),
+      ownerAccount: '0x0000000000000000000000000000000000000002'
+    })
+
+    const message: SafeInfo = {
+      safeAddress: '0x0000000000000000000000000000000000000001',
+      network: 'rinkeby',
+      ethBalance: '1.0000000',
+    }
+    window.postMessage({ messageId: 'ON_SAFE_INFO', message }, '*')
+
+    should.exist(cpk);
+    should.exist(cpk.safeAppInfo);
+    should.exist(cpk.ethLibAdapter);
+    (cpk.transactionManager.config.name).should.equal(TransactionManagerNames.SafeAppsSdkTransactionManager);
+    (cpk.address).should.equal(message.safeAddress);
+    should.not.exist(cpk.contract);
+    should.not.exist(cpk.multiSend);
+    should.not.exist(cpk.proxyFactory);
+    should.not.exist(cpk.masterCopyAddress);
+    should.not.exist(cpk.fallbackHandlerAddress);
   });
 
   it('should not produce CPK instances when ethLibAdapter not provided', async () => {
