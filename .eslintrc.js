@@ -1,38 +1,12 @@
 module.exports = {
-  env: {
-    browser: true,
-    es6: true,
-    node: true,
-  },
+  parser: '@typescript-eslint/parser',  // Specifies the ESLint parser
   extends: [
-    'eslint:recommended',
-    'plugin:@typescript-eslint/eslint-recommended',
-    'plugin:@typescript-eslint/recommended',
+    'plugin:@typescript-eslint/recommended', // Uses the recommended rules from the @typescript-eslint/eslint-plugin
+    'prettier/@typescript-eslint', // Uses eslint-config-prettier to disable ESLint rules from @typescript-eslint/eslint-plugin that would conflict with prettier
+    'plugin:prettier/recommended', // Enables eslint-plugin-prettier and displays prettier errors as ESLint errors. Make sure this is always the last configuration in the extends array.
   ],
-  globals: {
-    Atomics: 'readonly',
-    SharedArrayBuffer: 'readonly',
+  parserOptions: {
+    ecmaVersion: 2020,  // Allows for the parsing of modern ECMAScript features
+    sourceType: 'module',  // Allows for the use of imports
   },
-  parser: '@typescript-eslint/parser',
-  plugins: [
-    '@typescript-eslint',
-  ],
-  root: true,
-  rules: {
-    'quotes': ['error', 'single'],
-    'indent': ['error', 2],
-    'max-len': ['error', {
-      'code': 100,
-      'tabWidth': 2,
-      'ignoreComments': false,
-      'ignoreRegExpLiterals': true,
-      'ignoreStrings': true,
-      'ignoreTemplateLiterals': true,
-      'ignoreUrls': true
-    }],
-    'semi': ['error', 'always'],
-    'no-unused-vars': ['error', {
-      'varsIgnorePattern': 'should|expect'
-    }]
-  }
-};
+}
