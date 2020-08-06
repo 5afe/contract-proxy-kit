@@ -1,23 +1,20 @@
 {
   "name": "contract-proxy-kit",
-  "version": "1.1.1",
+  "version": "2.0.0-alpha.3",
   "description": "Enable batched transactions and contract account interactions using a unique deterministic Gnosis Safe.",
-  "main": "lib/index.js",
-  "files": [
-    "lib/"
-  ],
+  "main": "lib/cjs/index.js",
+  "module": "lib/esm/index.js",
   "scripts": {
     "generate-types": "typechain --target=truffle-v5 './build/contracts/*.json'",
-    "postinstall": "truffle compile && yarn generate-types",
-    "build": "tsc",
-    "prepare": "yarn build",
     "migrate": "tsc -p ./tsconfig.migrate.json --outDir ./migrations && truffle migrate --network local",
-    "test-ts": "nyc mocha -t 20000 -r ts-node/register -r jsdom-global/register ./test/contract-proxy-kit.ts --exit",
-    "test": "yarn migrate && yarn test-ts",
-    "test-rpc": "run-with-testrpc --noVMErrorsOnRPCResponse 'yarn migrate && yarn test-ts'",
+    "test-ts": "TS_NODE_PROJECT='./tsconfig.cjs.json' nyc mocha -t 20000 -r ts-node/register -r jsdom-global/register ./test/contract-proxy-kit.ts --exit",
+    "test": "yarn generate-types && yarn migrate && yarn test-ts",
+    "test-rpc": "run-with-testrpc --noVMErrorsOnRPCResponse 'yarn test'",
     "coverage": "nyc report --reporter=text-lcov | coveralls",
     "lint:check": "eslint . --ext .js,.jsx,.ts,.tsx",
-    "lint:fix": "yarn lint:check --fix"
+    "lint:fix": "yarn lint:check --fix",
+    "build": "tsc && tsc -p tsconfig.cjs.json",
+    "prepack": "yarn build"
   },
   "repository": {
     "type": "git",
@@ -40,6 +37,11 @@
   "bugs": {
     "url": "https://github.com/gnosis/contract-proxy-kit/issues"
   },
+  "files": [
+    "contracts",
+    "lib",
+    "src"
+  ],
   "homepage": "https://github.com/gnosis/contract-proxy-kit#readme",
   "dependencies": {
     "@gnosis.pm/safe-apps-sdk": "0.3.0",
