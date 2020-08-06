@@ -1,15 +1,16 @@
 import should from 'should';
 import Web3Maj1Min2 from 'web3-1-2';
-import CPK from '../../src';
-import EthersAdapter from '../../src/ethLibAdapters/EthersAdapter';
-import { NetworksConfig } from '../../src/config/networks';
-import { Transaction } from '../../src/utils/transactions';
+import CPK, {
+  NetworksConfig,
+  EthersAdapter,
+  TransactionManager,
+  Transaction
+} from '../../src';
 import { Address } from '../../src/utils/basicTypes';
 import { testSafeTransactions } from '../transactions/testSafeTransactions';
 import { testConnectedSafeTransactionsWithRelay } from '../transactions/testConnectedSafeTransactionsWithRelay';
 import { toTxHashPromise, AccountType } from '../utils';
 import { getContractInstances, TestContractInstances } from '../utils/contracts';
-import TransactionManager from '../../src/transactionManagers/TransactionManager';
 
 interface ShouldWorkWithEthersProps {
   ethers: any;

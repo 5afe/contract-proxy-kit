@@ -1,16 +1,12 @@
 import should from 'should';
 import Web3Maj1Min2 from 'web3-1-2';
 import Web3Maj2Alpha from 'web3-2-alpha';
-import CPK from '../../src';
-import Web3Adapter from '../../src/ethLibAdapters/Web3Adapter';
+import CPK, { Web3Adapter, Transaction, TransactionResult, TransactionManager, NetworksConfig } from '../../src';
 import { testSafeTransactions } from '../transactions/testSafeTransactions';
 import { testConnectedSafeTransactionsWithRelay } from '../transactions/testConnectedSafeTransactionsWithRelay';
 import { toTxHashPromise, AccountType } from '../utils';
-import { Transaction, TransactionResult } from '../../src/utils/transactions';
 import { getContractInstances, TestContractInstances } from '../utils/contracts';
 import { Address } from '../../src/utils/basicTypes';
-import { NetworksConfig } from '../../src/config/networks';
-import TransactionManager from '../../src/transactionManagers/TransactionManager';
 
 interface ShouldWorkWithWeb3Props {
   Web3: typeof Web3Maj1Min2 | typeof Web3Maj2Alpha;

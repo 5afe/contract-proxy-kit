@@ -1,4 +1,4 @@
-import { OperationType, Transaction } from '../../src/utils/transactions';
+import { OperationType, Transaction } from '../../src';
 import { zeroAddress } from '../../src/utils/constants';
 import { Address } from '../../src/utils/basicTypes';
 
