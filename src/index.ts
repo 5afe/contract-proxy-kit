@@ -48,13 +48,12 @@ class CPK {
 
   private setSafeInfo = (safeInfo: SafeInfo): void => {
     this.safeAppInfo = safeInfo;
-
+    this.isConnectedToSafe = true;
     this.setOwnerAccount(safeInfo.safeAddress);
 
-    //if (!this.transactionManager) {
-    this.transactionManager = new SafeAppsSdkTransactionManager();
-    this.isConnectedToSafe = true;
-    //}
+    if (!this.transactionManager || this.transactionManager.config.name !== TransactionManagerNames.SafeAppsSdkTransactionManager) {
+      this.transactionManager = new SafeAppsSdkTransactionManager();
+    }
   }
 
   static async create(opts?: CPKConfig): Promise<CPK> {
@@ -151,8 +150,7 @@ class CPK {
   }
 
   isSafeApp(): boolean {
-    return !!this.safeAppInfo &&
-      this.transactionManager?.config.name === TransactionManagerNames.SafeAppsSdkTransactionManager;
+    return !!this.safeAppInfo;
   }
 
   async getOwnerAccount(): Promise<Address> {
@@ -184,6 +182,9 @@ class CPK {
   }
 
   setTransactionManager(transactionManager: TransactionManager): void {
+    if (this.isSafeApp()) {
+      throw new Error('TransactionManagers are not allowed when the app is running as a Safe App');
+    }
     this.transactionManager = transactionManager;
   }
 
@@ -263,7 +264,6 @@ class CPK {
       masterCopyAddress: this.masterCopyAddress,
       fallbackHandlerAddress: this.fallbackHandlerAddress,
     };
-
 
     return txManager.execTransactions({
       ownerAccount,
