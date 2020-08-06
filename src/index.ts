@@ -6,7 +6,8 @@ import EthersAdapter, {
 } from './ethLibAdapters/EthersAdapter'
 import Web3Adapter, { Web3AdapterConfig, Web3TransactionResult } from './ethLibAdapters/Web3Adapter'
 import TransactionManager, {
-  TransactionManagerConfig
+  TransactionManagerConfig,
+  TransactionManagerNames
 } from './transactionManagers/TransactionManager'
 import CpkTransactionManager from './transactionManagers/CpkTransactionManager'
 import SafeRelayTransactionManager from './transactionManagers/SafeRelayTransactionManager'
@@ -25,6 +26,7 @@ export {
   CpkTransactionManager,
   SafeRelayTransactionManager,
   SafeAppsSdkTransactionManager,
+  TransactionManagerNames,
   // Transactions
   OperationType,
   // Configuration
