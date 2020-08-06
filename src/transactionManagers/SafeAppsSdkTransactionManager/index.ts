@@ -1,13 +1,16 @@
-import TransactionManager, { TransactionManagerConfig, ExecTransactionSafeAppsProps, TransactionManagerNames } from '../TransactionManager';
-import { TransactionResult } from '../../utils/transactions';
+import TransactionManager, {
+  TransactionManagerConfig,
+  ExecTransactionSafeAppsProps,
+  TransactionManagerNames
+} from '../TransactionManager'
+import { TransactionResult } from '../../utils/transactions'
 
-class SafeAppsSdkTransactionManager implements TransactionManager  {
-
+class SafeAppsSdkTransactionManager implements TransactionManager {
   get config(): TransactionManagerConfig {
     return {
       name: TransactionManagerNames.SafeAppsSdkTransactionManager,
-      url: undefined,
-    };
+      url: undefined
+    }
   }
 
   async execTransactions({
@@ -15,11 +18,9 @@ class SafeAppsSdkTransactionManager implements TransactionManager  {
     transactions
   }: ExecTransactionSafeAppsProps): Promise<TransactionResult> {
     appsSdk.sendTransactions(transactions)
-    
-    return new Promise(
-      (resolve, reject) => resolve({ hash: 'unknown' })
-    )
+
+    return new Promise((resolve, reject) => resolve({ hash: 'unknown' }))
   }
 }
 
-export default SafeAppsSdkTransactionManager;
+export default SafeAppsSdkTransactionManager
