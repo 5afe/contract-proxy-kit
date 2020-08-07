@@ -1,4 +1,11 @@
 .txManagerDescription {
+  color: #aaa;
   padding-top: 5px;
-  margin-left: 149px;
+}
+
+.relayForm {
+  & > input {
+    margin-bottom: 10px;
+    min-width: 235px;
+  }
 }
