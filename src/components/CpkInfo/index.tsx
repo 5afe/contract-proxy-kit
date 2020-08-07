@@ -24,8 +24,6 @@ const CpkInfo = ({
     if (!cpk) return
     if (walletState.txManager?.url === relayEndpoint) return
 
-    console.log(`setRelay (endpoint: ${relayEndpoint})`)
-
     const txManager: TransactionManager = (relayEndpoint)
       ? new SafeRelayTransactionManager({ url: relayEndpoint })
       : new CpkTransactionManager()
@@ -35,9 +33,7 @@ const CpkInfo = ({
   }
 
   useEffect(() => {
-    console.log('isRelayChecked', isRelayChecked)
     if (!isRelayChecked) {
-      console.log('useEffect isRelayChecked', isRelayChecked)
       setRelay()
     }
   }, [isRelayChecked])

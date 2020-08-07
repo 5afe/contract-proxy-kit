@@ -48,7 +48,6 @@ const App = () => {
 
   const updateCpk = async (): Promise<void> => {
     if (!cpk) return
-    console.log("updateCpkInfo")
     const cpkBalance = await getEthBalance(cpk.address);
     const ownerAddress = await cpk.getOwnerAccount()
     const ownerBalance = cpk.isSafeApp()
@@ -67,20 +66,16 @@ const App = () => {
 
   const initializeCpk = async (): Promise<void> => {
     if (!web3) return
-    console.log('initializeCpk')
     const ethLibAdapter = new Web3Adapter({ web3 })
     const newCpk = await CPK.create({ ethLibAdapter })
-
     setCpk(newCpk)
   }
 
   useEffect(() => {
-    console.log('useEffect web3', web3)
     initializeCpk()
   }, [web3])
 
   useEffect(() => {
-    console.log('useEffect cpk', cpk)
     updateCpk()
   }, [cpk])
 
