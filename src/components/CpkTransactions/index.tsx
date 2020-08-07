@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import './styles.scss'
 
 interface CpkTransactionsProps {
   cpk: any

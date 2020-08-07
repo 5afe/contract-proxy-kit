@@ -1,12 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import CPK, {
-  EthLibAdapter,
-  Web3Adapter,
-  TransactionManager,
-  TransactionManagerConfig,
-  CpkTransactionManager,
-  SafeRelayTransactionManager,
-} from 'contract-proxy-kit'
+import CPK, { Web3Adapter, TransactionManagerConfig } from 'contract-proxy-kit'
 import Web3 from 'web3'
 import ConnectButton from '../ConnectButton'
 import useCustomReducer from 'hooks/useCustomReducer'

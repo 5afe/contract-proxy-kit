@@ -4,6 +4,7 @@ import {
   SafeRelayTransactionManager,
   CpkTransactionManager
 } from 'contract-proxy-kit'
+import './styles.scss'
 
 interface CpkInfoProps {
   cpk: any
@@ -61,12 +62,25 @@ const CpkInfo = ({
         {walletState?.address}
       </div>
       <div className="dataLine">
-        <span className="dataTitle">Transaction manager:</span>
-        {walletState?.txManager?.name}
+        <div>
+          <span className="dataTitle">Transaction manager:</span>
+          {walletState?.txManager?.name}
+        </div>
+        <div className="txManagerDescription">
+          {walletState?.txManager?.name === 'CpkTransactionManager' && (
+            'Transactions are submitted using the connected Ethereum provider'
+          )}
+          {walletState?.txManager?.name === 'SafeRelayTransactionManager' && (
+            'Transactions are submitted using the Safe Relay Service selected'
+          )}
+          {walletState?.txManager?.name === 'SafeAppsSdkTransactionManager' && (
+            'Transactions are submitted using the Safe web interface'
+          )}
+        </div>
       </div>
-        <div className="dataLine">
-          <span className="dataTitle">Relay service:</span>
-          {walletState?.txManager?.url && (walletState?.txManager?.url)}
+      <div className="dataLine">
+        <span className="dataTitle">Relay service:</span>
+        {walletState?.txManager?.url && (walletState?.txManager?.url)}
       </div>
       <div className="dataLine">
         <span className="dataTitle">
