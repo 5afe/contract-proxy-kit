@@ -6,18 +6,23 @@ import useCustomReducer from 'hooks/useCustomReducer'
 import './styles.scss'
 import CpkTransactions from 'components/CpkTransactions'
 import CpkInfo from 'components/CpkInfo'
+import { BigNumber } from 'bignumber.js'
 
 interface IWalletState {
-  address?: string
-  ownerAddress?: string
   isSafeApp: boolean
+  cpkAddress?: string
+  cpkBalance?: string
+  ownerAddress?: string
+  ownerBalance?: string
   txManager?: TransactionManagerConfig
 }
 
 const initialWalletState = {
-  address: undefined,
-  ownerAddress: undefined,
   isSafeApp: false,
+  cpkAddress: undefined,
+  cpkBalance: undefined,
+  ownerAddress: undefined,
+  ownerBalance: undefined,
   txManager: undefined
 }
 
@@ -28,20 +33,34 @@ const App = () => {
     initialWalletState
   )
 
-
   const onWeb3Connect = (provider: any) => {
     if (provider) {
       setWeb3(new Web3(provider))
     }
   }
 
+  const getEthBalance = async (address?: string): Promise<string | undefined> => {
+    if (!web3 || !address) return
+    const ethBalance = new BigNumber(await web3.eth.getBalance(address))
+    const ethDecimals = new BigNumber(10).pow(18)
+    return web3 && ethBalance.div(ethDecimals).decimalPlaces(7).toString() + ' ETH'
+  }
+
   const updateCpk = async (): Promise<void> => {
     if (!cpk) return
     console.log("updateCpkInfo")
+    const cpkBalance = await getEthBalance(cpk.address);
+    const ownerAddress = await cpk.getOwnerAccount()
+    const ownerBalance = cpk.isSafeApp()
+      ? cpk.safeAppInfo?.ethBalance + ' ETH'
+      : await getEthBalance(ownerAddress);
+
     updateWalletState({
-      address: cpk.address,
-      ownerAddress: await cpk.getOwnerAccount(),
       isSafeApp: cpk.isSafeApp(),
+      cpkAddress: cpk.address,
+      cpkBalance,
+      ownerAddress,
+      ownerBalance,
       txManager: cpk.transactionManager?.config
     })
   }

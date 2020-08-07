@@ -50,56 +50,64 @@ const CpkInfo = ({
   return (
     <div className="cpkData">
       <div className="dataLine">
-        <span className="dataTitle">Running as a:</span>
-        {walletState?.isSafeApp ? "Safe App" : "standalone app"}
+        <div className="dataTitle">Running as a:</div>
+        <div className="dataValue">{walletState?.isSafeApp ? "Safe App" : "standalone app"}</div>
       </div>
       <div className="dataLine">
-        <span className="dataTitle">Owner address:</span>
-        {walletState?.ownerAddress}
+        <div className="dataTitle">CPK address:</div>
+        <div className="dataValue">{walletState?.cpkAddress}</div>
       </div>
       <div className="dataLine">
-        <span className="dataTitle">CPK address:</span>
-        {walletState?.address}
+        <div className="dataTitle">CPK Balance:</div>
+        <div className="dataValue">{walletState?.cpkBalance}</div>
       </div>
       <div className="dataLine">
-        <div>
-          <span className="dataTitle">Transaction manager:</span>
+        <div className="dataTitle">Owner address:</div>
+        <div className="dataValue">{walletState?.ownerAddress}</div>
+      </div>
+      <div className="dataLine">
+        <div className="dataTitle">Owner balance:</div>
+        <div className="dataValue">{walletState?.ownerBalance}</div>
+      </div>
+      <div className="dataLine">
+        <div className="dataTitle">Transaction manager:</div>
+        <div className="dataValue">
           {walletState?.txManager?.name}
-        </div>
-        <div className="txManagerDescription">
-          {walletState?.txManager?.name === 'CpkTransactionManager' && (
-            'Transactions are submitted using the connected Ethereum provider'
-          )}
-          {walletState?.txManager?.name === 'SafeRelayTransactionManager' && (
-            'Transactions are submitted using the Safe Relay Service selected'
-          )}
-          {walletState?.txManager?.name === 'SafeAppsSdkTransactionManager' && (
-            'Transactions are submitted using the Safe web interface'
-          )}
+          <div className="txManagerDescription">
+            {walletState?.txManager?.name === 'CpkTransactionManager' && (
+              '* Transactions are submitted using the connected Ethereum provider'
+            )}
+            {walletState?.txManager?.name === 'SafeRelayTransactionManager' && (
+              '* Transactions are submitted using the Safe Relay Service selected'
+            )}
+            {walletState?.txManager?.name === 'SafeAppsSdkTransactionManager' && (
+              '* Transactions are submitted using the Safe web interface'
+            )}
+          </div>
         </div>
       </div>
       <div className="dataLine">
-        <span className="dataTitle">Relay service:</span>
-        {walletState?.txManager?.url && (walletState?.txManager?.url)}
+        <div className="dataTitle">Relay service:</div>
+        <div className="dataValue">{walletState?.txManager?.url && (walletState?.txManager?.url)}</div>
       </div>
       <div className="dataLine">
-        <span className="dataTitle">
+        <div className="dataTitle">
           <input type="checkbox" onChange={(e) => handleRelayChecked(e.target.checked)}/>
           {' '}Use relay service
-        </span>
+        </div>
       </div>
       <div className="dataLine">
         {isRelayChecked && (
-          <>
+          <div className="relayForm">
             <input
               type="text"
-              placeholder="https://safe-relay.rinkeby.gnosis.io/"
+              placeholder="https://safe-relay.rinkeby.gnosis.io"
               onChange={(e) => setRelayEndpoint(e.target.value)}
             />
             <button disabled={!relayEndpoint} onClick={() => setRelay()}>
-              Set Relay service domain
+              Set Safe relay service URL
             </button>
-          </>
+          </div>
         )}
       </div>
     </div>
