@@ -68,7 +68,7 @@ The proxy owner will be the account associated with the signer.
 
 #### Networks configuration
 
-Regardless of which type of underlying API is being used, the *CPK* instance will check the ID of the network given by the provider in order to prepare for contract interactions. By default, Ethereum mainnet (ID 1) and the Rinkeby (ID 4), Goerli (ID 5), and Kovan (ID 42) test networks will have preconfigured addresses for the required contracts:
+Regardless of which type of underlying API is being used, the *CPK* instance will check the ID of the network given by the provider in order to prepare for contract interactions. By default, Ethereum Mainnet (ID 1) and the Rinkeby (ID 4), Goerli (ID 5), and Kovan (ID 42) test networks will have preconfigured addresses for the required contracts:
 
 * `masterCopyAddress`: Gnosis Safe master copy
 * `proxyFactoryAddress`: CPK factory
@@ -93,6 +93,22 @@ const cpk = await CPK.create({
 
 Please refer to the `migrations/` folder of this package for information on how to deploy the required contracts on a network, and note that these addresses must be available for the connected network in order for *CPK* creation to be successful.
 
+#### Transaction relayer configuration
+
+By default, the CPK will not use any transaction relayer. However, the [Safe Relay Service](https://github.com/gnosis/safe-relay-service) can be used to submit all the transactions when the optional property `transactionManager` is passed to the CPK constructor with an instance of the class `SafeRelayTransactionManager`.
+
+```js
+const safeRelayTransactionManager = new SafeRelayTransactionManager({ url: 'https://safe-relay.gnosis.io/'})
+const cpk = await CPK.create({
+  // ...otherOptions,
+  transactionManager: safeRelayTransactionManager,
+});
+```
+
+The URL of the [Safe Relay Service](https://github.com/gnosis/safe-relay-service) is different depending on the network:
+ - Mainnet: https://safe-relay.gnosis.io/
+ - Rinkeby: https://safe-relay.rinkeby.gnosis.io/
+
 ### CPK#getOwnerAccount
 
 This may be used to figure out which account the proxy considers the owner account. It returns a Promise which resolves to the owner account:
@@ -112,7 +128,7 @@ Once created, the `address` property on a *CPK* instance will provide the proxy'
 
 This address is calculated even if the proxy has not been deployed yet, and it is deterministically generated from the proxy owner address. This means that for any given owner, the same proxy owner address will always be generated.
 
-#### Support for WalletConnected Gnosis Safe
+#### Support for connection to a Gnosis Safe
 
 If the provider underlying the *CPK* instance is connected to a Gnosis Safe via WalletConnect, the address will match the owner account:
 
@@ -256,9 +272,9 @@ const txObject = await cpk.execTransactions(
 );
 ```
 
-#### Support for WalletConnected Gnosis Safe
+#### Support for connection to a Gnosis Safe
 
-When WalletConnected to Gnosis Safe, `execTransactions` will use the Safe's native support for sending batch transactions (via `gs_multi_send`). In this case, the gas price option is not available, and `execTransactions` will only return a transaction hash.
+When connected to a Gnosis Safe, `execTransactions` will use the Safe's native support for sending batch transactions (via `gs_multi_send`). In this case, the gas price option is not available, and `execTransactions` will only return a transaction hash.
 
 ```js
 const { hash } = await cpk.execTransactions([
