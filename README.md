@@ -324,6 +324,16 @@ Run the tests against the local network:
 yarn test
 ```
 
+## Run your app as a Safe App
+
+*CPK* uses the [Safe Apps SDK](https://github.com/gnosis/safe-apps-sdk), making your app available to be run in an iframe inside the [Safe Web UI](https://gnosis-safe.io/).
+
+Once your app is ready to be deployed make sure to follow these [steps to run your app as a Safe app](https://github.com/gnosis/safe-apps-sdk#testing-in-the-safe-multisig-application). Apart from that, no extra configuration is needed.
+
+When running your app inside the *Safe Web UI*, the configuration used to instantiate the *CPK* will be ignored because the responsability to send transactions is now tranferred to the *Safe Web UI* and the wallet connected to it.
+
+If needed, the method `CPK.isSafeApp()` is available to check if the app using the *CPK* is running as a Safe app or not.
+
 ## In-depth Guide
 
 The Contract Proxy Kit operates primarily using the following technologies:
