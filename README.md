@@ -94,6 +94,7 @@ const cpk = await CPK.create({
 
 Please refer to the `migrations/` folder of this package for information on how to deploy the required contracts on a network, and note that these addresses must be available for the connected network in order for *CPK* creation to be successful.
 
+<!---
 #### Transaction relayer configuration
 
 By default, the CPK will not use any transaction relayer. However, the [Safe Relay Service](https://github.com/gnosis/safe-relay-service) can be used to submit all the transactions when the optional property `transactionManager` is passed to the CPK constructor with an instance of the class `SafeRelayTransactionManager`.
@@ -109,8 +110,9 @@ const cpk = await CPK.create({
 The URL of the [Safe Relay Service](https://github.com/gnosis/safe-relay-service) is different depending on the network:
  - Mainnet: https://safe-relay.gnosis.io/
  - Rinkeby: https://safe-relay.rinkeby.gnosis.io/
-
+--->
 ### CPK#getOwnerAccount
+
 
 This may be used to figure out which account the proxy considers the owner account. It returns a Promise which resolves to the owner account:
 
