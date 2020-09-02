@@ -3,7 +3,7 @@
 [![Build Status](https://travis-ci.org/gnosis/contract-proxy-kit.svg?branch=master)](https://travis-ci.org/gnosis/contract-proxy-kit)
 [![Coverage Status](https://coveralls.io/repos/github/gnosis/contract-proxy-kit/badge.svg?branch=master)](https://coveralls.io/github/gnosis/contract-proxy-kit?branch=master)
 
-**Warning:** This documentation is for the 2.x series development version of the contract proxy kit. For documentation on the current stable 1.x series, go [here](https://github.com/gnosis/contract-proxy-kit/tree/v1.1.1#contract-proxy-kit).
+**Warning:** This documentation is for the 2.x series of the contract proxy kit. For documentation on the 1.x series, go [here](https://github.com/gnosis/contract-proxy-kit/tree/v1.1.1#contract-proxy-kit).
 
 Enable batched transactions and contract account interactions using a unique deterministic Gnosis Safe.
 
@@ -111,8 +111,8 @@ The URL of the [Safe Relay Service](https://github.com/gnosis/safe-relay-service
  - Mainnet: https://safe-relay.gnosis.io/
  - Rinkeby: https://safe-relay.rinkeby.gnosis.io/
 --->
-### CPK#getOwnerAccount
 
+### CPK#getOwnerAccount
 
 This may be used to figure out which account the proxy considers the owner account. It returns a Promise which resolves to the owner account:
 
@@ -328,11 +328,11 @@ yarn test
 
 *CPK* uses the [Safe Apps SDK](https://github.com/gnosis/safe-apps-sdk), making your app available to be run in an iframe inside the [Safe Web UI](https://gnosis-safe.io/).
 
-Once your app is ready to be deployed make sure to follow these [steps to run your app as a Safe app](https://github.com/gnosis/safe-apps-sdk#testing-in-the-safe-multisig-application). Apart from that, no extra configuration is needed.
+Once your app is ready to be deployed, make sure to follow these [steps to run your app as a Safe app](https://github.com/gnosis/safe-apps-sdk#testing-in-the-safe-multisig-application). Apart from that, no extra configuration is needed.
 
-When running your app inside the *Safe Web UI*, the configuration used to instantiate the *CPK* will be ignored because the responsability to send transactions is now tranferred to the *Safe Web UI* and the wallet connected to it.
+When running your app inside the *Safe Web UI*, the configuration used to instantiate the *CPK* will be ignored because the responsibility to send transactions is now transferred to the *Safe Web UI* and the wallet connected to it.
 
-If needed, the method `CPK.isSafeApp()` is available to check if the app using the *CPK* is running as a Safe app or not.
+If needed, the method `CPK.isSafeApp()` is available to check if the app using the *CPK* is running as a Safe App or not.
 
 ## In-depth Guide
 
