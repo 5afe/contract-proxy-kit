@@ -22,6 +22,7 @@ import CPK from 'contract-proxy-kit'
 * web3.js 1.2
 * web3.js 2.0 alpha
 * ethers.js 4.0
+* ethers.js 5.0
 
 ### CPK.create
 
