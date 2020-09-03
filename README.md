@@ -37,7 +37,9 @@ In order to obtain the proxy address, use the property [CPK#address](#cpkaddress
 To use *CPK* with web3.js, supply `CPK.create` with a *Web3* instance as the value of the `web3` key. For example:
 
 ```js
+import CPK, { Web3Adapter } from 'contract-proxy-kit';
 import Web3 from 'web3';
+
 const web3 = new Web3(/*...*/);
 
 const ethLibAdapter = new Web3Adapter({ web3 });
@@ -56,7 +58,9 @@ const cpk = await CPK.create({ ethLibAdapter, ownerAccount: '0x90F8bf6A479f320ea
 To use *CPK* with ethers.js, supply `CPK.create` with the `ethers` object and an ethers.js *Signer* which has an active *Provider* connection. For example:
 
 ```js
+import CPK, { EthersAdapter } from 'contract-proxy-kit';
 import { ethers } from 'ethers');
+
 const provider = ethers.getDefaultProvider('homestead');
 const wallet = ethers.Wallet.createRandom().connect(provider);
 
