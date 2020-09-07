@@ -32,6 +32,7 @@ const App = () => {
   const [walletState, updateWalletState] = useCustomReducer<IWalletState>(
     initialWalletState
   )
+  const network = 'rinkeby'
 
   const onWeb3Connect = (provider: any) => {
     if (provider) {
@@ -81,7 +82,7 @@ const App = () => {
 
   return (
     <div className="container">
-      <ConnectButton onConnect={onWeb3Connect} />
+      <ConnectButton onConnect={onWeb3Connect} networkName={network}/>
       {cpk && (
         <div className="cpk">
           <CpkInfo cpk={cpk} walletState={walletState} updateCpk={updateCpk} />

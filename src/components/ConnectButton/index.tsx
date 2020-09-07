@@ -8,12 +8,13 @@ const {
 
 type ConnectButtonProps = {
   onConnect: Function
+  networkName: string
 }
 
-const ConnectButton = ({ onConnect }: ConnectButtonProps) => (
+const ConnectButton = ({ onConnect, networkName }: ConnectButtonProps) => (
   <div className="connectButton">
     <Web3Connect.Button
-      network="rinkeby"
+      network={networkName}
       providerOptions={{
         walletconnect: {
           package: WalletConnectProvider,
