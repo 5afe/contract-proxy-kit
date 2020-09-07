@@ -1,10 +1,10 @@
-### CPK Configuration App
+## CPK Configuration App
 
-An example Dapp using the Gnosis Safe [Contract Proxy Kit](https://github.com/gnosis/contract-proxy-kit) which works as a Safe App or a standalone app and where the Relay service is configurable. This Dapp serves as an example of the different states the CPK can have.
+An example Dapp using the Gnosis Safe [Contract Proxy Kit](https://github.com/gnosis/contract-proxy-kit) which works as a Safe App or a standalone app and where the Relay service is configurable. This Dapp serves as an example of the different states the *CPK* can have.
+
+Only available for Rinkeby at this moment.
 
 App can be found live here: http://cpkconfig.surge.sh.
-
-Only available on Rinkeby at this moment.
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
