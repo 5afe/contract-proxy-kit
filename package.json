@@ -10,7 +10,7 @@
     "@types/react-dom": "^16.9.8",
     "@walletconnect/web3-provider": "^1.1.0",
     "bignumber.js": "^9.0.0",
-    "contract-proxy-kit": "file:../contract-proxy-kit",
+    "contract-proxy-kit": "^2.0.0",
     "node-sass": "^4.14.1",
     "prettier-eslint-cli": "^5.0.0",
     "react": "^16.13.1",
