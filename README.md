@@ -382,3 +382,8 @@ bytes32 salt = keccak256(abi.encode(msg.sender, saltNonce));
 where `msg.sender` is the user creating the proxy. The resulting proxy has an address which depends on the user address, the `saltNonce`, the `CPKFactory` address, and Safe master copy used, and the proxy creation bytecode.
 
 To aid with figuring out the proxy address, the `CPKFactory` contract announces the proxy creation bytecode it uses via an accessor `proxyCreationCode`.
+
+### Examples of applications built with the *CPK*
+
+- https://github.com/germartinez/cpk-configuration-app
+- https://github.com/gnosis/cpk-compound-tutorial
