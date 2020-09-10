@@ -7,7 +7,11 @@
     "sourceMap": true,
     "target": "ES6",
     "module": "ES2020",
-    "outDir": "lib/esm"
+    "outDir": "lib/esm",
+    "strict": true,
+    "strictBindCallApply": true,
+    "strictFunctionTypes": true,
+    "strictNullChecks": true
   },
   "include": [
     "src/**/*.ts",
