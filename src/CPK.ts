@@ -1,15 +1,19 @@
-import initSdk, {
-  RequestId,
-  SafeInfo,
-  SdkInstance,
-  TxConfirmationEvent
-} from '@gnosis.pm/safe-apps-sdk'
-import { v4 as uuid } from 'uuid'
-import { predeterminedSaltNonce } from './utils/constants'
-import { Address } from './utils/basicTypes'
-import { OperationType, SafeAppsSdkTransactionResult, standardizeSafeAppsTransaction } from './utils/transactions'
+import SafeAppsSdkConnector from './safeAppsSdkConnector'
+import EthLibAdapter, { Contract } from './ethLibAdapters/EthLibAdapter'
+import TransactionManager, { CPKContracts } from './transactionManagers/TransactionManager'
+import CpkTransactionManager from './transactionManagers/CpkTransactionManager'
 import { defaultNetworks, NetworksConfig } from './config/networks'
+import cpkFactoryAbi from './abis/CpkFactoryAbi.json'
+import safeAbi from './abis/SafeAbi.json'
+import multiSendAbi from './abis/MultiSendAbi.json'
+import { Address } from './utils/basicTypes'
+import { predeterminedSaltNonce } from './utils/constants'
 import { joinHexData, getHexDataLength } from './utils/hexData'
+import {
+  OperationType,
+  SafeAppsSdkTransactionResult,
+  standardizeSafeAppsTransaction
+} from './utils/transactions'
 import {
   Transaction,
   TransactionResult,
@@ -18,16 +22,6 @@ import {
   StandardTransaction,
   normalizeGasLimit
 } from './utils/transactions'
-import EthLibAdapter, { Contract } from './ethLibAdapters/EthLibAdapter'
-import TransactionManager, {
-  CPKContracts,
-  TransactionManagerNames
-} from './transactionManagers/TransactionManager'
-import CpkTransactionManager from './transactionManagers/CpkTransactionManager'
-import cpkFactoryAbi from './abis/CpkFactoryAbi.json'
-import safeAbi from './abis/SafeAbi.json'
-import multiSendAbi from './abis/MultiSendAbi.json'
-import SafeAppsSdkTransactionManager from './transactionManagers/SafeAppsSdkTransactionManager'
 
 export interface CPKConfig {
   ethLibAdapter: EthLibAdapter
@@ -41,41 +35,17 @@ class CPK {
   static Call = OperationType.Call
   static DelegateCall = OperationType.DelegateCall
 
-  appsSdk: SdkInstance
-  safeAppInfo?: SafeInfo
-  callbacks = new Map<RequestId, (safeAppsSdkTxResult: SafeAppsSdkTransactionResult) => void>()
-
-  ethLibAdapter?: EthLibAdapter
-  transactionManager?: TransactionManager
-  networks: NetworksConfig
-  ownerAccount?: Address
-  isConnectedToSafe = false
-
-  contract?: Contract
-  multiSend?: Contract
-  proxyFactory?: Contract
-  masterCopyAddress?: Address
-  fallbackHandlerAddress?: Address
-
-  private setSafeInfo = (safeInfo: SafeInfo): void => {
-    this.safeAppInfo = safeInfo
-    this.isConnectedToSafe = true
-    this.ownerAccount = safeInfo.safeAddress
-    if (
-      !this.transactionManager ||
-      this.transactionManager.config.name !== TransactionManagerNames.SafeAppsSdkTransactionManager
-    ) {
-      this.transactionManager = new SafeAppsSdkTransactionManager()
-    }
-  }
-
-  private setTransactionConfirmation = (txConfirmation: TxConfirmationEvent): void => {
-    const callback = this.callbacks.get(txConfirmation.requestId)
-    if (callback) {
-      this.callbacks.delete(txConfirmation.requestId)
-      callback({ safeTxHash: txConfirmation.safeTxHash })
-    }
-  }
+  #safeAppsSdkConnector?: SafeAppsSdkConnector
+  #ethLibAdapter?: EthLibAdapter
+  #transactionManager?: TransactionManager
+  #networks: NetworksConfig
+  #ownerAccount?: Address
+  #isConnectedToSafe = false
+  #contract?: Contract
+  #multiSend?: Contract
+  #proxyFactory?: Contract
+  #masterCopyAddress?: Address
+  #fallbackHandlerAddress?: Address
 
   static async create(opts?: CPKConfig): Promise<CPK> {
     const cpk = new CPK(opts)
@@ -86,136 +56,145 @@ class CPK {
   }
 
   constructor(opts?: CPKConfig) {
-    this.appsSdk = initSdk()
-    this.appsSdk.addListeners({
-      onSafeInfo: this.setSafeInfo,
-      onTransactionConfirmation: this.setTransactionConfirmation
-    })
-
-    this.networks = {
+    this.#networks = {
       ...defaultNetworks
     }
     if (!opts) {
       return
     }
-
     const { ethLibAdapter, transactionManager, ownerAccount, networks } = opts
     if (!ethLibAdapter) {
       throw new Error('ethLibAdapter property missing from options')
     }
-    this.ethLibAdapter = ethLibAdapter
-    this.transactionManager = transactionManager ? transactionManager : new CpkTransactionManager()
-    this.ownerAccount = ownerAccount
-    this.networks = {
+    this.#ethLibAdapter = ethLibAdapter
+    this.#transactionManager = transactionManager ? transactionManager : new CpkTransactionManager()
+    this.#ownerAccount = ownerAccount
+    this.#networks = {
       ...defaultNetworks,
       ...networks
     }
   }
 
   async init(): Promise<void> {
-    if (!this.ethLibAdapter) {
+    if (!this.#ethLibAdapter) {
       throw new Error('CPK uninitialized ethLibAdapter')
     }
+    this.#safeAppsSdkConnector = new SafeAppsSdkConnector()
 
-    const networkId = await this.ethLibAdapter.getNetworkId()
-    const network = this.networks[networkId]
+    const networkId = await this.#ethLibAdapter.getNetworkId()
+    const network = this.#networks[networkId]
     if (!network) {
       throw new Error(`unrecognized network ID ${networkId}`)
     }
 
-    this.masterCopyAddress = network.masterCopyAddress
-    this.fallbackHandlerAddress = network.fallbackHandlerAddress
+    this.#masterCopyAddress = network.masterCopyAddress
+    this.#fallbackHandlerAddress = network.fallbackHandlerAddress
 
     const ownerAccount = await this.getOwnerAccount()
 
-    const provider = this.ethLibAdapter.getProvider()
+    const provider = this.#ethLibAdapter.getProvider()
     const wc = provider && (provider.wc || (provider.connection && provider.connection.wc))
     if (wc && wc.peerMeta && wc.peerMeta.name && wc.peerMeta.name.startsWith('Gnosis Safe')) {
-      this.isConnectedToSafe = true
+      this.#isConnectedToSafe = true
     }
 
-    this.multiSend = this.ethLibAdapter.getContract(multiSendAbi, network.multiSendAddress)
+    this.#multiSend = this.#ethLibAdapter.getContract(multiSendAbi, network.multiSendAddress)
 
-    if (this.isConnectedToSafe) {
-      this.contract = this.ethLibAdapter.getContract(safeAbi, ownerAccount)
+    if (this.isSafeApp() || this.#isConnectedToSafe) {
+      this.#contract = this.#ethLibAdapter.getContract(safeAbi, ownerAccount)
     } else {
-      this.proxyFactory = this.ethLibAdapter.getContract(cpkFactoryAbi, network.proxyFactoryAddress)
-
-      const salt = this.ethLibAdapter.keccak256(
-        this.ethLibAdapter.abiEncode(['address', 'uint256'], [ownerAccount, predeterminedSaltNonce])
+      this.#proxyFactory = this.#ethLibAdapter.getContract(
+        cpkFactoryAbi,
+        network.proxyFactoryAddress
       )
-      const initCode = this.ethLibAdapter.abiEncodePacked(
-        { type: 'bytes', value: await this.proxyFactory.call('proxyCreationCode', []) },
+
+      const salt = this.#ethLibAdapter.keccak256(
+        this.#ethLibAdapter.abiEncode(
+          ['address', 'uint256'],
+          [ownerAccount, predeterminedSaltNonce]
+        )
+      )
+      const initCode = this.#ethLibAdapter.abiEncodePacked(
+        { type: 'bytes', value: await this.#proxyFactory.call('proxyCreationCode', []) },
         {
           type: 'bytes',
-          value: this.ethLibAdapter.abiEncode(['address'], [network.masterCopyAddress])
+          value: this.#ethLibAdapter.abiEncode(['address'], [network.masterCopyAddress])
         }
       )
-      const proxyAddress = this.ethLibAdapter.calcCreate2Address(
-        this.proxyFactory.address,
+      const proxyAddress = this.#ethLibAdapter.calcCreate2Address(
+        this.#proxyFactory.address,
         salt,
         initCode
       )
 
-      this.contract = this.ethLibAdapter.getContract(safeAbi, proxyAddress)
+      this.#contract = this.#ethLibAdapter.getContract(safeAbi, proxyAddress)
     }
   }
 
   isSafeApp(): boolean {
-    return !!this.safeAppInfo
+    return this.#safeAppsSdkConnector
+      ? this.#safeAppsSdkConnector.isSafeApp()
+      : false
   }
 
-  async getOwnerAccount(): Promise<Address> {
-    if (this.ownerAccount) {
-      return this.ownerAccount
+  async getOwnerAccount(): Promise<Address | undefined> {
+    if (this.#ownerAccount) {
+      return this.#ownerAccount
     }
-    if (!this.ethLibAdapter) {
+    if (this.isSafeApp()) {
+      return this.#safeAppsSdkConnector?.safeAppInfo?.safeAddress
+    }
+    if (!this.#ethLibAdapter) {
       throw new Error('CPK uninitialized ethLibAdapter')
     }
-    return this.ethLibAdapter.getAccount()
+    return this.#ethLibAdapter?.getAccount()
+  }
+
+  get ethLibAdapter(): EthLibAdapter | undefined {
+    return this.#ethLibAdapter
   }
 
   get address(): Address | undefined {
     if (this.isSafeApp()) {
-      return this.safeAppInfo?.safeAddress
+      return this.#safeAppsSdkConnector?.safeAppInfo?.safeAddress
     }
-    if (!this.contract) {
+    if (!this.#contract) {
       return undefined
     }
-    return this.contract.address
+    return this.#contract.address
   }
 
-  setOwnerAccount(ownerAccount?: Address): void {
-    this.ownerAccount = ownerAccount
+  get networks(): NetworksConfig {
+    return this.#networks
   }
 
   setEthLibAdapter(ethLibAdapter: EthLibAdapter): void {
-    this.ethLibAdapter = ethLibAdapter
+    this.#ethLibAdapter = ethLibAdapter
   }
 
   setTransactionManager(transactionManager: TransactionManager): void {
     if (this.isSafeApp()) {
       throw new Error('TransactionManagers are not allowed when the app is running as a Safe App')
     }
-    this.transactionManager = transactionManager
+    this.#transactionManager = transactionManager
   }
 
   setNetworks(networks: NetworksConfig): void {
-    this.networks = {
+    this.#networks = {
       ...defaultNetworks,
       ...networks
     }
   }
 
   encodeMultiSendCallData(transactions: Transaction[]): string {
-    if (!this.ethLibAdapter) {
+    if (!this.#ethLibAdapter) {
       throw new Error('CPK ethLibAdapter uninitialized')
     }
 
-    const multiSend = this.multiSend || this.ethLibAdapter.getContract(multiSendAbi)
+    const multiSend = this.#multiSend || this.#ethLibAdapter.getContract(multiSendAbi)
     const standardizedTxs = transactions.map(standardizeTransaction)
 
-    const ethLibAdapter = this.ethLibAdapter
+    const ethLibAdapter = this.#ethLibAdapter
     return multiSend.encode('multiSend', [
       joinHexData(
         standardizedTxs.map((tx) =>
@@ -235,55 +214,48 @@ class CPK {
     transactions: Transaction[],
     options?: ExecOptions
   ): Promise<TransactionResult | SafeAppsSdkTransactionResult | void> {
-    if (!this.transactionManager) {
-      throw new Error('CPK transactionManager uninitialized')
-    }
-
     if (this.isSafeApp() && transactions.length >= 1) {
       const standardizedTxs = transactions.map(standardizeSafeAppsTransaction)
-
-      const callback = new Promise<SafeAppsSdkTransactionResult>((returnFunction) => {
-        const requestId = uuid()
-        this.callbacks.set(requestId, returnFunction)
-        this.transactionManager.execTransactions({
-          appsSdk: this.appsSdk,
-          transactions: standardizedTxs,
-          requestId
-        })
-      })
-      return callback
+      this.#safeAppsSdkConnector?.sendTransactions(standardizedTxs)
     }
 
     if (!this.address) {
       throw new Error('CPK address uninitialized')
     }
-    if (!this.contract) {
+    if (!this.#contract) {
       throw new Error('CPK contract uninitialized')
     }
-    if (!this.masterCopyAddress) {
+    if (!this.#masterCopyAddress) {
       throw new Error('CPK masterCopyAddress uninitialized')
     }
-    if (!this.fallbackHandlerAddress) {
+    if (!this.#fallbackHandlerAddress) {
       throw new Error('CPK fallbackHandlerAddress uninitialized')
     }
-    if (!this.ethLibAdapter) {
+    if (!this.#ethLibAdapter) {
       throw new Error('CPK ethLibAdapter uninitialized')
+    }
+    if (!this.#transactionManager) {
+      throw new Error('CPK transactionManager uninitialized')
     }
 
     const ownerAccount = await this.getOwnerAccount()
+    if (!ownerAccount) {
+      throw new Error('CPK ownerAccount uninitialized')
+    }
+
     const safeExecTxParams = this.getSafeExecTxParams(transactions)
     const sendOptions = normalizeGasLimit({ ...options, from: ownerAccount })
 
-    const codeAtAddress = await this.ethLibAdapter.getCode(this.address)
+    const codeAtAddress = await this.#ethLibAdapter.getCode(this.address)
     const isDeployed = codeAtAddress !== '0x'
 
-    const txManager = !isDeployed ? new CpkTransactionManager() : this.transactionManager
+    const txManager = !isDeployed ? new CpkTransactionManager() : this.#transactionManager
 
     const cpkContracts: CPKContracts = {
-      safeContract: this.contract,
-      proxyFactory: this.proxyFactory,
-      masterCopyAddress: this.masterCopyAddress,
-      fallbackHandlerAddress: this.fallbackHandlerAddress
+      safeContract: this.#contract,
+      proxyFactory: this.#proxyFactory,
+      masterCopyAddress: this.#masterCopyAddress,
+      fallbackHandlerAddress: this.#fallbackHandlerAddress
     }
 
     return txManager.execTransactions({
@@ -291,9 +263,9 @@ class CPK {
       safeExecTxParams,
       transactions,
       contracts: cpkContracts,
-      ethLibAdapter: this.ethLibAdapter,
+      ethLibAdapter: this.#ethLibAdapter,
       isDeployed,
-      isConnectedToSafe: this.isConnectedToSafe,
+      isConnectedToSafe: this.#isConnectedToSafe,
       sendOptions
     })
   }
@@ -303,12 +275,12 @@ class CPK {
       return standardizeTransaction(transactions[0])
     }
 
-    if (!this.multiSend) {
+    if (!this.#multiSend) {
       throw new Error('CPK MultiSend uninitialized')
     }
 
     return {
-      to: this.multiSend.address,
+      to: this.#multiSend.address,
       value: 0,
       data: this.encodeMultiSendCallData(transactions),
       operation: CPK.DelegateCall
