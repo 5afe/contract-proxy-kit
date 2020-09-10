@@ -3,7 +3,6 @@ import TransactionManager, {
   ExecTransactionSafeAppsProps,
   TransactionManagerNames
 } from '../TransactionManager'
-import { TransactionResult } from '../../utils/transactions'
 
 class SafeAppsSdkTransactionManager implements TransactionManager {
   get config(): TransactionManagerConfig {
@@ -15,11 +14,10 @@ class SafeAppsSdkTransactionManager implements TransactionManager {
 
   async execTransactions({
     appsSdk,
-    transactions
-  }: ExecTransactionSafeAppsProps): Promise<TransactionResult> {
-    appsSdk.sendTransactions(transactions)
-
-    return new Promise((resolve, reject) => resolve({ hash: 'unknown' }))
+    transactions,
+    requestId
+  }: ExecTransactionSafeAppsProps): Promise<void> {
+    appsSdk.sendTransactions(transactions, requestId)
   }
 }
 

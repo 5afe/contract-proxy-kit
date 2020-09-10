@@ -43,10 +43,11 @@
   ],
   "homepage": "https://github.com/gnosis/contract-proxy-kit#readme",
   "dependencies": {
-    "@gnosis.pm/safe-apps-sdk": "0.3.0",
+    "@gnosis.pm/safe-apps-sdk": "^0.4.0",
     "@truffle/contract": "^4.2.15",
     "bignumber.js": "^9.0.0",
-    "node-fetch": "^2.6.0"
+    "node-fetch": "^2.6.0",
+    "uuid": "^8.3.0"
   },
   "devDependencies": {
     "@gnosis.pm/conditional-tokens-contracts": "^0.5.4",

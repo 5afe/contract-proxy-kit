@@ -1,7 +1,13 @@
-import initSdk, { SafeInfo, SdkInstance } from '@gnosis.pm/safe-apps-sdk'
+import initSdk, {
+  RequestId,
+  SafeInfo,
+  SdkInstance,
+  TxConfirmationEvent
+} from '@gnosis.pm/safe-apps-sdk'
+import { v4 as uuid } from 'uuid'
 import { predeterminedSaltNonce } from './utils/constants'
 import { Address } from './utils/basicTypes'
-import { OperationType, standardizeSafeAppsTransaction } from './utils/transactions'
+import { OperationType, SafeAppsSdkTransactionResult, standardizeSafeAppsTransaction } from './utils/transactions'
 import { defaultNetworks, NetworksConfig } from './config/networks'
 import { joinHexData, getHexDataLength } from './utils/hexData'
 import {
@@ -30,12 +36,14 @@ export interface CPKConfig {
   networks?: NetworksConfig
 }
 
+//cpk nuevo 5
 class CPK {
   static Call = OperationType.Call
   static DelegateCall = OperationType.DelegateCall
 
   appsSdk: SdkInstance
   safeAppInfo?: SafeInfo
+  callbacks = new Map<RequestId, (safeAppsSdkTxResult: SafeAppsSdkTransactionResult) => void>()
 
   ethLibAdapter?: EthLibAdapter
   transactionManager?: TransactionManager
@@ -53,7 +61,6 @@ class CPK {
     this.safeAppInfo = safeInfo
     this.isConnectedToSafe = true
     this.ownerAccount = safeInfo.safeAddress
-
     if (
       !this.transactionManager ||
       this.transactionManager.config.name !== TransactionManagerNames.SafeAppsSdkTransactionManager
@@ -62,9 +69,16 @@ class CPK {
     }
   }
 
+  private setTransactionConfirmation = (txConfirmation: TxConfirmationEvent): void => {
+    const callback = this.callbacks.get(txConfirmation.requestId)
+    if (callback) {
+      this.callbacks.delete(txConfirmation.requestId)
+      callback({ safeTxHash: txConfirmation.safeTxHash })
+    }
+  }
+
   static async create(opts?: CPKConfig): Promise<CPK> {
     const cpk = new CPK(opts)
-
     if (opts) {
       await cpk.init()
     }
@@ -74,7 +88,8 @@ class CPK {
   constructor(opts?: CPKConfig) {
     this.appsSdk = initSdk()
     this.appsSdk.addListeners({
-      onSafeInfo: this.setSafeInfo
+      onSafeInfo: this.setSafeInfo,
+      onTransactionConfirmation: this.setTransactionConfirmation
     })
 
     this.networks = {
@@ -219,17 +234,24 @@ class CPK {
   async execTransactions(
     transactions: Transaction[],
     options?: ExecOptions
-  ): Promise<TransactionResult> {
+  ): Promise<TransactionResult | SafeAppsSdkTransactionResult | void> {
     if (!this.transactionManager) {
       throw new Error('CPK transactionManager uninitialized')
     }
 
     if (this.isSafeApp() && transactions.length >= 1) {
       const standardizedTxs = transactions.map(standardizeSafeAppsTransaction)
-      return this.transactionManager.execTransactions({
-        appsSdk: this.appsSdk,
-        transactions: standardizedTxs
+
+      const callback = new Promise<SafeAppsSdkTransactionResult>((returnFunction) => {
+        const requestId = uuid()
+        this.callbacks.set(requestId, returnFunction)
+        this.transactionManager.execTransactions({
+          appsSdk: this.appsSdk,
+          transactions: standardizedTxs,
+          requestId
+        })
       })
+      return callback
     }
 
     if (!this.address) {

@@ -1,6 +1,7 @@
-import { SdkInstance } from '@gnosis.pm/safe-apps-sdk'
+import { RequestId, SdkInstance } from '@gnosis.pm/safe-apps-sdk'
 import {
   TransactionResult,
+  SafeAppsSdkTransactionResult,
   StandardTransaction,
   Transaction,
   StandardSafeAppsTransaction
@@ -40,6 +41,7 @@ export interface ExecTransactionProps {
 export interface ExecTransactionSafeAppsProps {
   appsSdk: SdkInstance
   transactions: StandardSafeAppsTransaction[]
+  requestId: RequestId
 }
 
 interface TransactionManager {
@@ -47,7 +49,7 @@ interface TransactionManager {
 
   execTransactions(
     options: ExecTransactionProps | ExecTransactionSafeAppsProps
-  ): Promise<TransactionResult>
+  ): Promise<TransactionResult | SafeAppsSdkTransactionResult | void>
 }
 
 export default TransactionManager

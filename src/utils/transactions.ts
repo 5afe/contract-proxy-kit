@@ -46,6 +46,10 @@ export interface TransactionResult {
   hash: string
 }
 
+export interface SafeAppsSdkTransactionResult {
+  safeTxHash: string
+}
+
 export class TransactionError extends Error {
   revertData?: string
   revertMessage?: string
