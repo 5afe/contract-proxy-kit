@@ -86,7 +86,8 @@ describe('CPK', () => {
   it('should produce uninitialized CPK instances when running standalone and options are missing', async () => {
     const cpk = await CPK.create(undefined as any)
     should.exist(cpk)
-    should.not.exist(cpk.safeAppInfo)
+    should.exist(cpk.safeAppsSdkConnector)
+    should.not.exist(cpk.safeAppsSdkConnector.safeAppInfo)
     should.not.exist(cpk.ethLibAdapter)
     should.not.exist(cpk.transactionManager)
     should.not.exist(cpk.contract)
@@ -108,12 +109,15 @@ describe('CPK', () => {
     window.postMessage({ messageId: 'ON_SAFE_INFO', message }, '*')
 
     should.exist(cpk)
-    should.exist(cpk.safeAppInfo)
+    should.exist(cpk.safeAppsSdkConnector)
+    should.exist(cpk.safeAppsSdkConnector.safeAppInfo)
     should.exist(cpk.ethLibAdapter)
-    cpk.transactionManager.config.name.should.equal(
+    should.exist(cpk.transactionManager)
+    cpk.transactionManager?.config.name.should.equal(
       TransactionManagerNames.SafeAppsSdkTransactionManager
     )
-    cpk.address.should.equal(message.safeAddress)
+    should.exist(cpk.address)
+    cpk.address?.should.equal(message.safeAddress)
     should.not.exist(cpk.contract)
     should.not.exist(cpk.multiSend)
     should.not.exist(cpk.proxyFactory)
@@ -136,12 +140,15 @@ describe('CPK', () => {
     window.postMessage({ messageId: 'ON_SAFE_INFO', message }, '*')
 
     should.exist(cpk)
-    should.exist(cpk.safeAppInfo)
+    should.exist(cpk.safeAppsSdkConnector)
+    should.exist(cpk.safeAppsSdkConnector.safeAppInfo)
     should.exist(cpk.ethLibAdapter)
-    cpk.transactionManager.config.name.should.equal(
+    should.exist(cpk.transactionManager)
+    cpk.transactionManager?.config.name.should.equal(
       TransactionManagerNames.SafeAppsSdkTransactionManager
     )
-    cpk.address.should.equal(message.safeAddress)
+    should.exist(cpk.address)
+    cpk.address?.should.equal(message.safeAddress)
     should.not.exist(cpk.contract)
     should.not.exist(cpk.multiSend)
     should.not.exist(cpk.proxyFactory)

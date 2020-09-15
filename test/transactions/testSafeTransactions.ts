@@ -1,6 +1,5 @@
 import should from 'should'
-import CPK from '../../src'
-import { TransactionResult } from '../../src/utils/transactions'
+import CPK, { SafeAppsSdkTransactionResult, TransactionResult } from '../../src'
 import { Address } from '../../src/utils/basicTypes'
 import { getContracts } from '../utils/contracts'
 import { AccountType } from '../utils'
@@ -15,8 +14,10 @@ interface TestSafeTransactionsProps {
   getTransactionCount: (account: Address) => number
   getBalance: (address: Address) => any
   testedTxObjProps: string
-  checkTxObj: (txResult: TransactionResult) => void
-  waitTxReceipt: ({ hash }: { hash: string }) => Promise<any>
+  checkTxObj: (txResult: TransactionResult | SafeAppsSdkTransactionResult | void) => void
+  waitTxReceipt: (
+    txReceipt: TransactionResult | SafeAppsSdkTransactionResult | void
+  ) => Promise<any>
   ownerIsRecognizedContract?: boolean
   isCpkTransactionManager: boolean
   executor?: Address[]
@@ -50,7 +51,8 @@ export function testSafeTransactions({
     it("has same owner as instance's address", async () => {
       const cpk = await getCPK()
       const proxyOwner = await cpk.getOwnerAccount()
-      proxyOwner.should.be.equal(cpk.address)
+      should.exist(proxyOwner)
+      proxyOwner?.should.be.equal(cpk.address)
     })
   }
 
@@ -63,7 +65,9 @@ export function testSafeTransactions({
 
     beforeEach('rebind symbols', async () => {
       cpk = await getCPK()
-      proxyOwner = await cpk.getOwnerAccount()
+      const pOwner = await cpk.getOwnerAccount()
+      if (!pOwner) throw new Error('proxyOwner is undefined')
+      proxyOwner = pOwner
     })
 
     before('deploy conditional tokens', async () => {
