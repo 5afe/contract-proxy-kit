@@ -34,7 +34,7 @@ class CPK {
   static Call = OperationType.Call
   static DelegateCall = OperationType.DelegateCall
 
-  #safeAppsSdkConnector?: SafeAppsSdkConnector
+  #safeAppsSdkConnector: SafeAppsSdkConnector
   #ethLibAdapter?: EthLibAdapter
   #transactionManager?: TransactionManager
   #networks: NetworksConfig
@@ -55,6 +55,7 @@ class CPK {
   }
 
   constructor(opts?: CPKConfig) {
+    this.#safeAppsSdkConnector = new SafeAppsSdkConnector()
     this.#networks = {
       ...defaultNetworks
     }
@@ -78,7 +79,6 @@ class CPK {
     if (!this.#ethLibAdapter) {
       throw new Error('CPK uninitialized ethLibAdapter')
     }
-    this.#safeAppsSdkConnector = new SafeAppsSdkConnector()
 
     const networkId = await this.#ethLibAdapter.getNetworkId()
     const network = this.#networks[networkId]
@@ -131,9 +131,7 @@ class CPK {
   }
 
   isSafeApp(): boolean {
-    return this.#safeAppsSdkConnector
-      ? this.#safeAppsSdkConnector.isSafeApp()
-      : false
+    return this.#safeAppsSdkConnector.isSafeApp()
   }
 
   async getOwnerAccount(): Promise<Address | undefined> {
@@ -141,7 +139,7 @@ class CPK {
       return this.#ownerAccount
     }
     if (this.isSafeApp()) {
-      return this.#safeAppsSdkConnector?.safeAppInfo?.safeAddress
+      return this.#safeAppsSdkConnector.safeAppInfo?.safeAddress
     }
     if (!this.#ethLibAdapter) {
       throw new Error('CPK uninitialized ethLibAdapter')
@@ -158,6 +156,9 @@ class CPK {
   }
 
   get transactionManager(): TransactionManager | undefined {
+    if (this.isSafeApp()) {
+      return this.#safeAppsSdkConnector.safeAppsSdkTransactionManager
+    }
     return this.#transactionManager
   }
 
@@ -195,7 +196,7 @@ class CPK {
 
   get address(): Address | undefined {
     if (this.isSafeApp()) {
-      return this.#safeAppsSdkConnector?.safeAppInfo?.safeAddress
+      return this.#safeAppsSdkConnector.safeAppInfo?.safeAddress
     }
     if (!this.#contract) {
       return undefined
@@ -251,7 +252,7 @@ class CPK {
   ): Promise<TransactionResult | SafeAppsSdkTransactionResult | void> {
     if (this.isSafeApp() && transactions.length >= 1) {
       const standardizedTxs = transactions.map(standardizeSafeAppsTransaction)
-      this.#safeAppsSdkConnector?.sendTransactions(standardizedTxs)
+      return this.#safeAppsSdkConnector.sendTransactions(standardizedTxs)
     }
 
     if (!this.address) {
