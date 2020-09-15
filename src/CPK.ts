@@ -30,7 +30,6 @@ export interface CPKConfig {
   networks?: NetworksConfig
 }
 
-//cpk nuevo 5
 class CPK {
   static Call = OperationType.Call
   static DelegateCall = OperationType.DelegateCall
@@ -150,8 +149,48 @@ class CPK {
     return this.#ethLibAdapter?.getAccount()
   }
 
+  get safeAppsSdkConnector() {
+    return this.#safeAppsSdkConnector
+  }
+
   get ethLibAdapter(): EthLibAdapter | undefined {
     return this.#ethLibAdapter
+  }
+
+  get transactionManager(): TransactionManager | undefined {
+    return this.#transactionManager
+  }
+
+  get networks(): NetworksConfig {
+    return this.#networks
+  }
+
+  get ownerAccount(): Address | undefined {
+    return this.#ownerAccount
+  }
+
+  get isConnectedToSafe(): boolean {
+    return this.#isConnectedToSafe
+  }
+
+  get contract(): Contract | undefined {
+    return this.#contract
+  }
+
+  get multiSend(): Contract | undefined {
+    return this.#multiSend
+  }
+
+  get proxyFactory(): Contract | undefined {
+    return this.#proxyFactory
+  }
+
+  get masterCopyAddress(): Address | undefined {
+    return this.#masterCopyAddress
+  }
+
+  get fallbackHandlerAddress(): Address | undefined {
+    return this.#fallbackHandlerAddress
   }
 
   get address(): Address | undefined {
@@ -162,10 +201,6 @@ class CPK {
       return undefined
     }
     return this.#contract.address
-  }
-
-  get networks(): NetworksConfig {
-    return this.#networks
   }
 
   setEthLibAdapter(ethLibAdapter: EthLibAdapter): void {
