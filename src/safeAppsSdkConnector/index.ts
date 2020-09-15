@@ -39,8 +39,8 @@ class SafeAppsSdkConnector {
     const onTransactionRejection = (txRejection: TxRejectionEvent) => {
       const callback = this.txCallbacks.get(txRejection.requestId)
       if (callback) {
-          this.txCallbacks.delete(txRejection.requestId)
-          callback.reject(new Error("Transaction rejected"))
+        this.txCallbacks.delete(txRejection.requestId)
+        callback.reject(new Error('Transaction rejected'))
       }
     }
 
