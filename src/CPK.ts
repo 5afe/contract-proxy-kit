@@ -126,6 +126,20 @@ class CPK {
     }
   }
 
+  async isProxyDeployed(): Promise<boolean> {
+    if (!this.address) {
+      throw new Error('CPK address uninitialized')
+    }
+    if (!this.ethLibAdapter) {
+      throw new Error('CPK ethLibAdapter uninitialized')
+    }
+
+    const codeAtAddress = await this.ethLibAdapter.getCode(this.address)
+    const isDeployed = codeAtAddress !== '0x'
+
+    return isDeployed
+  }
+
   isSafeApp(): boolean {
     return this.#safeAppsSdkConnector.isSafeApp()
   }
