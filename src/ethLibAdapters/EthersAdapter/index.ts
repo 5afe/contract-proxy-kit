@@ -155,13 +155,6 @@ class EthersAdapter extends EthLibAdapter {
       })
     )
   }
-
-  getSendOptions(ownerAccount: Address, options?: CallOptions): SendOptions {
-    return {
-      from: ownerAccount,
-      ...options
-    }
-  }
 }
 
 export default EthersAdapter
