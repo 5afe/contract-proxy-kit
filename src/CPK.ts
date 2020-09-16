@@ -9,7 +9,7 @@ import multiSendAbi from './abis/MultiSendAbi.json'
 import { Address } from './utils/basicTypes'
 import { predeterminedSaltNonce } from './utils/constants'
 import { joinHexData, getHexDataLength } from './utils/hexData'
-import { OperationType, standardizeSafeAppsTransaction } from './utils/transactions'
+import { OperationType, SendOptions, standardizeSafeAppsTransaction } from './utils/transactions'
 import {
   Transaction,
   TransactionResult,
@@ -299,6 +299,34 @@ class CPK {
       isConnectedToSafe: this.#isConnectedToSafe,
       sendOptions
     })
+  }
+
+  async getEnabledSafeModules(): Promise<Address[]> {
+    if (!this.#contract) {
+      throw new Error('CPK contract uninitialized')
+    }
+    return this.#contract.call('getModules', [])
+  }
+
+  async isSafeModuleEnabled(moduleAddress: Address): Promise<boolean> {
+    if (!this.#contract) {
+      throw new Error('CPK contract uninitialized')
+    }
+    return this.#contract.call('isModuleEnabled', [moduleAddress])
+  }
+
+  async enableSafeModule(moduleAddress: Address): Promise<TransactionResult> {
+    if (!this.#contract) {
+      throw new Error('CPK contract uninitialized')
+    }
+    return this.#contract.send('enableModule', [moduleAddress])
+  }
+
+  async disableSafeModule(moduleAddress: Address): Promise<TransactionResult> {
+    if (!this.#contract) {
+      throw new Error('CPK contract uninitialized')
+    }
+    return this.#contract.send('disableModule', [moduleAddress])
   }
 
   private getSafeExecTxParams(transactions: Transaction[]): StandardTransaction {
