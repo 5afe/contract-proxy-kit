@@ -7,9 +7,8 @@
   "scripts": {
     "generate-types": "typechain --target=truffle-v5 './build/contracts/*.json'",
     "migrate": "tsc -p ./tsconfig.migrate.json --outDir ./migrations && truffle migrate --network local",
-    "test-ts": "TS_NODE_PROJECT='./tsconfig.cjs.json' nyc mocha -t 20000 -r ts-node/register -r jsdom-global/register ./test/contract-proxy-kit.ts --exit",
+    "test-ts": "cross-env TS_NODE_PROJECT='./tsconfig.cjs.json' nyc mocha -t 20000 -r ts-node/register -r jsdom-global/register ./test/contract-proxy-kit.ts --exit",
     "test": "yarn generate-types && yarn migrate && yarn test-ts",
-    "test-rpc": "run-with-testrpc --noVMErrorsOnRPCResponse 'yarn test'",
     "coverage": "nyc report --reporter=text-lcov | coveralls",
     "format": "prettier-eslint --write $PWD/'src/**/*.{js,ts,json}' $PWD/'test/**/*.{js,ts,json}'",
     "build": "tsc && tsc -p tsconfig.cjs.json",
