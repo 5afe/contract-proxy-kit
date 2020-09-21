@@ -8,8 +8,6 @@ services:
 
 before_install:
   - git clone --depth=1 --branch=cpk-test https://github.com/gnosis/safe-relay-service.git
-
-before_script:
   - cd safe-relay-service
   - docker-compose -f docker-compose.yml -f docker-compose.dev.yml build
   - SAFE_RELAY_CONTAINER_ID=$(docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d)
@@ -19,7 +17,6 @@ after_script:
   - cd safe-relay-service
   - docker-compose down
   - cd ..
-  - docker logs $PROVIDER_CONTAINER_ID
   - docker stop $PROVIDER_CONTAINER_ID
   - docker rm $PROVIDER_CONTAINER_ID
 
