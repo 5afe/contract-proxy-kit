@@ -15,6 +15,7 @@ before_install:
 
 after_script:
   - cd safe-relay-service
+  - docker-compose logs web
   - docker-compose down
   - cd ..
   - docker stop $PROVIDER_CONTAINER_ID
