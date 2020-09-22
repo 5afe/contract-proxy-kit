@@ -25,12 +25,14 @@ jobs:
   include:
   - name: Ganache
     before_script:
-      - PROVIDER_CONTAINER_ID=$(docker run -d -p 8545:8545 trufflesuite/ganache-cli -h 0.0.0.0 -d --defaultBalanceEther 10000)
+      # - PROVIDER_CONTAINER_ID=$(docker run -d -p 8545:8545 trufflesuite/ganache-cli -h 0.0.0.0 -d --defaultBalanceEther 10000)
+      - yarn ganache-cli -h 0.0.0.0 -d --defaultBalanceEther 10000
       - yarn wait-port -t 10000 localhost:8545
 
   - name: Ganache with --noVMErrorsOnRPCResponse
     before_script:
-      - PROVIDER_CONTAINER_ID=$(docker run -d -p 8545:8545 trufflesuite/ganache-cli -h 0.0.0.0 -d --defaultBalanceEther 10000 --noVMErrorsOnRPCResponse)
+      # - PROVIDER_CONTAINER_ID=$(docker run -d -p 8545:8545 trufflesuite/ganache-cli -h 0.0.0.0 -d --defaultBalanceEther 10000 --noVMErrorsOnRPCResponse)
+      - yarn ganache-cli -h 0.0.0.0 -d --defaultBalanceEther 10000 --noVMErrorsOnRPCResponse
       - yarn wait-port -t 10000 localhost:8545
 
   - name: Geth
