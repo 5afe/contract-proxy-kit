@@ -12,13 +12,6 @@ before_install:
   # - docker-compose -f docker-compose.yml -f docker-compose.dev.yml build
   # - cd ..
 
-before_script:
-  - yarn wait-port -t 10000 localhost:8545
-  - cd safe-relay-service
-  - docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
-  - cd ..
-  - yarn wait-port -t 10000 localhost:8000
-
 after_script:
   - cd safe-relay-service
   - docker-compose logs web
@@ -30,23 +23,43 @@ after_script:
 jobs:
   include:
   - name: Ganache
-    after_install:
+    before_script:
       - PROVIDER_CONTAINER_ID=$(docker run -d -p 8545:8545 trufflesuite/ganache-cli -d --defaultBalanceEther 10000)
+      - yarn wait-port -t 10000 localhost:8545
+      - cd safe-relay-service
+      - docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+      - cd ..
+      - yarn wait-port -t 10000 localhost:8000
     
   - name: Ganache with --noVMErrorsOnRPCResponse
-    after_install:
+    before_script:
       - PROVIDER_CONTAINER_ID=$(docker run -d -p 8545:8545 trufflesuite/ganache-cli -d --defaultBalanceEther 10000 --noVMErrorsOnRPCResponse)
+      - yarn wait-port -t 10000 localhost:8545
+      - cd safe-relay-service
+      - docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+      - cd ..
+      - yarn wait-port -t 10000 localhost:8000
 
   - name: Geth
-    after_install:
+    before_script:
      - yarn geth-dev-assistant --accounts 10 --gasLimit 6721975 --balance 10000
      - PROVIDER_CONTAINER_ID=geth-client
+     - yarn wait-port -t 10000 localhost:8545
+     - cd safe-relay-service
+     - docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+     - cd ..
+     - yarn wait-port -t 10000 localhost:8000
 
   - name: OpenEthereum
-    after_install:
+    before_script:
       - PASSFILE=$(mktemp)
       - echo '' > $PASSFILE
       - chmod 644 $PASSFILE
       - PROVIDER_CONTAINER_ID=$(docker run -d -p 8545:8545 -p 8546:8546 -v $PASSFILE:$PASSFILE openethereum/openethereum --config dev --jsonrpc-interface=all --ws-interface=all --unlock 0x00a329c0648769a73afac7f9381e08fb43dbea72 --password $PASSFILE)
+      - yarn wait-port -t 10000 localhost:8545
+      - cd safe-relay-service
+      - docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+      - cd ..
+      - yarn wait-port -t 10000 localhost:8000
 
 after_success: yarn coverage
