@@ -8,10 +8,16 @@ services:
 
 before_install:
   - git clone --depth=1 --branch=cpk-test https://github.com/gnosis/safe-relay-service.git
+  # - cd safe-relay-service
+  # - docker-compose -f docker-compose.yml -f docker-compose.dev.yml build
+  # - cd ..
+
+before_script:
+  - yarn wait-port -t 10000 localhost:8545
   - cd safe-relay-service
-  - docker-compose -f docker-compose.yml -f docker-compose.dev.yml build
-  - SAFE_RELAY_CONTAINER_ID=$(docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d)
+  - docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
   - cd ..
+  - yarn wait-port -t 10000 localhost:8000
 
 after_script:
   - cd safe-relay-service
@@ -24,40 +30,23 @@ after_script:
 jobs:
   include:
   - name: Ganache
-    before_script:
-      # - PROVIDER_CONTAINER_ID=$(docker run -d -p 8545:8545 trufflesuite/ganache-cli -h 0.0.0.0 -d --defaultBalanceEther 10000)
-      - yarn ganache-cli -h 0.0.0.0 -d --defaultBalanceEther 10000 &
-      - yarn wait-port -t 10000 localhost:8545
-    after_script:
-      - cd safe-relay-service
-      - docker-compose logs web
-      - docker-compose down
-      - cd ..
-      - killall ganache-cli
-      
+    after_install:
+      - PROVIDER_CONTAINER_ID=$(docker run -d -p 8545:8545 trufflesuite/ganache-cli -d --defaultBalanceEther 10000)
+    
   - name: Ganache with --noVMErrorsOnRPCResponse
-    before_script:
-      # - PROVIDER_CONTAINER_ID=$(docker run -d -p 8545:8545 trufflesuite/ganache-cli -h 0.0.0.0 -d --defaultBalanceEther 10000 --noVMErrorsOnRPCResponse)
-      - yarn ganache-cli -h 0.0.0.0 -d --defaultBalanceEther 10000 --noVMErrorsOnRPCResponse &
-      - yarn wait-port -t 10000 localhost:8545
-    after_script:
-      - cd safe-relay-service
-      - docker-compose logs web
-      - docker-compose down
-      - cd ..
-      - killall ganache-cli
+    after_install:
+      - PROVIDER_CONTAINER_ID=$(docker run -d -p 8545:8545 trufflesuite/ganache-cli -d --defaultBalanceEther 10000 --noVMErrorsOnRPCResponse)
 
   - name: Geth
-    before_script:
+    after_install:
      - yarn geth-dev-assistant --accounts 10 --gasLimit 6721975 --balance 10000
      - PROVIDER_CONTAINER_ID=geth-client
 
   - name: OpenEthereum
-    before_script:
+    after_install:
       - PASSFILE=$(mktemp)
       - echo '' > $PASSFILE
       - chmod 644 $PASSFILE
       - PROVIDER_CONTAINER_ID=$(docker run -d -p 8545:8545 -p 8546:8546 -v $PASSFILE:$PASSFILE openethereum/openethereum --config dev --jsonrpc-interface=all --ws-interface=all --unlock 0x00a329c0648769a73afac7f9381e08fb43dbea72 --password $PASSFILE)
-      - yarn wait-port -t 10000 localhost:8545
 
 after_success: yarn coverage
