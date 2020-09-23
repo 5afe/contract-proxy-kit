@@ -7,7 +7,7 @@ import cpkFactoryAbi from './abis/CpkFactoryAbi.json'
 import safeAbi from './abis/SafeAbi.json'
 import multiSendAbi from './abis/MultiSendAbi.json'
 import { Address } from './utils/basicTypes'
-import { predeterminedSaltNonce } from './utils/constants'
+import { predeterminedSaltNonce, sentinelModules } from './utils/constants'
 import { joinHexData, getHexDataLength } from './utils/hexData'
 import { OperationType, SendOptions, standardizeSafeAppsTransaction } from './utils/transactions'
 import {
@@ -315,47 +315,46 @@ class CPK {
     }
     const modules = await this.#contract.call('getModules', [])
     const selectedModules = modules.filter(
-      (mod: Address) => mod.toLowerCase() === moduleAddress.toLocaleLowerCase()
+      (module: Address) => module.toLowerCase() === moduleAddress.toLowerCase()
     )
     return selectedModules.length > 0
   }
 
-  async enableSafeModule(
-    moduleAddress: Address,
-    options?: ExecOptions
-  ): Promise<TransactionResult> {
+  async enableSafeModule(moduleAddress: Address): Promise<void> {
     if (!this.#contract) {
       throw new Error('CPK contract uninitialized')
     }
-    const ownerAccount = await this.getOwnerAccount()
-    if (!ownerAccount) {
-      throw new Error('CPK ownerAccount uninitialized')
+    if (!this.address) {
+      throw new Error('CPK address uninitialized')
     }
-    const sendOptions = normalizeGasLimit({ ...options, from: ownerAccount })
-    const txResult = await this.#contract.send('enableModule', [moduleAddress], {
-      ...sendOptions,
-      from: ownerAccount
-    })
-    return txResult
+    const txResult = await this.execTransactions([
+      {
+        to: this.address,
+        data: await this.#contract.encode('enableModule', [moduleAddress]),
+        operation: CPK.Call
+      }
+    ])
   }
 
-  async disableSafeModule(
-    moduleAddress: Address,
-    options?: ExecOptions
-  ): Promise<TransactionResult> {
+  async disableSafeModule(moduleAddress: Address): Promise<void> {
     if (!this.#contract) {
       throw new Error('CPK contract uninitialized')
     }
-    const ownerAccount = await this.getOwnerAccount()
-    if (!ownerAccount) {
-      throw new Error('CPK ownerAccount uninitialized')
+    if (!this.address) {
+      throw new Error('CPK address uninitialized')
     }
-    const sendOptions = normalizeGasLimit({ ...options, from: ownerAccount })
-    const txResult = await this.#contract.send('disableModule', [moduleAddress], {
-      ...sendOptions,
-      from: ownerAccount
-    })
-    return txResult
+    const modules = await this.#contract.call('getModules', [])
+    const index = modules.findIndex(
+      (module: Address) => module.toLowerCase() === moduleAddress.toLowerCase()
+    )
+    const prevModuleAddress = index === 0 ? sentinelModules : modules[index - 1]
+    const txResult = await this.execTransactions([
+      {
+        to: this.address,
+        data: await this.#contract.encode('disableModule', [prevModuleAddress, moduleAddress]),
+        operation: CPK.Call
+      }
+    ])
   }
 
   private getSafeExecTxParams(transactions: Transaction[]): StandardTransaction {
