@@ -305,28 +305,57 @@ class CPK {
     if (!this.#contract) {
       throw new Error('CPK contract uninitialized')
     }
-    return this.#contract.call('getModules', [])
+    const modules = await this.#contract.call('getModules', [])
+    return modules
   }
 
   async isSafeModuleEnabled(moduleAddress: Address): Promise<boolean> {
     if (!this.#contract) {
       throw new Error('CPK contract uninitialized')
     }
-    return this.#contract.call('isModuleEnabled', [moduleAddress])
+    const modules = await this.#contract.call('getModules', [])
+    const selectedModules = modules.filter(
+      (mod: Address) => mod.toLowerCase() === moduleAddress.toLocaleLowerCase()
+    )
+    return selectedModules.length > 0
   }
 
-  async enableSafeModule(moduleAddress: Address): Promise<TransactionResult> {
+  async enableSafeModule(
+    moduleAddress: Address,
+    options?: ExecOptions
+  ): Promise<TransactionResult> {
     if (!this.#contract) {
       throw new Error('CPK contract uninitialized')
     }
-    return this.#contract.send('enableModule', [moduleAddress])
+    const ownerAccount = await this.getOwnerAccount()
+    if (!ownerAccount) {
+      throw new Error('CPK ownerAccount uninitialized')
+    }
+    const sendOptions = normalizeGasLimit({ ...options, from: ownerAccount })
+    const txResult = await this.#contract.send('enableModule', [moduleAddress], {
+      ...sendOptions,
+      from: ownerAccount
+    })
+    return txResult
   }
 
-  async disableSafeModule(moduleAddress: Address): Promise<TransactionResult> {
+  async disableSafeModule(
+    moduleAddress: Address,
+    options?: ExecOptions
+  ): Promise<TransactionResult> {
     if (!this.#contract) {
       throw new Error('CPK contract uninitialized')
     }
-    return this.#contract.send('disableModule', [moduleAddress])
+    const ownerAccount = await this.getOwnerAccount()
+    if (!ownerAccount) {
+      throw new Error('CPK ownerAccount uninitialized')
+    }
+    const sendOptions = normalizeGasLimit({ ...options, from: ownerAccount })
+    const txResult = await this.#contract.send('disableModule', [moduleAddress], {
+      ...sendOptions,
+      from: ownerAccount
+    })
+    return txResult
   }
 
   private getSafeExecTxParams(transactions: Transaction[]): StandardTransaction {
