@@ -9,6 +9,7 @@ import MultistepJson from '../../build/contracts/Multistep.json'
 import ERC20MintableJson from '../../build/contracts/ERC20Mintable.json'
 import ConditionalTokensJson from '../../build/contracts/ConditionalTokens.json'
 import DailyLimitModuleJson from '../../build/contracts/DailyLimitModule.json'
+import SocialRecoveryModuleJson from '../../build/contracts/SocialRecoveryModule.json'
 import { Address } from '../../src/utils/basicTypes'
 
 let CPKFactory: any
@@ -20,6 +21,7 @@ let MultiStep: any
 let ERC20Mintable: any
 let ConditionalTokens: any
 let DailyLimitModule: any
+let SocialRecoveryModule: any
 
 let cpkFactory: any
 let gnosisSafe: any
@@ -30,6 +32,7 @@ let multiStep: any
 let erc20: any
 let conditionalTokens: any
 let dailyLimitModule: any
+let socialRecoveryModule: any
 
 export interface TestContractInstances {
   cpkFactory: any
@@ -41,6 +44,7 @@ export interface TestContractInstances {
   erc20: any
   conditionalTokens: any
   dailyLimitModule: any
+  socialRecoveryModule: any
 }
 
 export interface TestContracts {
@@ -53,6 +57,7 @@ export interface TestContracts {
   ERC20Mintable: any
   ConditionalTokens: any
   DailyLimitModule: any
+  SocialRecoveryModule: any
 }
 
 export const initializeContracts = async (safeOwner: Address): Promise<void> => {
@@ -102,6 +107,11 @@ export const initializeContracts = async (safeOwner: Address): Promise<void> => 
   DailyLimitModule.setProvider(provider)
   DailyLimitModule.defaults({ from: safeOwner })
   dailyLimitModule = await DailyLimitModule.deployed()
+
+  SocialRecoveryModule = TruffleContract(SocialRecoveryModuleJson)
+  SocialRecoveryModule.setProvider(provider)
+  SocialRecoveryModule.defaults({ from: safeOwner })
+  socialRecoveryModule = await SocialRecoveryModule.deployed()
 }
 
 export const getContracts = (): TestContracts => ({
@@ -113,7 +123,8 @@ export const getContracts = (): TestContracts => ({
   MultiStep,
   ERC20Mintable,
   ConditionalTokens,
-  DailyLimitModule
+  DailyLimitModule,
+  SocialRecoveryModule
 })
 
 export const getContractInstances = (): TestContractInstances => ({
@@ -125,5 +136,6 @@ export const getContractInstances = (): TestContractInstances => ({
   multiStep,
   erc20,
   conditionalTokens,
-  dailyLimitModule
+  dailyLimitModule,
+  socialRecoveryModule
 })

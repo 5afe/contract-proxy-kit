@@ -11,6 +11,7 @@ module.exports = function (deployer, network) {
             'DefaultCallbackHandler',
             'Multistep',
             'DailyLimitModule',
+            'SocialRecoveryModule',
             'ERC20Mintable',
             'ConditionalTokens'
         ].forEach(deploy);
