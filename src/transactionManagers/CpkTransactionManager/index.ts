@@ -195,12 +195,14 @@ class CpkTransactionManager implements TransactionManager {
             // values > gasHigh will work
             gasHigh = testGasLimit - 1
           } else {
-            // values <= gasLow will work
+            // values <= gasLow will fail
             gasLow = testGasLimit + 1
           }
         }
-        // the final target gas value is in the interval [gasLow, gasHigh)
+      } else {
+        gasHigh = gasLow - 1
       }
+      // the final target gas value is > gasHigh
 
       const gasLimit = Math.min(Math.ceil((gasHigh + 1) * 1.1), blockGasLimit)
 
