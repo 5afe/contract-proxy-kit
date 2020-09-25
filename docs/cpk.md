@@ -24,6 +24,66 @@ async getOwnerAccount(): Promise<Address | undefined>
 ```
 Returns the address of the account connected to the CPK. If the CPK is connected to a Safe or running as a Safe App the Safe address will be returned.
 
+## safeAppsSdkConnector
+```
+get safeAppsSdkConnector()
+```
+Returns the SafeAppsSdkConnector in use.
+
+## ethLibAdapter
+```
+get ethLibAdapter(): EthLibAdapter | undefined
+```
+Returns the EthLibAdapter in use.
+
+## transactionManager
+```
+get transactionManager(): TransactionManager | undefined
+```
+Returns the TransactionManager in use.
+
+## networks
+```
+get networks(): NetworksConfig
+```
+Returns the network configuration in use.
+
+## isConnectedToSafe
+```
+get isConnectedToSafe(): boolean
+```
+Returns true or false if the CPK is connected to a Gnosis Safe wallet or not.
+
+## contract
+```
+get contract(): Contract | undefined
+```
+Returns an instance of the Safe contract in use.
+
+## multiSend
+```
+get multiSend(): Contract | undefined
+```
+Returns an instance of the MultiSend contract in use.
+
+## proxyFactory
+```
+get proxyFactory(): Contract | undefined
+```
+Returns an instance of the ProxyFactory contract in use.
+
+## masterCopyAddress
+```
+get masterCopyAddress(): Address | undefined
+```
+Returns the Safe masterCopy address in use.
+
+## fallbackHandlerAddress
+```
+get fallbackHandlerAddress(): Address | undefined
+```
+Returns the fallbackHandler address in use.
+
 ## address
 ```
 get address(): Address | undefined
