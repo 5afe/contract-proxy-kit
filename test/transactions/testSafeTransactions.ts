@@ -1,5 +1,5 @@
 import should from 'should'
-import CPK, { SafeAppsSdkTransactionResult, TransactionResult } from '../../src'
+import CPK, { TransactionResult } from '../../src'
 import { Address } from '../../src/utils/basicTypes'
 import { getContracts } from '../utils/contracts'
 import { AccountType } from '../utils'
@@ -14,10 +14,8 @@ interface TestSafeTransactionsProps {
   getTransactionCount: (account: Address) => number
   getBalance: (address: Address) => any
   testedTxObjProps: string
-  checkTxObj: (txResult: TransactionResult | SafeAppsSdkTransactionResult | void) => void
-  waitTxReceipt: (
-    txReceipt: TransactionResult | SafeAppsSdkTransactionResult | void
-  ) => Promise<any>
+  checkTxObj: (txResult: TransactionResult | void) => void
+  waitTxReceipt: (txReceipt: TransactionResult | void) => Promise<any>
   ownerIsRecognizedContract?: boolean
   isCpkTransactionManager: boolean
   executor?: Address[]

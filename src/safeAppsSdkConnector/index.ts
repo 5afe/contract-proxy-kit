@@ -7,10 +7,10 @@ import initSdk, {
 } from '@gnosis.pm/safe-apps-sdk'
 import { v4 as uuidv4 } from 'uuid'
 import SafeAppsSdkTransactionManager from '../transactionManagers/SafeAppsSdkTransactionManager'
-import { SafeAppsSdkTransactionResult, StandardSafeAppsTransaction } from '../utils/transactions'
+import { StandardSafeAppsTransaction, TransactionResult } from '../utils/transactions'
 
 interface TxCallback {
-  confirm: (txResult: SafeAppsSdkTransactionResult) => void
+  confirm: (txResult: TransactionResult) => void
   reject: (error: Error) => void
 }
 
@@ -56,11 +56,9 @@ class SafeAppsSdkConnector {
     return !!this.safeAppInfo
   }
 
-  sendTransactions(
-    transactions: StandardSafeAppsTransaction[]
-  ): Promise<SafeAppsSdkTransactionResult> {
+  sendTransactions(transactions: StandardSafeAppsTransaction[]): Promise<TransactionResult> {
     const requestId = uuidv4()
-    return new Promise<SafeAppsSdkTransactionResult>((confirm, reject) => {
+    return new Promise<TransactionResult>((confirm, reject) => {
       if (!this.safeAppsSdkTransactionManager) {
         throw new Error('Safe Apps SDK transactionManager uninitialized')
       }

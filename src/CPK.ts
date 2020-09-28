@@ -9,11 +9,7 @@ import multiSendAbi from './abis/MultiSendAbi.json'
 import { Address } from './utils/basicTypes'
 import { predeterminedSaltNonce } from './utils/constants'
 import { joinHexData, getHexDataLength } from './utils/hexData'
-import {
-  OperationType,
-  SafeAppsSdkTransactionResult,
-  standardizeSafeAppsTransaction
-} from './utils/transactions'
+import { OperationType, standardizeSafeAppsTransaction } from './utils/transactions'
 import {
   Transaction,
   TransactionResult,
@@ -249,7 +245,7 @@ class CPK {
   async execTransactions(
     transactions: Transaction[],
     options?: ExecOptions
-  ): Promise<TransactionResult | SafeAppsSdkTransactionResult | void> {
+  ): Promise<TransactionResult | void> {
     if (this.isSafeApp() && transactions.length >= 1) {
       const standardizedTxs = transactions.map(standardizeSafeAppsTransaction)
       return this.#safeAppsSdkConnector.sendTransactions(standardizedTxs)
