@@ -12,6 +12,12 @@ constructor(opts?: CPKConfig)
 ```
 Creates a non-initialized instance of the CPK with the selected configuration parameters.
 
+## isProxyDeployed
+```
+async isProxyDeployed(): Promise<boolean>
+```
+Returns true or false if the Safe Proxy used by the CPK is already deployed (at least one transaction was made) or if it is not (no transactions made yet).
+
 ## isSafeApp
 ```
 isSafeApp(): boolean
@@ -119,3 +125,27 @@ Returns the encoding of a list of transactions.
 async execTransactions(transactions: Transaction[], options?: ExecOptions): Promise<TransactionResult>
 ```
 Executes a list of transactions.
+
+## getEnabledSafeModules
+```
+async getEnabledSafeModules(): Promise<Address[]>
+```
+Returns the list of all the enabled Safe modules.
+
+## isSafeModuleEnabled
+```
+async isSafeModuleEnabled(moduleAddress: Address): Promise<boolean>
+```
+Returns true or false if the module provided is enabled or not.
+
+## enableSafeModule
+```
+async enableSafeModule(moduleAddress: Address, options?: ExecOptions): Promise<TransactionResult>
+```
+Enables a Safe module.
+
+## disableSafeModule
+```
+async disableSafeModule(moduleAddress: Address, options?: ExecOptions): Promise<TransactionResult>
+```
+Disables a Safe module.
