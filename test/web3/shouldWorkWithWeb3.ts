@@ -55,11 +55,11 @@ export function shouldWorkWithWeb3({
       checkTxObj: (txResult: TransactionResult): void => {
         should.exist(txResult.hash)
       },
-      waitTxReceipt: async ({ hash }: { hash: string }): Promise<any> => {
-        let receipt = await web3Box[0].eth.getTransactionReceipt(hash)
+      waitTxReceipt: async (txResult: TransactionResult): Promise<any> => {
+        let receipt = await web3Box[0].eth.getTransactionReceipt(txResult.hash)
         while (!receipt) {
           await new Promise((resolve) => setTimeout(resolve, 50))
-          receipt = await web3Box[0].eth.getTransactionReceipt(hash)
+          receipt = await web3Box[0].eth.getTransactionReceipt(txResult.hash)
         }
         return receipt
       }

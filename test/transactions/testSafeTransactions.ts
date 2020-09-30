@@ -60,6 +60,8 @@ export function testSafeTransactions({
     let conditionalTokens: any
     let multiStep: any
     let erc20: any
+    let dailyLimitModule: any
+    let socialRecoveryModule: any
 
     beforeEach('rebind symbols', async () => {
       cpk = await getCPK()
@@ -68,8 +70,10 @@ export function testSafeTransactions({
       proxyOwner = pOwner
     })
 
-    before('deploy conditional tokens', async () => {
+    before('deploy conditional tokens and daily limit module', async () => {
       conditionalTokens = await getContracts().ConditionalTokens.new()
+      dailyLimitModule = await getContracts().DailyLimitModule.new()
+      socialRecoveryModule = await getContracts().SocialRecoveryModule.new()
     })
 
     beforeEach('deploy mock contracts', async () => {
@@ -332,5 +336,52 @@ export function testSafeTransactions({
         gasCosts.should.be.equal(gasPrice * gasUsed)
       }
     )
+
+    it('can enable modules', async () => {
+      let moduleList: Address[]
+
+      if (accountType !== AccountType.Fresh) {
+        moduleList = await cpk.getModules()
+        moduleList.length.should.equal(0)
+        ;(await cpk.isModuleEnabled(dailyLimitModule.address)).should.equal(false)
+        ;(await cpk.isModuleEnabled(socialRecoveryModule.address)).should.equal(false)
+      }
+
+      await waitTxReceipt(await cpk.enableModule(dailyLimitModule.address))
+
+      moduleList = await cpk.getModules()
+      moduleList.length.should.equal(1)
+      ;(await cpk.isModuleEnabled(dailyLimitModule.address)).should.equal(true)
+      ;(await cpk.isModuleEnabled(socialRecoveryModule.address)).should.equal(false)
+
+      await waitTxReceipt(await cpk.enableModule(socialRecoveryModule.address))
+
+      moduleList = await cpk.getModules()
+      moduleList.length.should.equal(2)
+      ;(await cpk.isModuleEnabled(dailyLimitModule.address)).should.equal(true)
+      ;(await cpk.isModuleEnabled(socialRecoveryModule.address)).should.equal(true)
+    })
+    ;(accountType === AccountType.Fresh ? it.skip : it)('can disable modules', async () => {
+      let moduleList: Address[]
+
+      moduleList = await cpk.getModules()
+      moduleList.length.should.equal(2)
+      ;(await cpk.isModuleEnabled(dailyLimitModule.address)).should.equal(true)
+      ;(await cpk.isModuleEnabled(socialRecoveryModule.address)).should.equal(true)
+
+      await waitTxReceipt(await cpk.disableModule(dailyLimitModule.address))
+
+      moduleList = await cpk.getModules()
+      moduleList.length.should.equal(1)
+      ;(await cpk.isModuleEnabled(dailyLimitModule.address)).should.equal(false)
+      ;(await cpk.isModuleEnabled(socialRecoveryModule.address)).should.equal(true)
+
+      await waitTxReceipt(await cpk.disableModule(socialRecoveryModule.address))
+
+      moduleList = await cpk.getModules()
+      moduleList.length.should.equal(0)
+      ;(await cpk.isModuleEnabled(dailyLimitModule.address)).should.equal(false)
+      ;(await cpk.isModuleEnabled(socialRecoveryModule.address)).should.equal(false)
+    })
   })
 }
