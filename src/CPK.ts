@@ -320,14 +320,14 @@ class CPK {
     return selectedModules.length > 0
   }
 
-  async enableModule(moduleAddress: Address): Promise<void> {
+  async enableModule(moduleAddress: Address): Promise<TransactionResult | void> {
     if (!this.#contract) {
       throw new Error('CPK contract uninitialized')
     }
     if (!this.address) {
       throw new Error('CPK address uninitialized')
     }
-    const txResult = await this.execTransactions([
+    return await this.execTransactions([
       {
         to: this.address,
         data: await this.#contract.encode('enableModule', [moduleAddress]),
@@ -336,7 +336,7 @@ class CPK {
     ])
   }
 
-  async disableModule(moduleAddress: Address): Promise<void> {
+  async disableModule(moduleAddress: Address): Promise<TransactionResult | void> {
     if (!this.#contract) {
       throw new Error('CPK contract uninitialized')
     }
@@ -348,7 +348,7 @@ class CPK {
       (module: Address) => module.toLowerCase() === moduleAddress.toLowerCase()
     )
     const prevModuleAddress = index === 0 ? sentinelModules : modules[index - 1]
-    const txResult = await this.execTransactions([
+    return await this.execTransactions([
       {
         to: this.address,
         data: await this.#contract.encode('disableModule', [prevModuleAddress, moduleAddress]),
