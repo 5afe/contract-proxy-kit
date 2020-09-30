@@ -345,6 +345,13 @@ export function testSafeTransactions({
         moduleList.length.should.equal(0)
         ;(await cpk.isModuleEnabled(dailyLimitModule.address)).should.equal(false)
         ;(await cpk.isModuleEnabled(socialRecoveryModule.address)).should.equal(false)
+      } else {
+        await sendTransaction({
+          from: await cpk.getOwnerAccount(),
+          to: cpk.address,
+          value: '0xde0b6b3a7640000',
+          gas: '0x5b8d80'
+        })
       }
 
       await waitTxReceipt(await cpk.enableModule(dailyLimitModule.address))

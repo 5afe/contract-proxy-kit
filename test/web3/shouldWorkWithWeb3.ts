@@ -160,7 +160,7 @@ export function shouldWorkWithWeb3({
             await ueb3TestHelpers.sendTransaction({
               from: defaultAccountBox[0],
               to: cpk.address,
-              value: `${2e18}`
+              value: `${3e18}`
             })
           }
         })
@@ -195,7 +195,7 @@ export function shouldWorkWithWeb3({
             await ueb3TestHelpers.sendTransaction({
               from: defaultAccountBox[0],
               to: newAccount.address,
-              value: `${2e18}`,
+              value: `${3e18}`,
               gas: '0x5b8d80'
             })
 
@@ -230,7 +230,7 @@ export function shouldWorkWithWeb3({
             await ueb3TestHelpers.sendTransaction({
               from: defaultAccountBox[0],
               to: cpk.address,
-              value: `${2e18}`
+              value: `${3e18}`
             })
           }
         })
