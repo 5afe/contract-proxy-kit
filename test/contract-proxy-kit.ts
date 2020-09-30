@@ -89,7 +89,6 @@ describe('CPK', () => {
     should.exist(cpk.safeAppsSdkConnector)
     should.not.exist(cpk.safeAppsSdkConnector.safeAppInfo)
     should.not.exist(cpk.ethLibAdapter)
-    should.not.exist(cpk.transactionManager)
     should.not.exist(cpk.contract)
     should.not.exist(cpk.multiSend)
     should.not.exist(cpk.proxyFactory)
@@ -112,10 +111,6 @@ describe('CPK', () => {
     should.exist(cpk.safeAppsSdkConnector)
     should.exist(cpk.safeAppsSdkConnector.safeAppInfo)
     should.exist(cpk.ethLibAdapter)
-    should.exist(cpk.transactionManager)
-    cpk.transactionManager?.config.name.should.equal(
-      TransactionManagerNames.SafeAppsSdkTransactionManager
-    )
     should.exist(cpk.address)
     cpk.address?.should.equal(message.safeAddress)
     should.not.exist(cpk.contract)
@@ -143,10 +138,6 @@ describe('CPK', () => {
     should.exist(cpk.safeAppsSdkConnector)
     should.exist(cpk.safeAppsSdkConnector.safeAppInfo)
     should.exist(cpk.ethLibAdapter)
-    should.exist(cpk.transactionManager)
-    cpk.transactionManager?.config.name.should.equal(
-      TransactionManagerNames.SafeAppsSdkTransactionManager
-    )
     should.exist(cpk.address)
     cpk.address?.should.equal(message.safeAddress)
     should.not.exist(cpk.contract)

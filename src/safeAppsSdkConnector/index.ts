@@ -6,7 +6,6 @@ import initSdk, {
   TxRejectionEvent
 } from '@gnosis.pm/safe-apps-sdk'
 import { v4 as uuidv4 } from 'uuid'
-import SafeAppsSdkTransactionManager from '../transactionManagers/SafeAppsSdkTransactionManager'
 import { StandardSafeAppsTransaction, TransactionResult } from '../utils/transactions'
 
 interface TxCallback {
@@ -17,15 +16,11 @@ interface TxCallback {
 class SafeAppsSdkConnector {
   appsSdk: SdkInstance
   safeAppInfo?: SafeInfo
-  safeAppsSdkTransactionManager?: SafeAppsSdkTransactionManager
   txCallbacks = new Map<RequestId, TxCallback>()
 
   constructor() {
     const onSafeInfo = (safeInfo: SafeInfo): void => {
       this.safeAppInfo = safeInfo
-      if (!this.safeAppsSdkTransactionManager) {
-        this.safeAppsSdkTransactionManager = new SafeAppsSdkTransactionManager()
-      }
     }
 
     const onTransactionConfirmation = (txConfirmation: TxConfirmationEvent): void => {
@@ -36,7 +31,7 @@ class SafeAppsSdkConnector {
       }
     }
 
-    const onTransactionRejection = (txRejection: TxRejectionEvent) => {
+    const onTransactionRejection = (txRejection: TxRejectionEvent): void => {
       const callback = this.txCallbacks.get(txRejection.requestId)
       if (callback) {
         this.txCallbacks.delete(txRejection.requestId)
@@ -59,15 +54,8 @@ class SafeAppsSdkConnector {
   sendTransactions(transactions: StandardSafeAppsTransaction[]): Promise<TransactionResult> {
     const requestId = uuidv4()
     return new Promise<TransactionResult>((confirm, reject) => {
-      if (!this.safeAppsSdkTransactionManager) {
-        throw new Error('Safe Apps SDK transactionManager uninitialized')
-      }
       this.txCallbacks.set(requestId, { confirm, reject })
-      this.safeAppsSdkTransactionManager.execTransactions({
-        appsSdk: this.appsSdk,
-        transactions,
-        requestId
-      })
+      this.appsSdk.sendTransactions(transactions, requestId)
     })
   }
 }

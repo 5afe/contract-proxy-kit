@@ -11,7 +11,6 @@ import TransactionManager, {
 } from './transactionManagers/TransactionManager'
 import CpkTransactionManager from './transactionManagers/CpkTransactionManager'
 import SafeRelayTransactionManager from './transactionManagers/SafeRelayTransactionManager'
-import SafeAppsSdkTransactionManager from './transactionManagers/SafeAppsSdkTransactionManager'
 import { Transaction, OperationType, ExecOptions, TransactionResult } from './utils/transactions'
 import { defaultNetworks, NetworksConfig } from './config/networks'
 
@@ -25,7 +24,6 @@ export {
   // TransactionManagers
   CpkTransactionManager,
   SafeRelayTransactionManager,
-  SafeAppsSdkTransactionManager,
   TransactionManagerNames,
   // Transactions
   OperationType,

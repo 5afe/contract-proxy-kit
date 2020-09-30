@@ -14,8 +14,8 @@ interface TestSafeTransactionsProps {
   getTransactionCount: (account: Address) => number
   getBalance: (address: Address) => any
   testedTxObjProps: string
-  checkTxObj: (txResult: TransactionResult | void) => void
-  waitTxReceipt: (txReceipt: TransactionResult | void) => Promise<any>
+  checkTxObj: (txResult: TransactionResult) => void
+  waitTxReceipt: (txReceipt: TransactionResult) => Promise<any>
   ownerIsRecognizedContract?: boolean
   isCpkTransactionManager: boolean
   executor?: Address[]

@@ -151,13 +151,6 @@ class CPK {
     return this.#ethLibAdapter
   }
 
-  get transactionManager(): TransactionManager | undefined {
-    if (this.isSafeApp()) {
-      return this.#safeAppsSdkConnector.safeAppsSdkTransactionManager
-    }
-    return this.#transactionManager
-  }
-
   get networks(): NetworksConfig {
     return this.#networks
   }
@@ -245,7 +238,7 @@ class CPK {
   async execTransactions(
     transactions: Transaction[],
     options?: ExecOptions
-  ): Promise<TransactionResult | void> {
+  ): Promise<TransactionResult> {
     if (this.isSafeApp() && transactions.length >= 1) {
       const standardizedTxs = transactions.map(standardizeSafeAppsTransaction)
       return this.#safeAppsSdkConnector.sendTransactions(standardizedTxs)
