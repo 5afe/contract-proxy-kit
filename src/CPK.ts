@@ -301,7 +301,7 @@ class CPK {
     })
   }
 
-  async getEnabledSafeModules(): Promise<Address[]> {
+  async getModules(): Promise<Address[]> {
     if (!this.#contract) {
       throw new Error('CPK contract uninitialized')
     }
@@ -309,7 +309,7 @@ class CPK {
     return modules
   }
 
-  async isSafeModuleEnabled(moduleAddress: Address): Promise<boolean> {
+  async isModuleEnabled(moduleAddress: Address): Promise<boolean> {
     if (!this.#contract) {
       throw new Error('CPK contract uninitialized')
     }
@@ -320,7 +320,7 @@ class CPK {
     return selectedModules.length > 0
   }
 
-  async enableSafeModule(moduleAddress: Address): Promise<void> {
+  async enableModule(moduleAddress: Address): Promise<void> {
     if (!this.#contract) {
       throw new Error('CPK contract uninitialized')
     }
@@ -336,7 +336,7 @@ class CPK {
     ])
   }
 
-  async disableSafeModule(moduleAddress: Address): Promise<void> {
+  async disableModule(moduleAddress: Address): Promise<void> {
     if (!this.#contract) {
       throw new Error('CPK contract uninitialized')
     }
