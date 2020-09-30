@@ -302,14 +302,21 @@ class CPK {
   }
 
   async getModules(): Promise<Address[]> {
+    const isProxyDeployed = await this.isProxyDeployed()
+    if (!isProxyDeployed) {
+      throw new Error('CPK Proxy contract is not deployed')
+    }
     if (!this.#contract) {
       throw new Error('CPK contract uninitialized')
     }
-    const modules = await this.#contract.call('getModules', [])
-    return modules
+    return await this.#contract.call('getModules', [])
   }
 
   async isModuleEnabled(moduleAddress: Address): Promise<boolean> {
+    const isProxyDeployed = await this.isProxyDeployed()
+    if (!isProxyDeployed) {
+      throw new Error('CPK Proxy contract is not deployed')
+    }
     if (!this.#contract) {
       throw new Error('CPK contract uninitialized')
     }
@@ -337,6 +344,10 @@ class CPK {
   }
 
   async disableModule(moduleAddress: Address): Promise<TransactionResult | void> {
+    const isProxyDeployed = await this.isProxyDeployed()
+    if (!isProxyDeployed) {
+      throw new Error('CPK Proxy contract is not deployed')
+    }
     if (!this.#contract) {
       throw new Error('CPK contract uninitialized')
     }
