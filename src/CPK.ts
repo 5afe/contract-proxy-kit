@@ -327,7 +327,7 @@ class CPK {
     return selectedModules.length > 0
   }
 
-  async enableModule(moduleAddress: Address): Promise<TransactionResult | void> {
+  async enableModule(moduleAddress: Address): Promise<TransactionResult> {
     if (!this.#contract) {
       throw new Error('CPK contract uninitialized')
     }
@@ -343,7 +343,7 @@ class CPK {
     ])
   }
 
-  async disableModule(moduleAddress: Address): Promise<TransactionResult | void> {
+  async disableModule(moduleAddress: Address): Promise<TransactionResult> {
     const isProxyDeployed = await this.isProxyDeployed()
     if (!isProxyDeployed) {
       throw new Error('CPK Proxy contract is not deployed')
