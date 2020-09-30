@@ -86,14 +86,13 @@ describe('CPK', () => {
   it('should produce uninitialized CPK instances when running standalone and options are missing', async () => {
     const cpk = await CPK.create(undefined as any)
     should.exist(cpk)
-    should.exist(cpk.safeAppsSdkConnector)
-    should.not.exist(cpk.safeAppsSdkConnector.safeAppInfo)
     should.not.exist(cpk.ethLibAdapter)
     should.not.exist(cpk.contract)
     should.not.exist(cpk.multiSend)
     should.not.exist(cpk.proxyFactory)
     should.not.exist(cpk.masterCopyAddress)
     should.not.exist(cpk.fallbackHandlerAddress)
+    ;(cpk.isSafeApp()).should.equal(false)
   })
 
   it.skip('should produce CPK instances when running as a Safe App and options are missing', async () => {
@@ -108,8 +107,6 @@ describe('CPK', () => {
     window.postMessage({ messageId: 'ON_SAFE_INFO', message }, '*')
 
     should.exist(cpk)
-    should.exist(cpk.safeAppsSdkConnector)
-    should.exist(cpk.safeAppsSdkConnector.safeAppInfo)
     should.exist(cpk.ethLibAdapter)
     should.exist(cpk.address)
     cpk.address?.should.equal(message.safeAddress)
@@ -118,6 +115,7 @@ describe('CPK', () => {
     should.not.exist(cpk.proxyFactory)
     should.not.exist(cpk.masterCopyAddress)
     should.not.exist(cpk.fallbackHandlerAddress)
+    ;(cpk.isSafeApp()).should.equal(true)
   })
 
   it.skip('should produce CPK instances when running as a Safe App', async () => {
@@ -135,8 +133,6 @@ describe('CPK', () => {
     window.postMessage({ messageId: 'ON_SAFE_INFO', message }, '*')
 
     should.exist(cpk)
-    should.exist(cpk.safeAppsSdkConnector)
-    should.exist(cpk.safeAppsSdkConnector.safeAppInfo)
     should.exist(cpk.ethLibAdapter)
     should.exist(cpk.address)
     cpk.address?.should.equal(message.safeAddress)
@@ -145,6 +141,7 @@ describe('CPK', () => {
     should.not.exist(cpk.proxyFactory)
     should.not.exist(cpk.masterCopyAddress)
     should.not.exist(cpk.fallbackHandlerAddress)
+    ;(cpk.isSafeApp()).should.equal(true)
   })
 
   it('should not produce CPK instances when ethLibAdapter not provided', async () => {
