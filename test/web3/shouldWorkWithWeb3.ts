@@ -1,5 +1,5 @@
 import should from 'should'
-import Web3Maj1Min2 from 'web3-1-2'
+import Web3Maj1Min3 from 'web3-1-3'
 import Web3Maj2Alpha from 'web3-2-alpha'
 import CPK, {
   Web3Adapter,
@@ -15,7 +15,7 @@ import { getContractInstances, TestContractInstances } from '../utils/contracts'
 import { Address } from '../../src/utils/basicTypes'
 
 interface ShouldWorkWithWeb3Props {
-  Web3: typeof Web3Maj1Min2 | typeof Web3Maj2Alpha
+  Web3: typeof Web3Maj1Min3 | typeof Web3Maj2Alpha
   defaultAccountBox: Address[]
   safeOwnerBox: Address[]
   gnosisSafeProviderBox: any

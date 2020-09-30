@@ -36,7 +36,8 @@ export function testConnectedSafeTransactionsWithRelay({
     it("has same owner as instance's address", async () => {
       const cpk = await getCPK()
       const proxyOwner = await cpk.getOwnerAccount()
-      proxyOwner.should.be.equal(cpk.address)
+      should.exist(proxyOwner)
+      proxyOwner?.should.be.equal(cpk.address)
     })
   }
 
@@ -49,7 +50,9 @@ export function testConnectedSafeTransactionsWithRelay({
 
     beforeEach('rebind symbols', async () => {
       cpk = await getCPK()
-      proxyOwner = await cpk.getOwnerAccount()
+      const pOwner = await cpk.getOwnerAccount()
+      if (!pOwner) throw new Error('proxyOwner is undefined')
+      proxyOwner = pOwner
     })
 
     before('deploy conditional tokens', async () => {

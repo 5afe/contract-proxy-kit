@@ -1,5 +1,5 @@
 const TruffleContract = require('@truffle/contract')
-import Web3Maj1Min2 from 'web3-1-2'
+import Web3Maj1Min3 from 'web3-1-3'
 import CPKFactoryJson from '../../build/contracts/CPKFactory.json'
 import GnosisSafeJson from '../../build/contracts/GnosisSafe.json'
 import MultiSendJson from '../../build/contracts/MultiSend.json'
@@ -51,7 +51,7 @@ export interface TestContracts {
 }
 
 export const initializeContracts = async (safeOwner: Address): Promise<void> => {
-  const provider = new Web3Maj1Min2.providers.HttpProvider('http://localhost:8545')
+  const provider = new Web3Maj1Min3.providers.HttpProvider('http://localhost:8545')
 
   CPKFactory = TruffleContract(CPKFactoryJson)
   CPKFactory.setProvider(provider)

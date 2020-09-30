@@ -1,5 +1,5 @@
 import should from 'should'
-import Web3Maj1Min2 from 'web3-1-2'
+import Web3Maj1Min3 from 'web3-1-3'
 import CPK, { NetworksConfig, EthersAdapter, TransactionManager, Transaction } from '../../src'
 import { Address } from '../../src/utils/basicTypes'
 import { testSafeTransactions } from '../transactions/testSafeTransactions'
@@ -24,7 +24,7 @@ export function shouldWorkWithEthers({
 }: ShouldWorkWithEthersProps): void {
   describe(`with ethers version ${ethers.version}`, () => {
     let contracts: TestContractInstances
-    const web3 = new Web3Maj1Min2('http://localhost:8545')
+    const web3 = new Web3Maj1Min3('http://localhost:8545')
     const isCpkTransactionManager =
       !transactionManager || transactionManager.config.name === 'CpkTransactionManager'
 
