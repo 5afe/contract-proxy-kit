@@ -30,23 +30,11 @@ async getOwnerAccount(): Promise<Address | undefined>
 ```
 Returns the address of the account connected to the CPK. If the CPK is connected to a Safe or running as a Safe App the Safe address will be returned.
 
-## safeAppsSdkConnector
-```
-get safeAppsSdkConnector()
-```
-Returns the SafeAppsSdkConnector in use.
-
 ## ethLibAdapter
 ```
 get ethLibAdapter(): EthLibAdapter | undefined
 ```
 Returns the EthLibAdapter in use.
-
-## transactionManager
-```
-get transactionManager(): TransactionManager | undefined
-```
-Returns the TransactionManager in use.
 
 ## networks
 ```
