@@ -131,20 +131,16 @@ class CPK {
   }
 
   async getOwnerAccount(): Promise<Address | undefined> {
-    if (this.#ownerAccount) {
-      return this.#ownerAccount
-    }
     if (this.isSafeApp()) {
       return this.#safeAppsSdkConnector.safeAppInfo?.safeAddress
+    }
+    if (this.#ownerAccount) {
+      return this.#ownerAccount
     }
     if (!this.#ethLibAdapter) {
       throw new Error('CPK uninitialized ethLibAdapter')
     }
     return this.#ethLibAdapter?.getAccount()
-  }
-
-  get safeAppsSdkConnector() {
-    return this.#safeAppsSdkConnector
   }
 
   get ethLibAdapter(): EthLibAdapter | undefined {
@@ -153,10 +149,6 @@ class CPK {
 
   get networks(): NetworksConfig {
     return this.#networks
-  }
-
-  get ownerAccount(): Address | undefined {
-    return this.#ownerAccount
   }
 
   get isConnectedToSafe(): boolean {
