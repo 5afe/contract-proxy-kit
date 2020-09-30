@@ -114,26 +114,26 @@ async execTransactions(transactions: Transaction[], options?: ExecOptions): Prom
 ```
 Executes a list of transactions.
 
-## getEnabledSafeModules
+## getModules
 ```
-async getEnabledSafeModules(): Promise<Address[]>
+async getModules(): Promise<Address[]>
 ```
 Returns the list of all the enabled Safe modules.
 
-## isSafeModuleEnabled
+## isModuleEnabled
 ```
-async isSafeModuleEnabled(moduleAddress: Address): Promise<boolean>
+async isModuleEnabled(moduleAddress: Address): Promise<boolean>
 ```
-Returns true or false if the module provided is enabled or not.
+Returns true or false if the Safe module provided is enabled or not.
 
-## enableSafeModule
+## enableModule
 ```
-async enableSafeModule(moduleAddress: Address, options?: ExecOptions): Promise<TransactionResult>
+async enableModule(moduleAddress: Address, options?: ExecOptions): Promise<TransactionResult>
 ```
 Enables a Safe module.
 
-## disableSafeModule
+## disableModule
 ```
-async disableSafeModule(moduleAddress: Address, options?: ExecOptions): Promise<TransactionResult>
+async disableModule(moduleAddress: Address, options?: ExecOptions): Promise<TransactionResult>
 ```
 Disables a Safe module.
