@@ -47,7 +47,11 @@ const CpkInfo = ({
     <div className="cpkData">
       <div className="dataLine">
         <div className="dataTitle">Running as a:</div>
-        <div className="dataValue">{walletState?.isSafeApp ? "Safe App" : "standalone app"}</div>
+        <div className="dataValue">{walletState?.isSafeApp ? "Safe App" : "Standalone App"}</div>
+      </div>
+      <div className="dataLine">
+        <div className="dataTitle">State of the Proxy:</div>
+        <div className="dataValue">{walletState?.isProxyDeployed ? "Deployed" : "Not deployed"}</div>
       </div>
       <div className="dataLine">
         <div className="dataTitle">CPK address:</div>
@@ -60,27 +64,6 @@ const CpkInfo = ({
       <div className="dataLine">
         <div className="dataTitle">Owner address:</div>
         <div className="dataValue">{walletState?.ownerAddress}</div>
-      </div>
-      <div className="dataLine">
-        <div className="dataTitle">Owner balance:</div>
-        <div className="dataValue">{walletState?.ownerBalance}</div>
-      </div>
-      <div className="dataLine">
-        <div className="dataTitle">Transaction manager:</div>
-        <div className="dataValue">
-          {walletState?.txManager?.name}
-          <div className="txManagerDescription">
-            {walletState?.txManager?.name === 'CpkTransactionManager' && (
-              '* Transactions are submitted using the connected Ethereum provider'
-            )}
-            {walletState?.txManager?.name === 'SafeRelayTransactionManager' && (
-              '* Transactions are submitted using the Safe Relay Service selected'
-            )}
-            {walletState?.txManager?.name === 'SafeAppsSdkTransactionManager' && (
-              '* Transactions are submitted using the Safe web interface'
-            )}
-          </div>
-        </div>
       </div>
       <div className="dataLine">
         <div className="dataTitle">Relay service:</div>

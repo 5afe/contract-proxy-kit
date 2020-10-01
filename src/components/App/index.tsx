@@ -10,19 +10,19 @@ import { BigNumber } from 'bignumber.js'
 
 interface IWalletState {
   isSafeApp: boolean
+  isProxyDeployed: boolean
   cpkAddress?: string
   cpkBalance?: string
   ownerAddress?: string
-  ownerBalance?: string
   txManager?: TransactionManagerConfig
 }
 
 const initialWalletState = {
   isSafeApp: false,
+  isProxyDeployed: false,
   cpkAddress: undefined,
   cpkBalance: undefined,
   ownerAddress: undefined,
-  ownerBalance: undefined,
   txManager: undefined
 }
 
@@ -49,19 +49,12 @@ const App = () => {
 
   const updateCpk = async (): Promise<void> => {
     if (!cpk) return
-    const cpkBalance = await getEthBalance(cpk.address);
-    const ownerAddress = await cpk.getOwnerAccount()
-    const ownerBalance = cpk.isSafeApp()
-      ? cpk.safeAppInfo?.ethBalance + ' ETH'
-      : await getEthBalance(ownerAddress);
-
     updateWalletState({
       isSafeApp: cpk.isSafeApp(),
+      isProxyDeployed: await cpk.isProxyDeployed(),
       cpkAddress: cpk.address,
-      cpkBalance,
-      ownerAddress,
-      ownerBalance,
-      txManager: cpk.transactionManager?.config
+      cpkBalance: await getEthBalance(cpk.address),
+      ownerAddress: await cpk.getOwnerAccount()
     })
   }
 
