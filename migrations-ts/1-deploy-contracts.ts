@@ -13,7 +13,6 @@ module.exports = function(deployer: Truffle.Deployer, network: string) {
       'DefaultCallbackHandler',
       'Multistep',
       'DailyLimitModule',
-      'SocialRecoveryModule',
       'ERC20Mintable',
       'ConditionalTokens'
     ].forEach(deploy);
