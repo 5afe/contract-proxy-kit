@@ -9,6 +9,12 @@ Enable batched transactions and contract account interactions using a unique det
 
     npm install contract-proxy-kit
 
+## API Documentation
+
+[Method list](https://github.com/gnosis/contract-proxy-kit/tree/master/docs/cpk.md)
+
+[Architecture diagram](https://github.com/gnosis/contract-proxy-kit/tree/master/docs/CPKdiagram.png)
+
 ## Usage
 
 The Contract Proxy Kit package exposes a *CPK* class:
