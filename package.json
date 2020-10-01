@@ -1,6 +1,6 @@
 {
   "name": "contract-proxy-kit",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Enable batched transactions and contract account interactions using a unique deterministic Gnosis Safe.",
   "main": "lib/cjs/index.js",
   "module": "lib/esm/index.js",
