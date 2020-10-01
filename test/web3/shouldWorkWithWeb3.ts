@@ -1,5 +1,5 @@
 import should from 'should'
-import Web3Maj1Min2 from 'web3-1-2'
+import Web3Maj1Min3 from 'web3-1-3'
 import Web3Maj2Alpha from 'web3-2-alpha'
 import CPK, {
   Web3Adapter,
@@ -15,7 +15,7 @@ import { getContractInstances, TestContractInstances } from '../utils/contracts'
 import { Address } from '../../src/utils/basicTypes'
 
 interface ShouldWorkWithWeb3Props {
-  Web3: typeof Web3Maj1Min2 | typeof Web3Maj2Alpha
+  Web3: typeof Web3Maj1Min3 | typeof Web3Maj2Alpha
   defaultAccountBox: Address[]
   safeOwnerBox: Address[]
   gnosisSafeProviderBox: any
@@ -55,11 +55,11 @@ export function shouldWorkWithWeb3({
       checkTxObj: (txResult: TransactionResult): void => {
         should.exist(txResult.hash)
       },
-      waitTxReceipt: async ({ hash }: { hash: string }): Promise<any> => {
-        let receipt = await web3Box[0].eth.getTransactionReceipt(hash)
+      waitTxReceipt: async (txResult: TransactionResult): Promise<any> => {
+        let receipt = await web3Box[0].eth.getTransactionReceipt(txResult.hash)
         while (!receipt) {
           await new Promise((resolve) => setTimeout(resolve, 50))
-          receipt = await web3Box[0].eth.getTransactionReceipt(hash)
+          receipt = await web3Box[0].eth.getTransactionReceipt(txResult.hash)
         }
         return receipt
       }
@@ -160,7 +160,7 @@ export function shouldWorkWithWeb3({
             await ueb3TestHelpers.sendTransaction({
               from: defaultAccountBox[0],
               to: cpk.address,
-              value: `${2e18}`
+              value: `${3e18}`
             })
           }
         })
@@ -195,7 +195,7 @@ export function shouldWorkWithWeb3({
             await ueb3TestHelpers.sendTransaction({
               from: defaultAccountBox[0],
               to: newAccount.address,
-              value: `${2e18}`,
+              value: `${3e18}`,
               gas: '0x5b8d80'
             })
 
@@ -230,7 +230,7 @@ export function shouldWorkWithWeb3({
             await ueb3TestHelpers.sendTransaction({
               from: defaultAccountBox[0],
               to: cpk.address,
-              value: `${2e18}`
+              value: `${3e18}`
             })
           }
         })

@@ -43,7 +43,8 @@ export interface Transaction extends EthTx {
 }
 
 export interface TransactionResult {
-  hash: string
+  hash?: string
+  safeTxHash?: string
 }
 
 export class TransactionError extends Error {

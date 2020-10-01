@@ -1,6 +1,5 @@
 import should from 'should'
-import CPK from '../../src'
-import { TransactionResult } from '../../src/utils/transactions'
+import CPK, { TransactionResult } from '../../src'
 import { Address } from '../../src/utils/basicTypes'
 import { getContracts } from '../utils/contracts'
 import { AccountType } from '../utils'
@@ -16,7 +15,7 @@ interface TestSafeTransactionsProps {
   getBalance: (address: Address) => any
   testedTxObjProps: string
   checkTxObj: (txResult: TransactionResult) => void
-  waitTxReceipt: ({ hash }: { hash: string }) => Promise<any>
+  waitTxReceipt: (txReceipt: TransactionResult) => Promise<any>
   ownerIsRecognizedContract?: boolean
   isCpkTransactionManager: boolean
   executor?: Address[]
@@ -50,7 +49,8 @@ export function testSafeTransactions({
     it("has same owner as instance's address", async () => {
       const cpk = await getCPK()
       const proxyOwner = await cpk.getOwnerAccount()
-      proxyOwner.should.be.equal(cpk.address)
+      should.exist(proxyOwner)
+      proxyOwner?.should.be.equal(cpk.address)
     })
   }
 
@@ -60,14 +60,18 @@ export function testSafeTransactions({
     let conditionalTokens: any
     let multiStep: any
     let erc20: any
+    let dailyLimitModule: any
 
     beforeEach('rebind symbols', async () => {
       cpk = await getCPK()
-      proxyOwner = await cpk.getOwnerAccount()
+      const pOwner = await cpk.getOwnerAccount()
+      if (!pOwner) throw new Error('proxyOwner is undefined')
+      proxyOwner = pOwner
     })
 
-    before('deploy conditional tokens', async () => {
+    before('deploy conditional tokens and daily limit module', async () => {
       conditionalTokens = await getContracts().ConditionalTokens.new()
+      dailyLimitModule = await getContracts().DailyLimitModule.new()
     })
 
     beforeEach('deploy mock contracts', async () => {
@@ -330,5 +334,41 @@ export function testSafeTransactions({
         gasCosts.should.be.equal(gasPrice * gasUsed)
       }
     )
+
+    it('can enable modules', async () => {
+      let moduleList: Address[]
+
+      if (accountType !== AccountType.Fresh) {
+        moduleList = await cpk.getModules()
+        moduleList.length.should.equal(0)
+        ;(await cpk.isModuleEnabled(dailyLimitModule.address)).should.equal(false)
+      } else {
+        await sendTransaction({
+          from: await cpk.getOwnerAccount(),
+          to: cpk.address,
+          value: '0xde0b6b3a7640000',
+          gas: '0x5b8d80'
+        })
+      }
+
+      await waitTxReceipt(await cpk.enableModule(dailyLimitModule.address))
+
+      moduleList = await cpk.getModules()
+      moduleList.length.should.equal(1)
+      ;(await cpk.isModuleEnabled(dailyLimitModule.address)).should.equal(true)
+    })
+    ;(accountType === AccountType.Fresh ? it.skip : it)('can disable modules', async () => {
+      let moduleList: Address[]
+
+      moduleList = await cpk.getModules()
+      moduleList.length.should.equal(1)
+      ;(await cpk.isModuleEnabled(dailyLimitModule.address)).should.equal(true)
+
+      await waitTxReceipt(await cpk.disableModule(dailyLimitModule.address))
+
+      moduleList = await cpk.getModules()
+      moduleList.length.should.equal(0)
+      ;(await cpk.isModuleEnabled(dailyLimitModule.address)).should.equal(false)
+    })
   })
 }
