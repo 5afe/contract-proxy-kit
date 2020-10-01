@@ -1,6 +1,6 @@
 import should from 'should'
 import Web3Maj1Min3 from 'web3-1-3'
-import CPK, { NetworksConfig, EthersAdapter, TransactionManager, Transaction } from '../../src'
+import CPK, { NetworksConfig, EthersAdapter, TransactionManager, Transaction, TransactionResult } from '../../src'
 import { Address } from '../../src/utils/basicTypes'
 import { testSafeTransactions } from '../transactions/testSafeTransactions'
 import { testConnectedSafeTransactionsWithRelay } from '../transactions/testConnectedSafeTransactionsWithRelay'
@@ -88,7 +88,7 @@ export function shouldWorkWithEthers({
         should.exist(transactionResponse)
         should.exist(hash)
       },
-      waitTxReceipt: ({ hash }: { hash: string }): any => signer.provider.waitForTransaction(hash)
+      waitTxReceipt: (txResult: TransactionResult): any => signer.provider.waitForTransaction(txResult.hash)
     })
 
     before('setup contracts', async () => {
@@ -166,7 +166,7 @@ export function shouldWorkWithEthers({
             web3.eth.sendTransaction({
               from: defaultAccountBox[0],
               to: signer.address,
-              value: `${2e18}`,
+              value: `${3e18}`,
               gas: '0x5b8d80'
             })
           )
@@ -186,7 +186,7 @@ export function shouldWorkWithEthers({
               web3.eth.sendTransaction({
                 from: defaultAccountBox[0],
                 to: cpk.address,
-                value: `${2e18}`
+                value: `${3e18}`
               })
             )
           }
@@ -226,7 +226,7 @@ export function shouldWorkWithEthers({
               web3.eth.sendTransaction({
                 from: defaultAccountBox[0],
                 to: freshSignerBox[0].address,
-                value: `${2e18}`,
+                value: `${3e18}`,
                 gas: '0x5b8d80'
               })
             )
@@ -258,7 +258,7 @@ export function shouldWorkWithEthers({
               web3.eth.sendTransaction({
                 from: defaultAccountBox[0],
                 to: cpk.address,
-                value: `${2e18}`
+                value: `${3e18}`
               })
             )
           }

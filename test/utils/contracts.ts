@@ -8,6 +8,7 @@ import ProxyFactoryJson from '../../build/contracts/ProxyFactory.json'
 import MultistepJson from '../../build/contracts/Multistep.json'
 import ERC20MintableJson from '../../build/contracts/ERC20Mintable.json'
 import ConditionalTokensJson from '../../build/contracts/ConditionalTokens.json'
+import DailyLimitModuleJson from '../../build/contracts/DailyLimitModule.json'
 import { Address } from '../../src/utils/basicTypes'
 
 let CPKFactory: any
@@ -18,6 +19,7 @@ let DefaultCallbackHandler: any
 let MultiStep: any
 let ERC20Mintable: any
 let ConditionalTokens: any
+let DailyLimitModule: any
 
 let cpkFactory: any
 let gnosisSafe: any
@@ -27,6 +29,7 @@ let defaultCallbackHandler: any
 let multiStep: any
 let erc20: any
 let conditionalTokens: any
+let dailyLimitModule: any
 
 export interface TestContractInstances {
   cpkFactory: any
@@ -37,6 +40,7 @@ export interface TestContractInstances {
   multiStep: any
   erc20: any
   conditionalTokens: any
+  dailyLimitModule: any
 }
 
 export interface TestContracts {
@@ -48,6 +52,7 @@ export interface TestContracts {
   MultiStep: any
   ERC20Mintable: any
   ConditionalTokens: any
+  DailyLimitModule: any
 }
 
 export const initializeContracts = async (safeOwner: Address): Promise<void> => {
@@ -92,6 +97,11 @@ export const initializeContracts = async (safeOwner: Address): Promise<void> => 
   ConditionalTokens.setProvider(provider)
   ConditionalTokens.defaults({ from: safeOwner })
   conditionalTokens = await ConditionalTokens.deployed()
+
+  DailyLimitModule = TruffleContract(DailyLimitModuleJson)
+  DailyLimitModule.setProvider(provider)
+  DailyLimitModule.defaults({ from: safeOwner })
+  dailyLimitModule = await DailyLimitModule.deployed()
 }
 
 export const getContracts = (): TestContracts => ({
@@ -102,7 +112,8 @@ export const getContracts = (): TestContracts => ({
   DefaultCallbackHandler,
   MultiStep,
   ERC20Mintable,
-  ConditionalTokens
+  ConditionalTokens,
+  DailyLimitModule,
 })
 
 export const getContractInstances = (): TestContractInstances => ({
@@ -113,5 +124,6 @@ export const getContractInstances = (): TestContractInstances => ({
   defaultCallbackHandler,
   multiStep,
   erc20,
-  conditionalTokens
+  conditionalTokens,
+  dailyLimitModule,
 })

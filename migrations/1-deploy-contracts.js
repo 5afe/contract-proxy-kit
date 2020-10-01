@@ -10,6 +10,7 @@ module.exports = function (deployer, network) {
             'MultiSend',
             'DefaultCallbackHandler',
             'Multistep',
+            'DailyLimitModule',
             'ERC20Mintable',
             'ConditionalTokens'
         ].forEach(deploy);

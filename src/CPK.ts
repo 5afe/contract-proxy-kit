@@ -7,9 +7,9 @@ import cpkFactoryAbi from './abis/CpkFactoryAbi.json'
 import safeAbi from './abis/SafeAbi.json'
 import multiSendAbi from './abis/MultiSendAbi.json'
 import { Address } from './utils/basicTypes'
-import { predeterminedSaltNonce } from './utils/constants'
+import { predeterminedSaltNonce, sentinelModules } from './utils/constants'
 import { joinHexData, getHexDataLength } from './utils/hexData'
-import { OperationType, standardizeSafeAppsTransaction } from './utils/transactions'
+import { OperationType, SendOptions, standardizeSafeAppsTransaction } from './utils/transactions'
 import {
   Transaction,
   TransactionResult,
@@ -124,6 +124,20 @@ class CPK {
 
       this.#contract = this.#ethLibAdapter.getContract(safeAbi, proxyAddress)
     }
+  }
+
+  async isProxyDeployed(): Promise<boolean> {
+    if (!this.address) {
+      throw new Error('CPK address uninitialized')
+    }
+    if (!this.ethLibAdapter) {
+      throw new Error('CPK ethLibAdapter uninitialized')
+    }
+
+    const codeAtAddress = await this.ethLibAdapter.getCode(this.address)
+    const isDeployed = codeAtAddress !== '0x'
+
+    return isDeployed
   }
 
   isSafeApp(): boolean {
@@ -285,6 +299,73 @@ class CPK {
       isConnectedToSafe: this.#isConnectedToSafe,
       sendOptions
     })
+  }
+
+  async getModules(): Promise<Address[]> {
+    const isProxyDeployed = await this.isProxyDeployed()
+    if (!isProxyDeployed) {
+      throw new Error('CPK Proxy contract is not deployed')
+    }
+    if (!this.#contract) {
+      throw new Error('CPK contract uninitialized')
+    }
+    return await this.#contract.call('getModules', [])
+  }
+
+  async isModuleEnabled(moduleAddress: Address): Promise<boolean> {
+    const isProxyDeployed = await this.isProxyDeployed()
+    if (!isProxyDeployed) {
+      throw new Error('CPK Proxy contract is not deployed')
+    }
+    if (!this.#contract) {
+      throw new Error('CPK contract uninitialized')
+    }
+    const modules = await this.#contract.call('getModules', [])
+    const selectedModules = modules.filter(
+      (module: Address) => module.toLowerCase() === moduleAddress.toLowerCase()
+    )
+    return selectedModules.length > 0
+  }
+
+  async enableModule(moduleAddress: Address): Promise<TransactionResult> {
+    if (!this.#contract) {
+      throw new Error('CPK contract uninitialized')
+    }
+    if (!this.address) {
+      throw new Error('CPK address uninitialized')
+    }
+    return await this.execTransactions([
+      {
+        to: this.address,
+        data: await this.#contract.encode('enableModule', [moduleAddress]),
+        operation: CPK.Call
+      }
+    ])
+  }
+
+  async disableModule(moduleAddress: Address): Promise<TransactionResult> {
+    const isProxyDeployed = await this.isProxyDeployed()
+    if (!isProxyDeployed) {
+      throw new Error('CPK Proxy contract is not deployed')
+    }
+    if (!this.#contract) {
+      throw new Error('CPK contract uninitialized')
+    }
+    if (!this.address) {
+      throw new Error('CPK address uninitialized')
+    }
+    const modules = await this.#contract.call('getModules', [])
+    const index = modules.findIndex(
+      (module: Address) => module.toLowerCase() === moduleAddress.toLowerCase()
+    )
+    const prevModuleAddress = index === 0 ? sentinelModules : modules[index - 1]
+    return await this.execTransactions([
+      {
+        to: this.address,
+        data: await this.#contract.encode('disableModule', [prevModuleAddress, moduleAddress]),
+        operation: CPK.Call
+      }
+    ])
   }
 
   private getSafeExecTxParams(transactions: Transaction[]): StandardTransaction {
