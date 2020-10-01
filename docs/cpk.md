@@ -16,7 +16,7 @@ Creates a non-initialized instance of the CPK with the selected configuration pa
 ```
 async isProxyDeployed(): Promise<boolean>
 ```
-Returns true or false if the Safe Proxy used by the CPK is already deployed (at least one transaction was made) or if it is not (no transactions made yet).
+Returns true if the Safe Proxy used by the CPK is already deployed (at least one transaction was made) or the CPK is connected through WalletConnect or via the Safe Apps SDK to an existing Safe. Returns false if it is not connected to an existing Safe or no transactions were made yet.
 
 ## isSafeApp
 ```
@@ -40,7 +40,7 @@ Returns the EthLibAdapter in use.
 ```
 get networks(): NetworksConfig
 ```
-Returns the network configuration in use.
+Returns a list of the addresses of contracts which drive the CPK per network by network ID.
 
 ## isConnectedToSafe
 ```
