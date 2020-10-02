@@ -1,12 +1,17 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
-import './index.scss'
+import { ThemeProvider } from 'styled-components'
+import { theme } from '@gnosis.pm/safe-react-components'
 import App from './components/App'
+import GlobalStyle from 'styles/globalStyles'
 import * as serviceWorker from './serviceWorker'
 
 ReactDOM.render(
   <React.StrictMode>
-    <App />
+    <ThemeProvider theme={theme}>
+      <GlobalStyle />
+      <App />
+    </ThemeProvider>
   </React.StrictMode>,
   document.getElementById('root')
 )
