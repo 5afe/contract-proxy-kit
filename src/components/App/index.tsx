@@ -9,6 +9,10 @@ import CpkInfo from 'components/CpkInfo'
 import Transactions from 'components/Transactions'
 import SafeModules from 'components/SafeModules'
 
+const Container = styled.div`
+  padding: 20px;
+`
+
 const Line = styled.div`
   display: flex;
   justify-content: center;
@@ -78,20 +82,20 @@ const App = () => {
   }, [cpk])
 
   return (
-    <div className="container">
+    <Container>
       <Line><Title size="sm">Contract Proxy Kit Configuration</Title></Line>
       <ConnectButton onConnect={onWeb3Connect} networkName={network}/>
       {cpk && (
-        <div className="cpk">
+        <>
           <Divider />
           <CpkInfo walletState={walletState} />
           <Divider />
           <Transactions cpk={cpk} walletState={walletState} />
           <Divider />
           <SafeModules cpk={cpk} walletState={walletState} />
-        </div>
+        </>
       )}
-    </div>
+    </Container>
   )
 }
 
