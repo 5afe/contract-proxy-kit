@@ -6,6 +6,7 @@ import './styles.scss'
 const Web3ConnectButton = styled.div`
   display: flex;
   justify-content: center;
+  margin-bottom: 10px;
 `
 
 const {

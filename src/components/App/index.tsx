@@ -3,14 +3,14 @@ import CPK, { Web3Adapter, TransactionManagerConfig } from 'contract-proxy-kit'
 import Web3 from 'web3'
 import styled from 'styled-components'
 import { BigNumber } from 'bignumber.js'
-import { Divider, Title } from '@gnosis.pm/safe-react-components'
+import { Title, TabItem, Tab } from '@gnosis.pm/safe-react-components'
 import ConnectButton from '../ConnectButton'
 import CpkInfo from 'components/CpkInfo'
 import Transactions from 'components/Transactions'
 import SafeModules from 'components/SafeModules'
 
 const Container = styled.div`
-  padding: 20px;
+  padding: 10px;
 `
 
 const Line = styled.div`
@@ -37,6 +37,7 @@ const initialWalletState = {
 }
 
 const App = () => {
+  const [selectedTab, setSelectedTab] = useState('1');
   const [web3, setWeb3] = React.useState<Web3 | undefined>(undefined)
   const [cpk, setCpk] = useState<CPK | undefined>(undefined)
   const [walletState, updateWalletState] = useState<WalletState>(initialWalletState)
@@ -81,18 +82,37 @@ const App = () => {
     updateCpk()
   }, [cpk])
 
+  const tabs: TabItem[] = [{
+    id: "1",
+    label: "CPK Info",
+    icon: "info"
+  },
+  {
+    id: "2",
+    label: "CPK Transactions",
+    icon: "transactionsInactive"
+  },
+  {
+    id: "3",
+    label: "CPK Modules",
+    icon: "apps"
+  }]
+
   return (
     <Container>
       <Line><Title size="sm">Contract Proxy Kit Configuration</Title></Line>
       <ConnectButton onConnect={onWeb3Connect} networkName={network}/>
       {cpk && (
         <>
-          <Divider />
-          <CpkInfo walletState={walletState} />
-          <Divider />
-          <Transactions cpk={cpk} walletState={walletState} />
-          <Divider />
-          <SafeModules cpk={cpk} walletState={walletState} />
+          <Tab
+            onChange={setSelectedTab}
+            selectedTab={selectedTab}
+            variant="outlined"
+            items={tabs}
+          />
+          {selectedTab === "1" && <CpkInfo walletState={walletState} />}
+          {selectedTab === "2" && <Transactions cpk={cpk} walletState={walletState} />}
+          {selectedTab === "3" && <SafeModules cpk={cpk} walletState={walletState} />}
         </>
       )}
     </Container>
