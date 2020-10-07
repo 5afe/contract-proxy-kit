@@ -43,10 +43,15 @@ const SafeModules = ({ cpk, walletState }: SafeModulesProps) => {
   const enableModule = async (): Promise<void> => {
     if (!module) return
     setShowTxError(false)
+    setTxHash("")
     setIsLoading(true)
     try  {
       // Remove any type when TransactionResult type is updated
       const txResult: any = await cpk.enableModule(module)      
+      const hash = walletState.isSafeApp ? txResult.safeTxHash : txResult.hash
+      if (hash) {
+        setTxHash(hash)
+      }
       const receipt: any = await new Promise((resolve, reject) =>
         txResult.promiEvent?.then((receipt: any) => resolve(receipt)).catch(reject)
       )
@@ -60,10 +65,15 @@ const SafeModules = ({ cpk, walletState }: SafeModulesProps) => {
   const disableModule = async (): Promise<void> => {
     if (!module) return
     setShowTxError(false)
+    setTxHash("")
     setIsLoading(true)
     try {
       // Remove any type when TransactionResult type is updated
       const txResult: any = await cpk.disableModule(module)
+      const hash = walletState.isSafeApp ? txResult.safeTxHash : txResult.hash
+      if (hash) {
+        setTxHash(hash)
+      }
       const receipt: any = await new Promise((resolve, reject) =>
         txResult.promiEvent?.then((receipt: any) => resolve(receipt)).catch(reject)
       )

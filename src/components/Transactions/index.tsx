@@ -29,13 +29,16 @@ const Transactions = ({
   const makeTransaction = async (): Promise<void> => {
     if (!walletState.ownerAddress) return
     setShowTxError(false)
+    setTxHash("")
     const txs = [{
       to: walletState.ownerAddress,
     }]
     try {
       const txResult = await cpk.execTransactions(txs)
       const hash = walletState.isSafeApp ? txResult.safeTxHash : txResult.hash
-      setTxHash(hash ?? "")
+      if (hash) {
+        setTxHash(hash)
+      }
     } catch(e) {
       setShowTxError(true)
     }
