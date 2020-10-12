@@ -96,7 +96,14 @@ export function shouldWorkWithEthers({
         }
       },
       waitTxReceipt: (txResult: TransactionResult): any =>
-        signer.provider.waitForTransaction(txResult.hash)
+        signer.provider.waitForTransaction(txResult.hash),
+      waitSafeTxReceipt: async (txResult: TransactionResult): Promise<any> => {
+        if (!txResult.transactionResponse) return
+        const receipt = await txResult.transactionResponse
+        if (!receipt) return
+        txResult.hash?.should.equal(receipt.hash)
+        return receipt
+      }
     })
 
     before('setup contracts', async () => {
