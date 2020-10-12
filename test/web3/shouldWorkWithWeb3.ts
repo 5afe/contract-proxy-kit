@@ -55,13 +55,16 @@ export function shouldWorkWithWeb3({
       checkTxObj: (
         txsSize: number,
         accountType: AccountType,
-        txResult: TransactionResult
+        txResult: TransactionResult,
+        isCpkTransactionManager: boolean
       ): void => {
         const safeConnected = accountType === AccountType.Connected
         should.exist(txResult.hash)
         if (!safeConnected || (safeConnected && txsSize === 1)) {
           should.exist(txResult.promiEvent)
-          should.exist(txResult.sendOptions)
+          if (isCpkTransactionManager) {
+            should.exist(txResult.sendOptions)
+          }
         }
       },
       waitTxReceipt: async (txResult: TransactionResult): Promise<any> => {
@@ -70,6 +73,18 @@ export function shouldWorkWithWeb3({
           await new Promise((resolve) => setTimeout(resolve, 50))
           receipt = await web3Box[0].eth.getTransactionReceipt(txResult.hash)
         }
+        return receipt
+      },
+      waitSafeTxReceipt: async (txResult: TransactionResult): Promise<any> => {
+        let receipt: any
+        if (!txResult.promiEvent) return
+        receipt = await new Promise((resolve, reject) =>
+          (txResult.promiEvent as any)
+            ?.on('confirmation', (confirmationNumber: any, receipt: any) => resolve(receipt))
+            .catch(reject)
+        )
+        if (!receipt) return
+        txResult.hash?.should.equal(receipt.transactionHash)
         return receipt
       }
     })
