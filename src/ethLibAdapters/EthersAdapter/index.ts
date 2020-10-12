@@ -142,6 +142,8 @@ class EthersAdapter extends EthLibAdapter {
   }
 
   toSafeRelayTxResult(txHash: string, tx: Record<string, any>): Promise<EthersTransactionResult> {
+    tx['hash'] = tx['txHash']
+    delete tx['txHash']
     return new Promise((resolve, reject) =>
       resolve({
         transactionResponse: new Promise((resolve, reject) => resolve(tx)),

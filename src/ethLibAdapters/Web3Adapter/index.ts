@@ -146,6 +146,8 @@ class Web3Adapter extends EthLibAdapter {
   }
 
   toSafeRelayTxResult(txHash: string, tx: Record<string, any>): Promise<Web3TransactionResult> {
+    tx['transactionHash'] = tx['txHash']
+    delete tx['txHash']
     return new Promise((resolve, reject) =>
       resolve({
         promiEvent: new Promise((resolve, reject) => resolve(tx)),
