@@ -1,4 +1,4 @@
-import { zeroAddress, predeterminedSaltNonce } from '../../utils/constants'
+import { zeroAddress } from '../../utils/constants'
 import TransactionManager, {
   ExecTransactionProps,
   TransactionManagerConfig,
@@ -36,6 +36,7 @@ class CpkTransactionManager implements TransactionManager {
     transactions,
     contracts,
     ethLibAdapter,
+    saltNonce,
     isDeployed,
     isConnectedToSafe,
     sendOptions
@@ -61,6 +62,7 @@ class CpkTransactionManager implements TransactionManager {
           masterCopyAddress,
           fallbackHandlerAddress,
           safeExecTxParams,
+          saltNonce,
           proxyFactory
         )
 
@@ -137,6 +139,7 @@ class CpkTransactionManager implements TransactionManager {
     masterCopyAddress: Address,
     fallbackHandlerAddress: Address,
     { to, value, data, operation }: StandardTransaction,
+    saltNonce: string,
     proxyFactory?: Contract
   ): ContractTxObj {
     if (!proxyFactory) {
@@ -148,7 +151,7 @@ class CpkTransactionManager implements TransactionManager {
       methodName: 'createProxyAndExecTransaction',
       params: [
         masterCopyAddress,
-        predeterminedSaltNonce,
+        saltNonce,
         fallbackHandlerAddress,
         to,
         value,

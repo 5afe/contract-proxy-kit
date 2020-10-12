@@ -104,6 +104,15 @@ const cpk = await CPK.create({
 
 Please refer to the `migrations/` folder of this package for information on how to deploy the required contracts on a network, and note that these addresses must be available for the connected network in order for *CPK* creation to be successful.
 
+#### Salt nonce configuration
+
+The `CPK.saltNonce` property is predetermined, but it may be passed in as a parameter to generate new proxies for which the owner controls.
+
+```js
+const saltNonce = "<NEW_SALT_NONCE>";
+const cpk = await CPK.create({ ethLibAdapter, saltNonce });
+```
+
 <!---
 #### Transaction relayer configuration
 
