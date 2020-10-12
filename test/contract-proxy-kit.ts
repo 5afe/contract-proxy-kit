@@ -92,7 +92,7 @@ describe('CPK', () => {
     should.not.exist(cpk.proxyFactory)
     should.not.exist(cpk.masterCopyAddress)
     should.not.exist(cpk.fallbackHandlerAddress)
-    ;(cpk.isSafeApp()).should.equal(false)
+    cpk.isSafeApp().should.equal(false)
   })
 
   it.skip('should produce CPK instances when running as a Safe App and options are missing', async () => {
@@ -115,7 +115,7 @@ describe('CPK', () => {
     should.not.exist(cpk.proxyFactory)
     should.not.exist(cpk.masterCopyAddress)
     should.not.exist(cpk.fallbackHandlerAddress)
-    ;(cpk.isSafeApp()).should.equal(true)
+    cpk.isSafeApp().should.equal(true)
   })
 
   it.skip('should produce CPK instances when running as a Safe App', async () => {
@@ -141,7 +141,7 @@ describe('CPK', () => {
     should.not.exist(cpk.proxyFactory)
     should.not.exist(cpk.masterCopyAddress)
     should.not.exist(cpk.fallbackHandlerAddress)
-    ;(cpk.isSafeApp()).should.equal(true)
+    cpk.isSafeApp().should.equal(true)
   })
 
   it('should not produce CPK instances when ethLibAdapter not provided', async () => {

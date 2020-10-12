@@ -52,8 +52,17 @@ export function shouldWorkWithWeb3({
         web3Box[0].eth
           .getBalance(address)
           .then((balance: number) => web3Box[0].utils.toBN(balance)),
-      checkTxObj: (txResult: TransactionResult): void => {
+      checkTxObj: (
+        txsSize: number,
+        accountType: AccountType,
+        txResult: TransactionResult
+      ): void => {
+        const safeConnected = accountType === AccountType.Connected
         should.exist(txResult.hash)
+        if (!safeConnected || (safeConnected && txsSize === 1)) {
+          should.exist(txResult.promiEvent)
+          should.exist(txResult.sendOptions)
+        }
       },
       waitTxReceipt: async (txResult: TransactionResult): Promise<any> => {
         let receipt = await web3Box[0].eth.getTransactionReceipt(txResult.hash)

@@ -14,7 +14,7 @@ interface TestSafeTransactionsProps {
   getTransactionCount: (account: Address) => number
   getBalance: (address: Address) => any
   testedTxObjProps: string
-  checkTxObj: (txResult: TransactionResult) => void
+  checkTxObj: (txsSize: number, accountType: AccountType, txResult: TransactionResult) => void
   waitTxReceipt: (txReceipt: TransactionResult) => Promise<any>
   ownerIsRecognizedContract?: boolean
   isCpkTransactionManager: boolean
@@ -94,14 +94,16 @@ export function testSafeTransactions({
     it('can execute a single transaction', async () => {
       ;(await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0)
 
-      await waitTxReceipt(
-        await cpk.execTransactions([
-          {
-            to: multiStep.address,
-            data: multiStep.contract.methods.doStep(1).encodeABI()
-          }
-        ])
-      )
+      const txs = [
+        {
+          to: multiStep.address,
+          data: multiStep.contract.methods.doStep(1).encodeABI()
+        }
+      ]
+      const txResult = await cpk.execTransactions(txs)
+
+      checkTxObj(txs.length, accountType, txResult)
+      await waitTxReceipt(txResult)
       ;(await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(1)
     })
 
@@ -109,60 +111,64 @@ export function testSafeTransactions({
       ;(await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0)
       const numSteps = 10
 
-      await waitTxReceipt(
-        await cpk.execTransactions([
-          {
-            to: multiStep.address,
-            data: multiStep.contract.methods.doDeepStep(numSteps, numSteps, cpk.address).encodeABI()
-          }
-        ])
-      )
+      const txs = [
+        {
+          to: multiStep.address,
+          data: multiStep.contract.methods.doDeepStep(numSteps, numSteps, cpk.address).encodeABI()
+        }
+      ]
+      const txResult = await cpk.execTransactions(txs)
+
+      checkTxObj(txs.length, accountType, txResult)
+      await waitTxReceipt(txResult)
       ;(await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(numSteps)
     })
 
     it('can batch transactions together', async () => {
       ;(await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0)
 
-      await waitTxReceipt(
-        await cpk.execTransactions([
-          {
-            to: multiStep.address,
-            data: multiStep.contract.methods.doStep(1).encodeABI()
-          },
-          {
-            to: multiStep.address,
-            data: multiStep.contract.methods.doStep(2).encodeABI()
-          }
-        ])
-      )
+      const txs = [
+        {
+          to: multiStep.address,
+          data: multiStep.contract.methods.doStep(1).encodeABI()
+        },
+        {
+          to: multiStep.address,
+          data: multiStep.contract.methods.doStep(2).encodeABI()
+        }
+      ]
+      const txResult = await cpk.execTransactions(txs)
+
+      checkTxObj(txs.length, accountType, txResult)
+      await waitTxReceipt(txResult)
       ;(await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(2)
     })
 
     it('can batch ERC20 transactions', async () => {
       ;(await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0)
 
-      await waitTxReceipt(
-        await cpk.execTransactions([
-          {
-            to: erc20.address,
-            data: erc20.contract.methods
-              .transferFrom(proxyOwner, cpk.address, `${3e18}`)
-              .encodeABI()
-          },
-          {
-            to: erc20.address,
-            data: erc20.contract.methods.approve(multiStep.address, `${3e18}`).encodeABI()
-          },
-          {
-            to: multiStep.address,
-            data: multiStep.contract.methods.doStep(1).encodeABI()
-          },
-          {
-            to: multiStep.address,
-            data: multiStep.contract.methods.doERC20Step(2, erc20.address).encodeABI()
-          }
-        ])
-      )
+      const txs = [
+        {
+          to: erc20.address,
+          data: erc20.contract.methods.transferFrom(proxyOwner, cpk.address, `${3e18}`).encodeABI()
+        },
+        {
+          to: erc20.address,
+          data: erc20.contract.methods.approve(multiStep.address, `${3e18}`).encodeABI()
+        },
+        {
+          to: multiStep.address,
+          data: multiStep.contract.methods.doStep(1).encodeABI()
+        },
+        {
+          to: multiStep.address,
+          data: multiStep.contract.methods.doERC20Step(2, erc20.address).encodeABI()
+        }
+      ]
+      const txResult = await cpk.execTransactions(txs)
+
+      checkTxObj(txs.length, accountType, txResult)
+      await waitTxReceipt(txResult)
       ;(await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(2)
 
       if (cpk.address === proxyOwner) {
@@ -182,32 +188,32 @@ export function testSafeTransactions({
         { t: 'uint', v: 2 }
       )
 
-      await waitTxReceipt(
-        await cpk.execTransactions([
-          {
-            to: erc20.address,
-            data: erc20.contract.methods
-              .transferFrom(proxyOwner, cpk.address, `${3e18}`)
-              .encodeABI()
-          },
-          {
-            to: erc20.address,
-            data: erc20.contract.methods.approve(conditionalTokens.address, `${1e18}`).encodeABI()
-          },
-          {
-            to: conditionalTokens.address,
-            data: conditionalTokens.contract.methods
-              .prepareCondition(cpk.address, questionId, 2)
-              .encodeABI()
-          },
-          {
-            to: conditionalTokens.address,
-            data: conditionalTokens.contract.methods
-              .splitPosition(erc20.address, `0x${'0'.repeat(64)}`, conditionId, [1, 2], `${1e18}`)
-              .encodeABI()
-          }
-        ])
-      )
+      const txs = [
+        {
+          to: erc20.address,
+          data: erc20.contract.methods.transferFrom(proxyOwner, cpk.address, `${3e18}`).encodeABI()
+        },
+        {
+          to: erc20.address,
+          data: erc20.contract.methods.approve(conditionalTokens.address, `${1e18}`).encodeABI()
+        },
+        {
+          to: conditionalTokens.address,
+          data: conditionalTokens.contract.methods
+            .prepareCondition(cpk.address, questionId, 2)
+            .encodeABI()
+        },
+        {
+          to: conditionalTokens.address,
+          data: conditionalTokens.contract.methods
+            .splitPosition(erc20.address, `0x${'0'.repeat(64)}`, conditionId, [1, 2], `${1e18}`)
+            .encodeABI()
+        }
+      ]
+      const txResult = await cpk.execTransactions(txs)
+
+      checkTxObj(txs.length, accountType, txResult)
+      await waitTxReceipt(txResult)
 
       if (cpk.address === proxyOwner) {
         fromWei(await erc20.balanceOf(cpk.address)).should.equal(99)
@@ -269,14 +275,16 @@ export function testSafeTransactions({
     )
 
     it(`returns an object with ${testedTxObjProps} when doing a transaction`, async () => {
-      checkTxObj(
-        await cpk.execTransactions([
-          {
-            to: multiStep.address,
-            data: multiStep.contract.methods.doStep(1).encodeABI()
-          }
-        ])
-      )
+      const txs = [
+        {
+          to: multiStep.address,
+          data: multiStep.contract.methods.doStep(1).encodeABI()
+        }
+      ]
+      const txResult = await cpk.execTransactions(txs)
+
+      checkTxObj(txs.length, accountType, txResult)
+      await waitTxReceipt(txResult)
     })
     ;(!isCpkTransactionManager ? it.skip : it)(
       'can execute a single transaction with a specific gas price',
@@ -285,17 +293,16 @@ export function testSafeTransactions({
 
         ;(await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0)
 
+        const txs = [
+          {
+            to: multiStep.address,
+            data: multiStep.contract.methods.doStep(1).encodeABI()
+          }
+        ]
         const gasPrice = 123
-        const txObj = await cpk.execTransactions(
-          [
-            {
-              to: multiStep.address,
-              data: multiStep.contract.methods.doStep(1).encodeABI()
-            }
-          ],
-          { gasPrice }
-        )
-        const receipt = await waitTxReceipt(txObj)
+        const txResult = await cpk.execTransactions(txs, { gasPrice })
+        checkTxObj(txs.length, accountType, txResult)
+        const receipt = await waitTxReceipt(txResult)
         const { gasUsed } = receipt
 
         const endingBalance = await getBalance((executor && executor[0]) || proxyOwner)
@@ -311,21 +318,20 @@ export function testSafeTransactions({
 
         ;(await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0)
 
+        const txs = [
+          {
+            to: multiStep.address,
+            data: multiStep.contract.methods.doStep(1).encodeABI()
+          },
+          {
+            to: multiStep.address,
+            data: multiStep.contract.methods.doStep(2).encodeABI()
+          }
+        ]
         const gasPrice = 123
-        const txObj = await cpk.execTransactions(
-          [
-            {
-              to: multiStep.address,
-              data: multiStep.contract.methods.doStep(1).encodeABI()
-            },
-            {
-              to: multiStep.address,
-              data: multiStep.contract.methods.doStep(2).encodeABI()
-            }
-          ],
-          { gasPrice }
-        )
-        const receipt = await waitTxReceipt(txObj)
+        const txResult = await cpk.execTransactions(txs, { gasPrice })
+        checkTxObj(txs.length, accountType, txResult)
+        const receipt = await waitTxReceipt(txResult)
         const { gasUsed } = receipt
 
         const endingBalance = await getBalance((executor && executor[0]) || proxyOwner)
@@ -351,7 +357,9 @@ export function testSafeTransactions({
         })
       }
 
-      await waitTxReceipt(await cpk.enableModule(dailyLimitModule.address))
+      const txResult = await cpk.enableModule(dailyLimitModule.address)
+      checkTxObj(1, accountType, txResult)
+      await waitTxReceipt(txResult)
 
       moduleList = await cpk.getModules()
       moduleList.length.should.equal(1)
@@ -364,7 +372,9 @@ export function testSafeTransactions({
       moduleList.length.should.equal(1)
       ;(await cpk.isModuleEnabled(dailyLimitModule.address)).should.equal(true)
 
-      await waitTxReceipt(await cpk.disableModule(dailyLimitModule.address))
+      const txResult = await cpk.disableModule(dailyLimitModule.address)
+      checkTxObj(1, accountType, txResult)
+      await waitTxReceipt(txResult)
 
       moduleList = await cpk.getModules()
       moduleList.length.should.equal(0)
