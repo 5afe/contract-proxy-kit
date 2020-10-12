@@ -9,7 +9,7 @@ import multiSendAbi from './abis/MultiSendAbi.json'
 import { Address } from './utils/basicTypes'
 import { predeterminedSaltNonce, sentinelModules } from './utils/constants'
 import { joinHexData, getHexDataLength } from './utils/hexData'
-import { OperationType, SendOptions, standardizeSafeAppsTransaction } from './utils/transactions'
+import { OperationType, standardizeSafeAppsTransaction } from './utils/transactions'
 import {
   Transaction,
   TransactionResult,

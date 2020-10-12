@@ -6,10 +6,10 @@ import initSdk, {
   TxRejectionEvent
 } from '@gnosis.pm/safe-apps-sdk'
 import { v4 as uuidv4 } from 'uuid'
-import { StandardSafeAppsTransaction, TransactionResult } from '../utils/transactions'
+import { StandardSafeAppsTransaction, SimpleTransactionResult } from '../utils/transactions'
 
 interface TxCallback {
-  confirm: (txResult: TransactionResult) => void
+  confirm: (txResult: SimpleTransactionResult) => void
   reject: (error: Error) => void
 }
 
@@ -51,9 +51,9 @@ class SafeAppsSdkConnector {
     return !!this.safeAppInfo
   }
 
-  sendTransactions(transactions: StandardSafeAppsTransaction[]): Promise<TransactionResult> {
+  sendTransactions(transactions: StandardSafeAppsTransaction[]): Promise<SimpleTransactionResult> {
     const requestId = uuidv4()
-    return new Promise<TransactionResult>((confirm, reject) => {
+    return new Promise<SimpleTransactionResult>((confirm, reject) => {
       this.txCallbacks.set(requestId, { confirm, reject })
       this.appsSdk.sendTransactions(transactions, requestId)
     })

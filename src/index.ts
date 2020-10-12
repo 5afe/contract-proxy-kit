@@ -1,17 +1,19 @@
 import CPK, { CPKConfig } from './CPK'
 import EthLibAdapter from './ethLibAdapters/EthLibAdapter'
-import EthersAdapter, {
-  EthersAdapterConfig,
-  EthersTransactionResult
-} from './ethLibAdapters/EthersAdapter'
-import Web3Adapter, { Web3AdapterConfig, Web3TransactionResult } from './ethLibAdapters/Web3Adapter'
+import EthersAdapter, { EthersAdapterConfig } from './ethLibAdapters/EthersAdapter'
+import Web3Adapter, { Web3AdapterConfig } from './ethLibAdapters/Web3Adapter'
 import TransactionManager, {
   TransactionManagerConfig,
   TransactionManagerNames
 } from './transactionManagers/TransactionManager'
 import CpkTransactionManager from './transactionManagers/CpkTransactionManager'
 import SafeRelayTransactionManager from './transactionManagers/SafeRelayTransactionManager'
-import { Transaction, OperationType, ExecOptions, TransactionResult } from './utils/transactions'
+import {
+  Transaction,
+  OperationType,
+  ExecOptions,
+  TransactionResult
+} from './utils/transactions'
 import { defaultNetworks, NetworksConfig } from './config/networks'
 
 export default CPK
@@ -36,9 +38,7 @@ export type {
   CPKConfig,
   // EthLibAdapters
   EthersAdapterConfig,
-  EthersTransactionResult,
   Web3AdapterConfig,
-  Web3TransactionResult,
   // TransactionManagers
   TransactionManager,
   TransactionManagerConfig,

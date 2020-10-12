@@ -42,9 +42,24 @@ export interface Transaction extends EthTx {
   operation?: OperationType
 }
 
-export interface TransactionResult {
+export interface SimpleTransactionResult {
   hash?: string
   safeTxHash?: string
+}
+
+export interface Web3TransactionResult extends SimpleTransactionResult {
+  sendOptions?: SendOptions
+  promiEvent: Promise<any>
+}
+
+export interface EthersTransactionResult extends SimpleTransactionResult {
+  transactionResponse: Record<string, any>
+}
+
+export interface TransactionResult extends SimpleTransactionResult {
+  sendOptions?: SendOptions
+  promiEvent?: Promise<any>
+  transactionResponse?: Record<string, any>
 }
 
 export class TransactionError extends Error {

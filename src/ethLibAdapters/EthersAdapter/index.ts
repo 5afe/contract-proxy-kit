@@ -2,13 +2,11 @@ import EthLibAdapter, { Contract } from '../EthLibAdapter'
 import EthersV4ContractAdapter from './EthersV4ContractAdapter'
 import EthersV5ContractAdapter from './EthersV5ContractAdapter'
 import {
-  TransactionResult,
-  CallOptions,
-  SendOptions,
   EthCallTx,
   formatCallTx,
   EthSendTx,
-  normalizeGasLimit
+  normalizeGasLimit,
+  EthersTransactionResult
 } from '../../utils/transactions'
 import { zeroAddress } from '../../utils/constants'
 import { Address, Abi } from '../../utils/basicTypes'
@@ -16,10 +14,6 @@ import { Address, Abi } from '../../utils/basicTypes'
 export interface EthersAdapterConfig {
   ethers: any
   signer: any
-}
-
-export interface EthersTransactionResult extends TransactionResult {
-  transactionResponse: Record<string, any>
 }
 
 class EthersAdapter extends EthLibAdapter {

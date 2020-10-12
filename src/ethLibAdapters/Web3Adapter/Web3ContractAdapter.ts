@@ -1,6 +1,11 @@
 import { Contract } from '../EthLibAdapter'
-import { Web3TransactionResult, toTxResult } from './'
-import { SendOptions, CallOptions, normalizeGasLimit } from '../../utils/transactions'
+import { toTxResult } from './'
+import {
+  SendOptions,
+  CallOptions,
+  normalizeGasLimit,
+  Web3TransactionResult
+} from '../../utils/transactions'
 import { Address } from '../../utils/basicTypes'
 
 class Web3ContractAdapter implements Contract {

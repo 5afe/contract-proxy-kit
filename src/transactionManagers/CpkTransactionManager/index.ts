@@ -7,12 +7,13 @@ import TransactionManager, {
 import EthLibAdapter, { Contract } from '../../ethLibAdapters/EthLibAdapter'
 import {
   OperationType,
-  TransactionResult,
+  SimpleTransactionResult,
   SendOptions,
   StandardTransaction,
   TransactionError,
   NormalizeGas,
-  Transaction
+  Transaction,
+  TransactionResult
 } from '../../utils/transactions'
 import { NumberLike, Address } from '../../utils/basicTypes'
 
@@ -89,8 +90,12 @@ class CpkTransactionManager implements TransactionManager {
     ethLibAdapter: EthLibAdapter,
     transactions: Transaction[],
     sendOptions: SendOptions
-  ): Promise<TransactionResult> {
-    if (transactions.length === 1 && !transactions[0].operation) {
+  ): Promise<SimpleTransactionResult> {
+    if (transactions.some(({ operation }) => operation === OperationType.DelegateCall)) {
+      throw new Error('DelegateCall unsupported by Gnosis Safe')
+    }
+
+    if (transactions.length === 1) {
       const { to, value, data } = transactions[0]
       return ethLibAdapter.ethSendTransaction({
         to,
@@ -98,10 +103,6 @@ class CpkTransactionManager implements TransactionManager {
         data,
         ...sendOptions
       })
-    }
-
-    if (transactions.some(({ operation }) => operation === OperationType.DelegateCall)) {
-      throw new Error('DelegateCall unsupported by Gnosis Safe')
     }
 
     return {
