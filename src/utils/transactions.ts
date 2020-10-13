@@ -58,7 +58,7 @@ export interface EthersTransactionResult extends SimpleTransactionResult {
 
 export interface TransactionResult extends SimpleTransactionResult {
   sendOptions?: SendOptions
-  promiEvent?: Promise<any>
+  promiEvent?: any
   transactionResponse?: Record<string, any>
 }
 

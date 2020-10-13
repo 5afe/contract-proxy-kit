@@ -8,12 +8,7 @@ import TransactionManager, {
 } from './transactionManagers/TransactionManager'
 import CpkTransactionManager from './transactionManagers/CpkTransactionManager'
 import SafeRelayTransactionManager from './transactionManagers/SafeRelayTransactionManager'
-import {
-  Transaction,
-  OperationType,
-  ExecOptions,
-  TransactionResult
-} from './utils/transactions'
+import { Transaction, OperationType, ExecOptions, TransactionResult } from './utils/transactions'
 import { defaultNetworks, NetworksConfig } from './config/networks'
 
 export default CPK

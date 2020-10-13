@@ -14,8 +14,14 @@ interface TestSafeTransactionsProps {
   getTransactionCount: (account: Address) => number
   getBalance: (address: Address) => any
   testedTxObjProps: string
-  checkTxObj: (txsSize: number, accountType: AccountType, txResult: TransactionResult) => void
-  waitTxReceipt: (txReceipt: TransactionResult) => Promise<any>
+  checkTxObj: (
+    txsSize: number,
+    accountType: AccountType,
+    txResult: TransactionResult,
+    isCpkTransactionManager: boolean
+  ) => void
+  waitTxReceipt: (txResult: TransactionResult) => Promise<any>
+  waitSafeTxReceipt: (txResult: TransactionResult) => Promise<any>
   ownerIsRecognizedContract?: boolean
   isCpkTransactionManager: boolean
   executor?: Address[]
@@ -34,6 +40,7 @@ export function testSafeTransactions({
   testedTxObjProps,
   checkTxObj,
   waitTxReceipt,
+  waitSafeTxReceipt,
   ownerIsRecognizedContract,
   isCpkTransactionManager,
   executor,
@@ -102,8 +109,8 @@ export function testSafeTransactions({
       ]
       const txResult = await cpk.execTransactions(txs)
 
-      checkTxObj(txs.length, accountType, txResult)
-      await waitTxReceipt(txResult)
+      checkTxObj(txs.length, accountType, txResult, isCpkTransactionManager)
+      await waitSafeTxReceipt(txResult)
       ;(await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(1)
     })
 
@@ -119,8 +126,8 @@ export function testSafeTransactions({
       ]
       const txResult = await cpk.execTransactions(txs)
 
-      checkTxObj(txs.length, accountType, txResult)
-      await waitTxReceipt(txResult)
+      checkTxObj(txs.length, accountType, txResult, isCpkTransactionManager)
+      await waitSafeTxReceipt(txResult)
       ;(await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(numSteps)
     })
 
@@ -139,8 +146,8 @@ export function testSafeTransactions({
       ]
       const txResult = await cpk.execTransactions(txs)
 
-      checkTxObj(txs.length, accountType, txResult)
-      await waitTxReceipt(txResult)
+      checkTxObj(txs.length, accountType, txResult, isCpkTransactionManager)
+      await waitSafeTxReceipt(txResult)
       ;(await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(2)
     })
 
@@ -167,8 +174,8 @@ export function testSafeTransactions({
       ]
       const txResult = await cpk.execTransactions(txs)
 
-      checkTxObj(txs.length, accountType, txResult)
-      await waitTxReceipt(txResult)
+      checkTxObj(txs.length, accountType, txResult, isCpkTransactionManager)
+      await waitSafeTxReceipt(txResult)
       ;(await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(2)
 
       if (cpk.address === proxyOwner) {
@@ -212,8 +219,8 @@ export function testSafeTransactions({
       ]
       const txResult = await cpk.execTransactions(txs)
 
-      checkTxObj(txs.length, accountType, txResult)
-      await waitTxReceipt(txResult)
+      checkTxObj(txs.length, accountType, txResult, isCpkTransactionManager)
+      await waitSafeTxReceipt(txResult)
 
       if (cpk.address === proxyOwner) {
         fromWei(await erc20.balanceOf(cpk.address)).should.equal(99)
@@ -283,8 +290,8 @@ export function testSafeTransactions({
       ]
       const txResult = await cpk.execTransactions(txs)
 
-      checkTxObj(txs.length, accountType, txResult)
-      await waitTxReceipt(txResult)
+      checkTxObj(txs.length, accountType, txResult, isCpkTransactionManager)
+      await waitSafeTxReceipt(txResult)
     })
     ;(!isCpkTransactionManager ? it.skip : it)(
       'can execute a single transaction with a specific gas price',
@@ -301,7 +308,7 @@ export function testSafeTransactions({
         ]
         const gasPrice = 123
         const txResult = await cpk.execTransactions(txs, { gasPrice })
-        checkTxObj(txs.length, accountType, txResult)
+        checkTxObj(txs.length, accountType, txResult, isCpkTransactionManager)
         const receipt = await waitTxReceipt(txResult)
         const { gasUsed } = receipt
 
@@ -330,7 +337,7 @@ export function testSafeTransactions({
         ]
         const gasPrice = 123
         const txResult = await cpk.execTransactions(txs, { gasPrice })
-        checkTxObj(txs.length, accountType, txResult)
+        checkTxObj(txs.length, accountType, txResult, isCpkTransactionManager)
         const receipt = await waitTxReceipt(txResult)
         const { gasUsed } = receipt
 
@@ -358,8 +365,8 @@ export function testSafeTransactions({
       }
 
       const txResult = await cpk.enableModule(dailyLimitModule.address)
-      checkTxObj(1, accountType, txResult)
-      await waitTxReceipt(txResult)
+      checkTxObj(1, accountType, txResult, isCpkTransactionManager)
+      await waitSafeTxReceipt(txResult)
 
       moduleList = await cpk.getModules()
       moduleList.length.should.equal(1)
@@ -373,8 +380,8 @@ export function testSafeTransactions({
       ;(await cpk.isModuleEnabled(dailyLimitModule.address)).should.equal(true)
 
       const txResult = await cpk.disableModule(dailyLimitModule.address)
-      checkTxObj(1, accountType, txResult)
-      await waitTxReceipt(txResult)
+      checkTxObj(1, accountType, txResult, isCpkTransactionManager)
+      await waitSafeTxReceipt(txResult)
 
       moduleList = await cpk.getModules()
       moduleList.length.should.equal(0)

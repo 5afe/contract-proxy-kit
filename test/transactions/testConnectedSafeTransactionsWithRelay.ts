@@ -1,5 +1,5 @@
 import should from 'should'
-import CPK from '../../src'
+import CPK, { TransactionResult } from '../../src'
 import { Address } from '../../src/utils/basicTypes'
 import { getContracts } from '../utils/contracts'
 
@@ -11,7 +11,7 @@ interface TestConnectedSafeTransactionsWithRelayProps {
   randomHexWord: () => string
   fromWei: (amount: number) => number
   testedTxObjProps: string
-  waitTxReceipt: ({ hash }: { hash: string }) => Promise<any>
+  waitTxReceipt: (txResult: TransactionResult) => Promise<any>
   ownerIsRecognizedContract?: boolean
 }
 
