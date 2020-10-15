@@ -4,7 +4,7 @@ import CPKFactoryJson from '../../build/contracts/CPKFactory.json'
 import GnosisSafeJson from '../../build/contracts/GnosisSafe.json'
 import MultiSendJson from '../../build/contracts/MultiSend.json'
 import DefaultCallbackHandlerJson from '../../build/contracts/DefaultCallbackHandler.json'
-import ProxyFactoryJson from '../../build/contracts/ProxyFactory.json'
+import GnosisSafeProxyFactoryJson from '../../build/contracts/GnosisSafeProxyFactory.json'
 import MultistepJson from '../../build/contracts/Multistep.json'
 import ERC20MintableJson from '../../build/contracts/ERC20Mintable.json'
 import ConditionalTokensJson from '../../build/contracts/ConditionalTokens.json'
@@ -13,7 +13,7 @@ import { Address } from '../../src/utils/basicTypes'
 
 let CPKFactory: any
 let GnosisSafe: any
-let ProxyFactory: any
+let GnosisSafeProxyFactory: any
 let MultiSend: any
 let DefaultCallbackHandler: any
 let MultiStep: any
@@ -23,7 +23,7 @@ let DailyLimitModule: any
 
 let cpkFactory: any
 let gnosisSafe: any
-let proxyFactory: any
+let gnosisSafeProxyFactory: any
 let multiSend: any
 let defaultCallbackHandler: any
 let multiStep: any
@@ -34,7 +34,7 @@ let dailyLimitModule: any
 export interface TestContractInstances {
   cpkFactory: any
   gnosisSafe: any
-  proxyFactory: any
+  gnosisSafeProxyFactory: any
   multiSend: any
   defaultCallbackHandler: any
   multiStep: any
@@ -46,7 +46,7 @@ export interface TestContractInstances {
 export interface TestContracts {
   CPKFactory: any
   GnosisSafe: any
-  ProxyFactory: any
+  GnosisSafeProxyFactory: any
   MultiSend: any
   DefaultCallbackHandler: any
   MultiStep: any
@@ -68,10 +68,10 @@ export const initializeContracts = async (safeOwner: Address): Promise<void> => 
   GnosisSafe.defaults({ from: safeOwner })
   gnosisSafe = await GnosisSafe.deployed()
 
-  ProxyFactory = TruffleContract(ProxyFactoryJson)
-  ProxyFactory.setProvider(provider)
-  ProxyFactory.defaults({ from: safeOwner })
-  proxyFactory = await ProxyFactory.deployed()
+  GnosisSafeProxyFactory = TruffleContract(GnosisSafeProxyFactoryJson)
+  GnosisSafeProxyFactory.setProvider(provider)
+  GnosisSafeProxyFactory.defaults({ from: safeOwner })
+  gnosisSafeProxyFactory = await GnosisSafeProxyFactory.deployed()
 
   MultiSend = TruffleContract(MultiSendJson)
   MultiSend.setProvider(provider)
@@ -107,7 +107,7 @@ export const initializeContracts = async (safeOwner: Address): Promise<void> => 
 export const getContracts = (): TestContracts => ({
   CPKFactory,
   GnosisSafe,
-  ProxyFactory,
+  GnosisSafeProxyFactory,
   MultiSend,
   DefaultCallbackHandler,
   MultiStep,
@@ -119,7 +119,7 @@ export const getContracts = (): TestContracts => ({
 export const getContractInstances = (): TestContractInstances => ({
   cpkFactory,
   gnosisSafe,
-  proxyFactory,
+  gnosisSafeProxyFactory,
   multiSend,
   defaultCallbackHandler,
   multiStep,
