@@ -327,11 +327,7 @@ class CPK {
     if (!this.#contract) {
       throw new Error('CPK contract uninitialized')
     }
-    const modules = await this.#contract.call('getModules', [])
-    const selectedModules = modules.filter(
-      (module: Address) => module.toLowerCase() === moduleAddress.toLowerCase()
-    )
-    return selectedModules.length > 0
+    return await this.#contract.call('isModuleEnabled', [moduleAddress])
   }
 
   async enableModule(moduleAddress: Address): Promise<TransactionResult> {
