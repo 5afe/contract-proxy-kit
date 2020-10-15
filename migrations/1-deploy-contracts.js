@@ -1,12 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 module.exports = function (deployer, network) {
-    var deploy = function (name) { return deployer.deploy(artifacts.require(name)); };
+    const deploy = (name) => deployer.deploy(artifacts.require(name));
     ['Migrations', 'CPKFactory'].forEach(deploy);
     if (network === 'test' || network === 'local') {
         [
             'GnosisSafe',
-            'ProxyFactory',
+            'GnosisSafeProxyFactory',
             'MultiSend',
             'DefaultCallbackHandler',
             'Multistep',
