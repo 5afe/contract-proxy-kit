@@ -1,14 +1,14 @@
 pragma solidity >=0.5.0 <0.7.0;
 
 import { Enum } from "@gnosis.pm/safe-contracts/contracts/common/Enum.sol";
-import { Proxy } from "@gnosis.pm/safe-contracts/contracts/proxies/Proxy.sol";
+import { GnosisSafeProxy } from "@gnosis.pm/safe-contracts/contracts/proxies/GnosisSafeProxy.sol";
 import { GnosisSafe } from "@gnosis.pm/safe-contracts/contracts/GnosisSafe.sol";
 
 contract CPKFactory {
-    event ProxyCreation(Proxy proxy);
+    event ProxyCreation(GnosisSafeProxy proxy);
 
     function proxyCreationCode() external pure returns (bytes memory) {
-        return type(Proxy).creationCode;
+        return type(GnosisSafeProxy).creationCode;
     }
 
     function createProxyAndExecTransaction(
@@ -24,7 +24,7 @@ contract CPKFactory {
         returns (bool execTransactionSuccess)
     {
         GnosisSafe proxy;
-        bytes memory deploymentData = abi.encodePacked(type(Proxy).creationCode, abi.encode(masterCopy));
+        bytes memory deploymentData = abi.encodePacked(type(GnosisSafeProxy).creationCode, abi.encode(masterCopy));
         bytes32 salt = keccak256(abi.encode(msg.sender, saltNonce));
         // solium-disable-next-line security/no-inline-assembly
         assembly {
@@ -49,6 +49,6 @@ contract CPKFactory {
             abi.encodePacked(uint(address(this)), uint(0), uint8(1))
         );
 
-        emit ProxyCreation(Proxy(address(proxy)));
+        emit ProxyCreation(GnosisSafeProxy(address(proxy)));
    }
 }
