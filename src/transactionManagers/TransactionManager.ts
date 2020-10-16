@@ -25,7 +25,7 @@ export interface ExecTransactionProps {
   transactions: Transaction[]
   contracts: CPKContracts
   ethLibAdapter: EthLibAdapter
-  saltNonce: string,
+  saltNonce: string
   isDeployed: boolean
   isConnectedToSafe: boolean
   sendOptions: any
