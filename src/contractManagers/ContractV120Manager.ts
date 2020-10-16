@@ -1,9 +1,10 @@
-import { Contract } from '../ethLibAdapters/EthLibAdapter'
-import ContractManager from '.'
+import ContractManager, { ContractManagerProps } from './'
 
 class ContractV120Manager extends ContractManager {
-  constructor(contract: Contract) {
-    super(contract)
+  static async create(opts: ContractManagerProps): Promise<ContractV120Manager> {
+    const contractV120Manager = new ContractV120Manager()
+    await contractV120Manager.init(opts)
+    return contractV120Manager
   }
 }
 
