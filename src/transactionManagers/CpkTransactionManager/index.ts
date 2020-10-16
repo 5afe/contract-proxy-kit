@@ -35,15 +35,22 @@ class CpkTransactionManager implements TransactionManager {
     ownerAccount,
     safeExecTxParams,
     transactions,
-    contracts,
     ethLibAdapter,
+    contractManager,
     saltNonce,
     isDeployed,
     isConnectedToSafe,
     sendOptions
   }: ExecTransactionProps): Promise<TransactionResult> {
-    const { safeContract, proxyFactory, masterCopyAddress, fallbackHandlerAddress } = contracts
-    const isSingleTx = transactions.length === 1
+    const {
+      contract: safeContract,
+      proxyFactory,
+      masterCopyAddress,
+      fallbackHandlerAddress
+    } = contractManager
+    if (!safeContract) {
+      throw new Error('CPK Proxy contract uninitialized')
+    }
 
     if (isConnectedToSafe) {
       return this.execTxsWhileConnectedToSafe(ethLibAdapter, transactions, sendOptions)
@@ -69,6 +76,7 @@ class CpkTransactionManager implements TransactionManager {
 
     const { success, gasLimit } = await this.findGasLimit(ethLibAdapter, txObj, sendOptions)
     sendOptions.gas = gasLimit
+    const isSingleTx = transactions.length === 1
 
     if (!success) {
       throw await this.makeTransactionError(
@@ -141,12 +149,8 @@ class CpkTransactionManager implements TransactionManager {
     fallbackHandlerAddress: Address,
     { to, value, data, operation }: StandardTransaction,
     saltNonce: string,
-    proxyFactory?: Contract
+    proxyFactory: Contract
   ): ContractTxObj {
-    if (!proxyFactory) {
-      throw new Error('CPK factory uninitialized')
-    }
-
     return {
       contract: proxyFactory,
       methodName: 'createProxyAndExecTransaction',

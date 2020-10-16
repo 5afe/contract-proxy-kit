@@ -1,5 +1,6 @@
 import { TransactionResult, StandardTransaction, Transaction } from '../utils/transactions'
 import EthLibAdapter, { Contract } from '../ethLibAdapters/EthLibAdapter'
+import ContractManager from '../contractManagers'
 import { Address } from '../utils/basicTypes'
 
 export enum TransactionManagerNames {
@@ -14,7 +15,7 @@ export interface TransactionManagerConfig {
 
 export interface CPKContracts {
   safeContract: Contract
-  proxyFactory?: Contract
+  proxyFactory: Contract
   masterCopyAddress: Address
   fallbackHandlerAddress: Address
 }
@@ -23,7 +24,7 @@ export interface ExecTransactionProps {
   ownerAccount: Address
   safeExecTxParams: StandardTransaction
   transactions: Transaction[]
-  contracts: CPKContracts
+  contractManager: ContractManager
   ethLibAdapter: EthLibAdapter
   saltNonce: string
   isDeployed: boolean
