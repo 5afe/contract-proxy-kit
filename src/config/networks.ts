@@ -1,4 +1,4 @@
-interface NetworkConfigEntry {
+export interface NetworkConfigEntry {
   masterCopyAddress: string
   proxyFactoryAddress: string
   multiSendAddress: string
