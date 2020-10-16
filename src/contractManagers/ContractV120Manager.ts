@@ -1,10 +1,9 @@
-import ContractManager, { ContractManagerProps } from './'
+import CommonContractManager from './CommonContractManager'
+import { Address } from '../utils/basicTypes'
 
-class ContractV120Manager extends ContractManager {
-  static async create(opts: ContractManagerProps): Promise<ContractV120Manager> {
-    const contractV120Manager = new ContractV120Manager(opts.ethLibAdapter, opts.network)
-    await contractV120Manager.init(opts)
-    return contractV120Manager
+class ContractV120Manager extends CommonContractManager {
+  async isModuleEnabled(moduleAddress: Address): Promise<boolean> {
+    return this.contract.call('isModuleEnabled', [moduleAddress])
   }
 }
 

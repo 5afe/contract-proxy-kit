@@ -4,7 +4,8 @@ import { Address } from '../utils/basicTypes'
 import cpkFactoryAbi from '../abis/CpkFactoryAbi.json'
 import safeAbi from '../abis/SafeAbi.json'
 import multiSendAbi from '../abis/MultiSendAbi.json'
-import { sentinelModules } from '../utils/constants'
+import ContractV120Manager from './ContractV120Manager'
+import CommonContractManager from './CommonContractManager'
 
 export interface ContractManagerProps {
   ethLibAdapter: EthLibAdapter
@@ -15,12 +16,19 @@ export interface ContractManagerProps {
   isConnectedToSafe: boolean
 }
 
-abstract class ContractManager {
+class ContractManager {
+  contractVersionManager?: CommonContractManager
   #contract?: Contract
   #proxyFactory: Contract
   #masterCopyAddress: Address
   #multiSend: Contract
   #fallbackHandlerAddress: Address
+
+  static async create(opts: ContractManagerProps): Promise<ContractManager> {
+    const contractManager = new ContractManager(opts.ethLibAdapter, opts.network)
+    await contractManager.init(opts)
+    return contractManager
+  }
 
   constructor(ethLibAdapter: EthLibAdapter, network: NetworkConfigEntry) {
     this.#masterCopyAddress = network.masterCopyAddress
@@ -31,29 +39,28 @@ abstract class ContractManager {
 
   async init(opts: ContractManagerProps): Promise<void> {
     const { ethLibAdapter, network, ownerAccount, saltNonce, isSafeApp, isConnectedToSafe } = opts
-
     if (isSafeApp || isConnectedToSafe) {
       this.#contract = ethLibAdapter.getContract(safeAbi, ownerAccount)
-      return
+    } else {
+      const salt = ethLibAdapter.keccak256(
+        ethLibAdapter.abiEncode(['address', 'uint256'], [ownerAccount, saltNonce])
+      )
+      const initCode = ethLibAdapter.abiEncodePacked(
+        { type: 'bytes', value: await this.#proxyFactory.call('proxyCreationCode', []) },
+        {
+          type: 'bytes',
+          value: ethLibAdapter.abiEncode(['address'], [network.masterCopyAddress])
+        }
+      )
+      const proxyAddress = ethLibAdapter.calcCreate2Address(
+        this.#proxyFactory.address,
+        salt,
+        initCode
+      )
+  
+      this.#contract = ethLibAdapter.getContract(safeAbi, proxyAddress)
     }
-
-    const salt = ethLibAdapter.keccak256(
-      ethLibAdapter.abiEncode(['address', 'uint256'], [ownerAccount, saltNonce])
-    )
-    const initCode = ethLibAdapter.abiEncodePacked(
-      { type: 'bytes', value: await this.#proxyFactory.call('proxyCreationCode', []) },
-      {
-        type: 'bytes',
-        value: ethLibAdapter.abiEncode(['address'], [network.masterCopyAddress])
-      }
-    )
-    const proxyAddress = ethLibAdapter.calcCreate2Address(
-      this.#proxyFactory.address,
-      salt,
-      initCode
-    )
-
-    this.#contract = ethLibAdapter.getContract(safeAbi, proxyAddress)
+    this.contractVersionManager = new ContractV120Manager(this.#contract)
   }
 
   get contract(): Contract | undefined {
@@ -74,39 +81,6 @@ abstract class ContractManager {
 
   get fallbackHandlerAddress(): Address {
     return this.#fallbackHandlerAddress
-  }
-
-  async getModules(): Promise<Address[]> {
-    if (!this.contract) {
-      throw new Error('CPK Proxy contract uninitialized')
-    }
-    return this.contract.call('getModules', [])
-  }
-
-  async isModuleEnabled(moduleAddress: Address): Promise<boolean> {
-    if (!this.contract) {
-      throw new Error('CPK Proxy contract uninitialized')
-    }
-    return this.contract.call('isModuleEnabled', [moduleAddress])
-  }
-
-  async encodeEnableModule(moduleAddress: Address): Promise<string> {
-    if (!this.contract) {
-      throw new Error('CPK Proxy contract uninitialized')
-    }
-    return this.contract.encode('enableModule', [moduleAddress])
-  }
-
-  async encodeDisableModule(moduleAddress: Address): Promise<string> {
-    if (!this.contract) {
-      throw new Error('CPK Proxy contract uninitialized')
-    }
-    const modules = await this.contract.call('getModules', [])
-    const index = modules.findIndex(
-      (module: Address) => module.toLowerCase() === moduleAddress.toLowerCase()
-    )
-    const prevModuleAddress = index === 0 ? sentinelModules : modules[index - 1]
-    return this.contract.encode('disableModule', [prevModuleAddress, moduleAddress])
   }
 }
 
