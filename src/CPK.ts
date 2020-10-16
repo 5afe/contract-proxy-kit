@@ -1,13 +1,13 @@
 import SafeAppsSdkConnector from './safeAppsSdkConnector'
 import EthLibAdapter, { Contract } from './ethLibAdapters/EthLibAdapter'
-import TransactionManager, { CPKContracts } from './transactionManagers/TransactionManager'
+import TransactionManager from './transactionManagers/TransactionManager'
 import CpkTransactionManager from './transactionManagers/CpkTransactionManager'
 import ContractManager from './contractManagers'
 import ContractV120Manager from './contractManagers/ContractV120Manager'
 import { defaultNetworks, NetworksConfig } from './config/networks'
 import multiSendAbi from './abis/MultiSendAbi.json'
 import { Address } from './utils/basicTypes'
-import { predeterminedSaltNonce, sentinelModules } from './utils/constants'
+import { predeterminedSaltNonce } from './utils/constants'
 import { joinHexData, getHexDataLength } from './utils/hexData'
 import { OperationType, standardizeSafeAppsTransaction } from './utils/transactions'
 import {
@@ -63,7 +63,7 @@ class CPK {
       throw new Error('ethLibAdapter property missing from options')
     }
     this.#ethLibAdapter = ethLibAdapter
-    this.#transactionManager = transactionManager ? transactionManager : new CpkTransactionManager()
+    this.#transactionManager = transactionManager ?? new CpkTransactionManager()
     this.#ownerAccount = ownerAccount
     this.#networks = {
       ...defaultNetworks,
@@ -172,7 +172,7 @@ class CPK {
     if (this.isSafeApp()) {
       return this.#safeAppsSdkConnector.safeAppInfo?.safeAddress
     }
-    return this.contract?.address
+    return this.#contractManager?.contract?.address
   }
 
   setEthLibAdapter(ethLibAdapter: EthLibAdapter): void {
@@ -229,14 +229,8 @@ class CPK {
     if (!this.address) {
       throw new Error('CPK address uninitialized')
     }
-    if (!this.contract) {
-      throw new Error('CPK contract uninitialized')
-    }
-    if (!this.#contractManager?.masterCopyAddress) {
-      throw new Error('CPK masterCopyAddress uninitialized')
-    }
-    if (!this.#contractManager?.fallbackHandlerAddress) {
-      throw new Error('CPK fallbackHandlerAddress uninitialized')
+    if (!this.#contractManager) {
+      throw new Error('CPK contractManager uninitialized')
     }
     if (!this.#ethLibAdapter) {
       throw new Error('CPK ethLibAdapter uninitialized')
@@ -258,19 +252,12 @@ class CPK {
 
     const txManager = !isDeployed ? new CpkTransactionManager() : this.#transactionManager
 
-    const cpkContracts: CPKContracts = {
-      safeContract: this.contract,
-      proxyFactory: this.proxyFactory,
-      masterCopyAddress: this.#contractManager?.masterCopyAddress,
-      fallbackHandlerAddress: this.#contractManager?.fallbackHandlerAddress
-    }
-
     return txManager.execTransactions({
       ownerAccount,
       safeExecTxParams,
       transactions,
-      contracts: cpkContracts,
       ethLibAdapter: this.#ethLibAdapter,
+      contractManager: this.#contractManager,
       saltNonce: this.#saltNonce,
       isDeployed,
       isConnectedToSafe: this.#isConnectedToSafe,
@@ -283,10 +270,10 @@ class CPK {
     if (!isProxyDeployed) {
       throw new Error('CPK Proxy contract is not deployed')
     }
-    if (!this.contract) {
-      throw new Error('CPK contract uninitialized')
+    if (!this.#contractManager) {
+      throw new Error('CPK contractManager uninitialized')
     }
-    return await this.contract.call('getModules', [])
+    return await this.#contractManager.getModules()
   }
 
   async isModuleEnabled(moduleAddress: Address): Promise<boolean> {
@@ -294,15 +281,15 @@ class CPK {
     if (!isProxyDeployed) {
       throw new Error('CPK Proxy contract is not deployed')
     }
-    if (!this.contract) {
-      throw new Error('CPK contract uninitialized')
+    if (!this.#contractManager) {
+      throw new Error('CPK contractManager uninitialized')
     }
-    return await this.contract.call('isModuleEnabled', [moduleAddress])
+    return await this.#contractManager.isModuleEnabled(moduleAddress)
   }
 
   async enableModule(moduleAddress: Address): Promise<TransactionResult> {
-    if (!this.contract) {
-      throw new Error('CPK contract uninitialized')
+    if (!this.#contractManager) {
+      throw new Error('CPK contractManager uninitialized')
     }
     if (!this.address) {
       throw new Error('CPK address uninitialized')
@@ -310,7 +297,7 @@ class CPK {
     return await this.execTransactions([
       {
         to: this.address,
-        data: await this.contract.encode('enableModule', [moduleAddress]),
+        data: await this.#contractManager.encodeEnableModule(moduleAddress),
         operation: CPK.Call
       }
     ])
@@ -321,21 +308,16 @@ class CPK {
     if (!isProxyDeployed) {
       throw new Error('CPK Proxy contract is not deployed')
     }
-    if (!this.contract) {
-      throw new Error('CPK contract uninitialized')
+    if (!this.#contractManager) {
+      throw new Error('CPK contractManager uninitialized')
     }
     if (!this.address) {
       throw new Error('CPK address uninitialized')
     }
-    const modules = await this.contract.call('getModules', [])
-    const index = modules.findIndex(
-      (module: Address) => module.toLowerCase() === moduleAddress.toLowerCase()
-    )
-    const prevModuleAddress = index === 0 ? sentinelModules : modules[index - 1]
     return await this.execTransactions([
       {
         to: this.address,
-        data: await this.contract.encode('disableModule', [prevModuleAddress, moduleAddress]),
+        data: await this.#contractManager.encodeDisableModule(moduleAddress),
         operation: CPK.Call
       }
     ])
