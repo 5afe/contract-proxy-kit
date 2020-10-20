@@ -1,12 +1,7 @@
+import { Address } from '../../utils/basicTypes'
+import { CallOptions, EthersTransactionResult, normalizeGasLimit, SendOptions } from '../../utils/transactions'
 import { Contract } from '../EthLibAdapter'
 import EthersAdapter from './'
-import {
-  CallOptions,
-  SendOptions,
-  normalizeGasLimit,
-  EthersTransactionResult
-} from '../../utils/transactions'
-import { Address } from '../../utils/basicTypes'
 
 class EthersContractAdapter implements Contract {
   constructor(public contract: any, public ethersAdapter: EthersAdapter) {}

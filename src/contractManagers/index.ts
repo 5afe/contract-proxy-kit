@@ -1,13 +1,13 @@
-import { masterCopyAddressVersions, NetworkConfigEntry } from '../config/networks'
-import EthLibAdapter, { Contract } from '../ethLibAdapters/EthLibAdapter'
 import cpkFactoryAbi from '../abis/CpkFactoryAbi.json'
+import multiSendAbi from '../abis/MultiSendAbi.json'
 import safeAbiV111 from '../abis/SafeAbiV1-1-1.json'
 import safeAbiV120 from '../abis/SafeAbiV1-2-0.json'
-import multiSendAbi from '../abis/MultiSendAbi.json'
-import CommonContractManager from './CommonContractManager'
-import ContractV120Manager from './ContractV120Manager'
-import ContractV111Manager from './ContractV111Manager'
+import { masterCopyAddressVersions, NetworkConfigEntry } from '../config/networks'
+import EthLibAdapter, { Contract } from '../ethLibAdapters/EthLibAdapter'
 import { Address } from '../utils/basicTypes'
+import CommonContractManager from './CommonContractManager'
+import ContractV111Manager from './ContractV111Manager'
+import ContractV120Manager from './ContractV120Manager'
 
 export interface ContractManagerProps {
   ethLibAdapter: EthLibAdapter

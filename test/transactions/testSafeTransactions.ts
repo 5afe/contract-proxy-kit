@@ -1,8 +1,8 @@
 import should from 'should'
 import CPK, { TransactionResult } from '../../src'
 import { Address } from '../../src/utils/basicTypes'
-import { getContracts } from '../utils/contracts'
 import { AccountType } from '../utils'
+import { getContracts } from '../utils/contracts'
 
 interface TestSafeTransactionsProps {
   web3: any

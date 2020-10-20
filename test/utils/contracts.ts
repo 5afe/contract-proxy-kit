@@ -1,14 +1,14 @@
 const TruffleContract = require('@truffle/contract')
 import Web3Maj1Min3 from 'web3-1-3'
-import CPKFactoryJson from '../../build/contracts/CPKFactory.json'
-import GnosisSafeJson from '../../build/contracts/GnosisSafe.json'
-import MultiSendJson from '../../build/contracts/MultiSend.json'
-import DefaultCallbackHandlerJson from '../../build/contracts/DefaultCallbackHandler.json'
-import GnosisSafeProxyFactoryJson from '../../build/contracts/GnosisSafeProxyFactory.json'
-import MultistepJson from '../../build/contracts/Multistep.json'
-import ERC20MintableJson from '../../build/contracts/ERC20Mintable.json'
 import ConditionalTokensJson from '../../build/contracts/ConditionalTokens.json'
+import CPKFactoryJson from '../../build/contracts/CPKFactory.json'
 import DailyLimitModuleJson from '../../build/contracts/DailyLimitModule.json'
+import DefaultCallbackHandlerJson from '../../build/contracts/DefaultCallbackHandler.json'
+import ERC20MintableJson from '../../build/contracts/ERC20Mintable.json'
+import GnosisSafeJson from '../../build/contracts/GnosisSafe.json'
+import GnosisSafeProxyFactoryJson from '../../build/contracts/GnosisSafeProxyFactory.json'
+import MultiSendJson from '../../build/contracts/MultiSend.json'
+import MultistepJson from '../../build/contracts/Multistep.json'
 import { Address } from '../../src/utils/basicTypes'
 
 let CPKFactory: any

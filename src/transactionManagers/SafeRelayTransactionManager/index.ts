@@ -1,14 +1,14 @@
-import fetch from 'node-fetch'
 import BigNumber from 'bignumber.js'
+import fetch from 'node-fetch'
+import EthLibAdapter from '../../ethLibAdapters/EthLibAdapter'
+import { Address } from '../../utils/basicTypes'
+import { zeroAddress } from '../../utils/constants'
+import { OperationType, TransactionResult } from '../../utils/transactions'
 import TransactionManager, {
   ExecTransactionProps,
   TransactionManagerConfig,
   TransactionManagerNames
 } from '../TransactionManager'
-import { TransactionResult, OperationType } from '../../utils/transactions'
-import { zeroAddress } from '../../utils/constants'
-import { Address } from '../../utils/basicTypes'
-import EthLibAdapter from '../../ethLibAdapters/EthLibAdapter'
 
 BigNumber.set({ EXPONENTIAL_AT: [-7, 255] })
 

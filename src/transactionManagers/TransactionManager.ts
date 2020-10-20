@@ -1,7 +1,7 @@
-import { TransactionResult, StandardTransaction, Transaction } from '../utils/transactions'
-import EthLibAdapter, { Contract } from '../ethLibAdapters/EthLibAdapter'
 import ContractManager from '../contractManagers'
+import EthLibAdapter, { Contract } from '../ethLibAdapters/EthLibAdapter'
 import { Address } from '../utils/basicTypes'
+import { StandardTransaction, Transaction, TransactionResult } from '../utils/transactions'
 
 export enum TransactionManagerNames {
   CpkTransactionManager = 'CpkTransactionManager',
