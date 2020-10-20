@@ -6,6 +6,7 @@ module.exports = function (deployer: Truffle.Deployer, network: string) {
   if (network === 'test' || network === 'local') {
     ;[
       'GnosisSafe',
+      'GnosisSafe2',
       'GnosisSafeProxyFactory',
       'MultiSend',
       'DefaultCallbackHandler',

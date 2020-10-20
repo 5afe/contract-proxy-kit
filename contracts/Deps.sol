@@ -7,3 +7,5 @@ import { DefaultCallbackHandler } from "@gnosis.pm/safe-contracts/contracts/hand
 import { DailyLimitModule } from "@gnosis.pm/safe-contracts/contracts/modules/DailyLimitModule.sol";
 import { ConditionalTokens } from "@gnosis.pm/conditional-tokens-contracts/contracts/ConditionalTokens.sol";
 import { ERC20Mintable } from "openzeppelin-solidity/contracts/token/ERC20/ERC20Mintable.sol";
+
+contract GnosisSafe2 is GnosisSafe {}
