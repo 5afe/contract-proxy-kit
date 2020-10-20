@@ -1,13 +1,27 @@
+import { Address } from '../utils/basicTypes'
+
 export interface NetworkConfigEntry {
-  masterCopyAddress: string
-  proxyFactoryAddress: string
-  multiSendAddress: string
-  fallbackHandlerAddress: string
+  masterCopyAddress: Address
+  proxyFactoryAddress: Address
+  multiSendAddress: Address
+  fallbackHandlerAddress: Address
 }
 
 export interface NetworksConfig {
   [id: string]: NetworkConfigEntry
 }
+
+// First element belongs to latest release. Do not alter this order. New releases go first.
+export const masterCopyAddressVersions = [
+  {
+    version: '1.2.0',
+    address: '0x6851D6fDFAfD08c0295C392436245E5bc78B0185'
+  },
+  {
+    version: '1.1.1',
+    address: '0x34CfAC646f301356fAa8B21e94227e3583Fe3F5F'
+  }
+]
 
 export const defaultNetworks: NetworksConfig = {
   // mainnet
