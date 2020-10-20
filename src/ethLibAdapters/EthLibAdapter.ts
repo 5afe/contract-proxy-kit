@@ -1,12 +1,12 @@
+import { Abi, Address } from '../utils/basicTypes'
+import { joinHexData } from '../utils/hexData'
 import {
-  TransactionResult,
-  SendOptions,
   CallOptions,
   EthCallTx,
-  EthSendTx
+  EthSendTx,
+  SendOptions,
+  TransactionResult
 } from '../utils/transactions'
-import { joinHexData } from '../utils/hexData'
-import { Address, Abi } from '../utils/basicTypes'
 
 export interface Contract {
   address: Address

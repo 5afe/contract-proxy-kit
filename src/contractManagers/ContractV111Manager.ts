@@ -1,5 +1,5 @@
-import CommonContractManager from './CommonContractManager'
 import { Address } from '../utils/basicTypes'
+import CommonContractManager from './CommonContractManager'
 
 class ContractV111Manager extends CommonContractManager {
   async isModuleEnabled(moduleAddress: Address): Promise<boolean> {

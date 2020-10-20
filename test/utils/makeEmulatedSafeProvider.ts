@@ -1,6 +1,6 @@
 import { OperationType, Transaction } from '../../src'
-import { zeroAddress } from '../../src/utils/constants'
 import { Address } from '../../src/utils/basicTypes'
+import { zeroAddress } from '../../src/utils/constants'
 
 interface EmulatedSafeProviderProps {
   web3: any
