@@ -6,6 +6,7 @@ import DailyLimitModuleJson from '../../build/contracts/DailyLimitModule.json'
 import DefaultCallbackHandlerJson from '../../build/contracts/DefaultCallbackHandler.json'
 import ERC20MintableJson from '../../build/contracts/ERC20Mintable.json'
 import GnosisSafeJson from '../../build/contracts/GnosisSafe.json'
+import GnosisSafe2Json from '../../build/contracts/GnosisSafe2.json'
 import GnosisSafeProxyFactoryJson from '../../build/contracts/GnosisSafeProxyFactory.json'
 import MultiSendJson from '../../build/contracts/MultiSend.json'
 import MultistepJson from '../../build/contracts/Multistep.json'
@@ -13,6 +14,7 @@ import { Address } from '../../src/utils/basicTypes'
 
 let CPKFactory: any
 let GnosisSafe: any
+let GnosisSafe2: any
 let GnosisSafeProxyFactory: any
 let MultiSend: any
 let DefaultCallbackHandler: any
@@ -23,6 +25,7 @@ let DailyLimitModule: any
 
 let cpkFactory: any
 let gnosisSafe: any
+let gnosisSafe2: any
 let gnosisSafeProxyFactory: any
 let multiSend: any
 let defaultCallbackHandler: any
@@ -34,6 +37,7 @@ let dailyLimitModule: any
 export interface TestContractInstances {
   cpkFactory: any
   gnosisSafe: any
+  gnosisSafe2: any
   gnosisSafeProxyFactory: any
   multiSend: any
   defaultCallbackHandler: any
@@ -46,6 +50,7 @@ export interface TestContractInstances {
 export interface TestContracts {
   CPKFactory: any
   GnosisSafe: any
+  GnosisSafe2: any
   GnosisSafeProxyFactory: any
   MultiSend: any
   DefaultCallbackHandler: any
@@ -67,6 +72,11 @@ export const initializeContracts = async (safeOwner: Address): Promise<void> => 
   GnosisSafe.setProvider(provider)
   GnosisSafe.defaults({ from: safeOwner })
   gnosisSafe = await GnosisSafe.deployed()
+
+  GnosisSafe2 = TruffleContract(GnosisSafe2Json)
+  GnosisSafe2.setProvider(provider)
+  GnosisSafe2.defaults({ from: safeOwner })
+  gnosisSafe2 = await GnosisSafe2.deployed()
 
   GnosisSafeProxyFactory = TruffleContract(GnosisSafeProxyFactoryJson)
   GnosisSafeProxyFactory.setProvider(provider)
@@ -107,6 +117,7 @@ export const initializeContracts = async (safeOwner: Address): Promise<void> => 
 export const getContracts = (): TestContracts => ({
   CPKFactory,
   GnosisSafe,
+  GnosisSafe2,
   GnosisSafeProxyFactory,
   MultiSend,
   DefaultCallbackHandler,
@@ -119,6 +130,7 @@ export const getContracts = (): TestContracts => ({
 export const getContractInstances = (): TestContractInstances => ({
   cpkFactory,
   gnosisSafe,
+  gnosisSafe2,
   gnosisSafeProxyFactory,
   multiSend,
   defaultCallbackHandler,
