@@ -175,25 +175,25 @@ describe('CPK', () => {
     })
   })
 
-  //describe('with Safe Relay transaction manager', () => {
-  //  const transactionManager = new SafeRelayTransactionManager({ url: 'http://localhost:8000' })
-  //  web3Versions.forEach((Web3) => {
-  //    shouldWorkWithWeb3({
-  //      Web3,
-  //      defaultAccountBox,
-  //      safeOwnerBox,
-  //      gnosisSafeProviderBox,
-  //      transactionManager
-  //    })
-  //  })
-  //  ethersVersions.forEach((ethers) => {
-  //    shouldWorkWithEthers({
-  //      ethers,
-  //      defaultAccountBox,
-  //      safeOwnerBox,
-  //      gnosisSafeProviderBox,
-  //      transactionManager
-  //    })
-  //  })
-  //})
+  describe('with Safe Relay transaction manager', () => {
+    const transactionManager = new SafeRelayTransactionManager({ url: 'http://localhost:8000' })
+    web3Versions.forEach((Web3) => {
+      shouldWorkWithWeb3({
+        Web3,
+        defaultAccountBox,
+        safeOwnerBox,
+        gnosisSafeProviderBox,
+        transactionManager
+      })
+    })
+    ethersVersions.forEach((ethers) => {
+      shouldWorkWithEthers({
+        ethers,
+        defaultAccountBox,
+        safeOwnerBox,
+        gnosisSafeProviderBox,
+        transactionManager
+      })
+    })
+  })
 })
