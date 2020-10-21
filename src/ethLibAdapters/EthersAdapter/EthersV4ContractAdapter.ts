@@ -1,5 +1,10 @@
 import { Address } from '../../utils/basicTypes'
-import { CallOptions, EthersTransactionResult, normalizeGasLimit, SendOptions } from '../../utils/transactions'
+import {
+  CallOptions,
+  EthersTransactionResult,
+  normalizeGasLimit,
+  SendOptions
+} from '../../utils/transactions'
 import { Contract } from '../EthLibAdapter'
 import EthersAdapter from './'
 
