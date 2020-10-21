@@ -2,7 +2,7 @@ import cpkFactoryAbi from '../abis/CpkFactoryAbi.json'
 import multiSendAbi from '../abis/MultiSendAbi.json'
 import safeAbiV111 from '../abis/SafeAbiV1-1-1.json'
 import safeAbiV120 from '../abis/SafeAbiV1-2-0.json'
-import { masterCopyAddressVersions, NormalizedNetworkConfigEntry } from '../config/networks'
+import { NormalizedNetworkConfigEntry } from '../config/networks'
 import EthLibAdapter, { Contract } from '../ethLibAdapters/EthLibAdapter'
 import { Address } from '../utils/basicTypes'
 import CommonContractManager from './CommonContractManager'
@@ -54,8 +54,9 @@ class ContractManager {
 
     if (isSafeApp || isConnectedToSafe) {
       const temporaryContract = ethLibAdapter.getContract(safeAbiV120, ownerAccount)
-      const version: string = await temporaryContract.call('version', [])
+      const version: string = await temporaryContract.call('VERSION', [])
       properVersion = version
+      proxyAddress = ownerAccount
     } else {
       for (const masterCopyVersion of network.masterCopyAddressVersions) {
         proxyAddress = await this.calculateProxyAddress(
@@ -71,16 +72,16 @@ class ContractManager {
           break
         }
       }
-    }
 
-    if (!properVersion) {
-      // Last version released
-      properVersion = masterCopyAddressVersions[0].version
-      proxyAddress = await this.calculateProxyAddress(
-        masterCopyAddressVersions[0].address,
-        salt,
-        ethLibAdapter
-      )
+      if (!properVersion) {
+        // Last version released
+        properVersion = network.masterCopyAddressVersions[0].version
+        proxyAddress = await this.calculateProxyAddress(
+          network.masterCopyAddressVersions[0].address,
+          salt,
+          ethLibAdapter
+        )
+      }
     }
 
     switch (properVersion) {
