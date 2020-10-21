@@ -29,7 +29,7 @@ export interface NormalizedNetworksConfig {
 }
 
 // First element belongs to latest release. Do not alter this order. New releases go first.
-export const masterCopyAddressVersions: MasterCopyAddressVersion[] = [
+const masterCopyAddressVersions: MasterCopyAddressVersion[] = [
   {
     version: '1.2.0',
     address: '0x6851D6fDFAfD08c0295C392436245E5bc78B0185'
