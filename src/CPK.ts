@@ -1,5 +1,10 @@
 import multiSendAbi from './abis/MultiSendAbi.json'
-import { defaultNetworks, NetworksConfig } from './config/networks'
+import {
+  defaultNetworks,
+  NetworksConfig,
+  NormalizedNetworksConfig,
+  normalizeNetworksConfig
+} from './config/networks'
 import ContractManager from './contractManagers'
 import EthLibAdapter, { Contract } from './ethLibAdapters/EthLibAdapter'
 import SafeAppsSdkConnector from './safeAppsSdkConnector'
@@ -37,7 +42,7 @@ class CPK {
   #transactionManager?: TransactionManager
   #contractManager?: ContractManager
 
-  #networks: NetworksConfig
+  #networks: NormalizedNetworksConfig
   #ownerAccount?: Address
   #saltNonce = predeterminedSaltNonce
   #isConnectedToSafe = false
@@ -65,10 +70,7 @@ class CPK {
     this.#ethLibAdapter = ethLibAdapter
     this.#transactionManager = transactionManager ?? new CpkTransactionManager()
     this.#ownerAccount = ownerAccount
-    this.#networks = {
-      ...defaultNetworks,
-      ...networks
-    }
+    this.#networks = normalizeNetworksConfig(defaultNetworks, networks)
     if (saltNonce) {
       this.#saltNonce = saltNonce
     }
@@ -132,7 +134,7 @@ class CPK {
     return this.#ethLibAdapter
   }
 
-  get networks(): NetworksConfig {
+  get networks(): NormalizedNetworksConfig {
     return this.#networks
   }
 
@@ -183,10 +185,7 @@ class CPK {
   }
 
   setNetworks(networks: NetworksConfig): void {
-    this.#networks = {
-      ...defaultNetworks,
-      ...networks
-    }
+    this.#networks = normalizeNetworksConfig(defaultNetworks, networks)
   }
 
   encodeMultiSendCallData(transactions: Transaction[]): string {

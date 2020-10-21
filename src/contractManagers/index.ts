@@ -2,7 +2,7 @@ import cpkFactoryAbi from '../abis/CpkFactoryAbi.json'
 import multiSendAbi from '../abis/MultiSendAbi.json'
 import safeAbiV111 from '../abis/SafeAbiV1-1-1.json'
 import safeAbiV120 from '../abis/SafeAbiV1-2-0.json'
-import { masterCopyAddressVersions, NetworkConfigEntry } from '../config/networks'
+import { masterCopyAddressVersions, NormalizedNetworkConfigEntry } from '../config/networks'
 import EthLibAdapter, { Contract } from '../ethLibAdapters/EthLibAdapter'
 import { Address } from '../utils/basicTypes'
 import CommonContractManager from './CommonContractManager'
@@ -11,7 +11,7 @@ import ContractV120Manager from './ContractV120Manager'
 
 export interface ContractManagerProps {
   ethLibAdapter: EthLibAdapter
-  network: NetworkConfigEntry
+  network: NormalizedNetworkConfigEntry
   ownerAccount: Address | undefined
   saltNonce: string
   isSafeApp: boolean
@@ -32,8 +32,8 @@ class ContractManager {
     return contractManager
   }
 
-  constructor(ethLibAdapter: EthLibAdapter, network: NetworkConfigEntry) {
-    this.#masterCopyAddress = network.masterCopyAddress
+  constructor(ethLibAdapter: EthLibAdapter, network: NormalizedNetworkConfigEntry) {
+    this.#masterCopyAddress = network.masterCopyAddressVersions[0].address
     this.#fallbackHandlerAddress = network.fallbackHandlerAddress
     this.#multiSend = ethLibAdapter.getContract(multiSendAbi, network.multiSendAddress)
     this.#proxyFactory = ethLibAdapter.getContract(cpkFactoryAbi, network.proxyFactoryAddress)
@@ -44,7 +44,7 @@ class ContractManager {
   }
 
   private async calculateContractVersionManager(opts: ContractManagerProps) {
-    const { ethLibAdapter, ownerAccount, saltNonce, isSafeApp, isConnectedToSafe } = opts
+    const { ethLibAdapter, ownerAccount, saltNonce, network, isSafeApp, isConnectedToSafe } = opts
     let proxyAddress
     let properVersion
 
@@ -57,7 +57,7 @@ class ContractManager {
       const version: string = await temporaryContract.call('version', [])
       properVersion = version
     } else {
-      for (const masterCopyVersion of masterCopyAddressVersions) {
+      for (const masterCopyVersion of network.masterCopyAddressVersions) {
         proxyAddress = await this.calculateProxyAddress(
           masterCopyVersion.address,
           salt,

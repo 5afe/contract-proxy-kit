@@ -1,12 +1,7 @@
 import should from 'should'
 import Web3Maj1Min3 from 'web3-1-3'
-import CPK, {
-  EthersAdapter,
-  NetworksConfig,
-  Transaction,
-  TransactionManager,
-  TransactionResult
-} from '../../src'
+import CPK, { EthersAdapter, Transaction, TransactionManager, TransactionResult } from '../../src'
+import { NetworksConfig } from '../../src/config/networks'
 import { Address } from '../../src/utils/basicTypes'
 import { testConnectedSafeTransactionsWithRelay } from '../transactions/testConnectedSafeTransactionsWithRelay'
 import { testSafeTransactions } from '../transactions/testSafeTransactions'
@@ -131,10 +126,20 @@ export function shouldWorkWithEthers({
       let networks: NetworksConfig
 
       before('obtain addresses from artifacts', async () => {
-        const { gnosisSafe, cpkFactory, multiSend, defaultCallbackHandler } = contracts
+        const { gnosisSafe, gnosisSafe2, cpkFactory, multiSend, defaultCallbackHandler } = contracts
 
         networks = {
           [(await signer.provider.getNetwork()).chainId]: {
+            masterCopyAddressVersions: [
+              {
+                address: gnosisSafe.address,
+                version: '1.2.0'
+              },
+              {
+                address: gnosisSafe2.address,
+                version: '1.1.1'
+              }
+            ],
             masterCopyAddress: gnosisSafe.address,
             proxyFactoryAddress: cpkFactory.address,
             multiSendAddress: multiSend.address,
