@@ -1,12 +1,10 @@
-module.exports = function(deployer: Truffle.Deployer, network: string) {
-  const deploy = (
-    name: string
-  ): Truffle.Deployer => deployer.deploy(artifacts.require(name as any));
+module.exports = function (deployer: Truffle.Deployer, network: string) {
+  const deploy = (name: any): Truffle.Deployer => deployer.deploy(artifacts.require(name))
 
-  ['Migrations', 'CPKFactory'].forEach(deploy);
+  deploy('CPKFactory')
 
   if (network === 'test' || network === 'local') {
-    [
+    ;[
       'GnosisSafe',
       'ProxyFactory',
       'MultiSend',
@@ -15,8 +13,8 @@ module.exports = function(deployer: Truffle.Deployer, network: string) {
       'DailyLimitModule',
       'ERC20Mintable',
       'ConditionalTokens'
-    ].forEach(deploy);
+    ].forEach(deploy)
   }
-} as Truffle.Migration;
+} as Truffle.Migration
 
-export {};
+export {}
