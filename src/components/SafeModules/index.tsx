@@ -23,6 +23,11 @@ interface SafeModulesProps {
   walletState: WalletState
 }
 
+const headers: TableHeader[] = [{
+  id: "1",
+  label: "Enabled modules"
+}]
+
 const SafeModules = ({ cpk, walletState }: SafeModulesProps) => {
   const [module, setModule] = useState<string>("")
   const [txHash, setTxHash] = useState<string>("")
@@ -32,19 +37,18 @@ const SafeModules = ({ cpk, walletState }: SafeModulesProps) => {
 
   const getModules = async () => {
     const modules = await cpk.getModules()
-    const rows: TableRow[] = modules.map((module, index) => ({ id: index.toString(), cells: [{ content: module }] }))
-    setRows(rows)
+    const newRows: TableRow[] = modules.map((module, index) => ({ id: index.toString(), cells: [{ content: module }] }))
+    setRows(newRows)
   }
 
   useEffect(() => {
     getModules()
-  }, [txHash])
+  }, [])
 
   const enableModule = async (): Promise<void> => {
     if (!module) return
     setShowTxError(false)
     setTxHash("")
-    setIsLoading(true)
     try  {
       // Remove any type when TransactionResult type is updated
       const txResult: any = await cpk.enableModule(module)      
@@ -52,10 +56,11 @@ const SafeModules = ({ cpk, walletState }: SafeModulesProps) => {
       if (hash) {
         setTxHash(hash)
       }
-      const receipt: any = await new Promise((resolve, reject) =>
+      setIsLoading(true)
+      await new Promise((resolve, reject) =>
         txResult.promiEvent?.then((receipt: any) => resolve(receipt)).catch(reject)
       )
-      getModules()      
+      await getModules()      
     } catch(e) {
       setShowTxError(true)
     }
@@ -66,7 +71,6 @@ const SafeModules = ({ cpk, walletState }: SafeModulesProps) => {
     if (!module) return
     setShowTxError(false)
     setTxHash("")
-    setIsLoading(true)
     try {
       // Remove any type when TransactionResult type is updated
       const txResult: any = await cpk.disableModule(module)
@@ -74,20 +78,16 @@ const SafeModules = ({ cpk, walletState }: SafeModulesProps) => {
       if (hash) {
         setTxHash(hash)
       }
-      const receipt: any = await new Promise((resolve, reject) =>
+      setIsLoading(true)
+      await new Promise((resolve, reject) =>
         txResult.promiEvent?.then((receipt: any) => resolve(receipt)).catch(reject)
       )
-      getModules()  
+      await getModules()
     } catch(e) {
       setShowTxError(true)
     }
     setIsLoading(false)
   }
-
-  const headers: TableHeader[] = [{
-    id: "1",
-    label: "Enabled modules"
-  }]
 
   return (
     <>
