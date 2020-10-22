@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import CPK, { Web3Adapter, TransactionManagerConfig } from 'contract-proxy-kit'
 import Web3 from 'web3'
 import styled from 'styled-components'
@@ -36,6 +36,22 @@ const initialWalletState = {
   txManager: undefined
 }
 
+const tabs: TabItem[] = [{
+  id: "1",
+  label: "CPK Info",
+  icon: "info"
+},
+{
+  id: "2",
+  label: "CPK Transactions",
+  icon: "transactionsInactive"
+},
+{
+  id: "3",
+  label: "CPK Modules",
+  icon: "apps"
+}]
+
 const App = () => {
   const [selectedTab, setSelectedTab] = useState('1');
   const [web3, setWeb3] = React.useState<Web3 | undefined>(undefined)
@@ -49,14 +65,14 @@ const App = () => {
     }
   }
 
-  const getEthBalance = async (address?: string): Promise<string | undefined> => {
+  const getEthBalance = useCallback(async (address?: string): Promise<string | undefined> => {
     if (!web3 || !address) return
     const ethBalance = new BigNumber(await web3.eth.getBalance(address))
     const ethDecimals = new BigNumber(10).pow(18)
     return web3 && ethBalance.div(ethDecimals).decimalPlaces(7).toString() + ' ETH'
-  }
+  }, [web3])
 
-  const updateCpk = async (): Promise<void> => {
+  const updateCpk = useCallback(async (): Promise<void> => {
     if (!cpk) return
     updateWalletState({
       isSafeApp: cpk.isSafeApp(),
@@ -65,38 +81,22 @@ const App = () => {
       cpkBalance: await getEthBalance(cpk.address),
       ownerAddress: await cpk.getOwnerAccount()
     })
-  }
+  }, [cpk, getEthBalance])
 
-  const initializeCpk = async (): Promise<void> => {
+  const initializeCpk = useCallback(async (): Promise<void> => {
     if (!web3) return
     const ethLibAdapter = new Web3Adapter({ web3 })
     const newCpk = await CPK.create({ ethLibAdapter })
     setCpk(newCpk)
-  }
-
-  useEffect(() => {
-    initializeCpk()
   }, [web3])
 
   useEffect(() => {
-    updateCpk()
-  }, [cpk])
+    initializeCpk()
+  }, [initializeCpk])
 
-  const tabs: TabItem[] = [{
-    id: "1",
-    label: "CPK Info",
-    icon: "info"
-  },
-  {
-    id: "2",
-    label: "CPK Transactions",
-    icon: "transactionsInactive"
-  },
-  {
-    id: "3",
-    label: "CPK Modules",
-    icon: "apps"
-  }]
+  useEffect(() => {
+    updateCpk()
+  }, [updateCpk])
 
   return (
     <Container>

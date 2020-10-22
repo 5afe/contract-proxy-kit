@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import CPK from 'contract-proxy-kit'
 import styled from 'styled-components'
 import { Button, Card, EthHashInfo, Loader, Table, TableHeader, TableRow, Text, TextField, Title } from '@gnosis.pm/safe-react-components'
@@ -35,15 +35,15 @@ const SafeModules = ({ cpk, walletState }: SafeModulesProps) => {
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [rows, setRows] = useState<TableRow[]>([])
 
-  const getModules = async () => {
+  const getModules = useCallback(async () => {
     const modules = await cpk.getModules()
     const newRows: TableRow[] = modules.map((module, index) => ({ id: index.toString(), cells: [{ content: module }] }))
     setRows(newRows)
-  }
+  }, [cpk])
 
   useEffect(() => {
     getModules()
-  }, [])
+  }, [getModules])
 
   const enableModule = async (): Promise<void> => {
     if (!module) return
