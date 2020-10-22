@@ -22,40 +22,63 @@ const CpkInfo = ({ walletState }: CpkInfoProps) => {
     <>
       <Title size="sm">Information</Title>
       <Line>
-        <TitleLine><Text size="xl" strong>Running as a:</Text></TitleLine>
-        <Text size="xl">{walletState?.isSafeApp ? "Safe App" : "Standalone App"}</Text>
+        <TitleLine>
+          <Text size="xl" strong>
+            Running as a:
+          </Text>
+        </TitleLine>
+        <Text size="xl">
+          {walletState?.isSafeApp ? 'Safe App' : 'Standalone App'}
+        </Text>
       </Line>
       <Line>
-        <TitleLine><Text size="xl" strong>State of the Proxy:</Text></TitleLine>
-        <Text size="xl">{walletState?.isProxyDeployed ? "Deployed" : "Not deployed"}</Text>
+        <TitleLine>
+          <Text size="xl" strong>
+            State of the Proxy:
+          </Text>
+        </TitleLine>
+        <Text size="xl">
+          {walletState?.isProxyDeployed ? 'Deployed' : 'Not deployed'}
+        </Text>
       </Line>
       <Line>
-        <TitleLine><Text size="xl" strong>Owner address:</Text></TitleLine>
-          {walletState?.ownerAddress && (
-            <EthHashInfo
-              hash={walletState?.ownerAddress}
-              showIdenticon
-              showCopyBtn
-              showEtherscanBtn
-              shortenHash={4}
-            />
-          )}
-        
+        <TitleLine>
+          <Text size="xl" strong>
+            Owner address:
+          </Text>
+        </TitleLine>
+        {walletState?.ownerAddress && (
+          <EthHashInfo
+            hash={walletState?.ownerAddress}
+            showIdenticon
+            showCopyBtn
+            showEtherscanBtn
+            shortenHash={4}
+          />
+        )}
       </Line>
       <Line>
-        <TitleLine><Text size="xl" strong>CPK address:</Text></TitleLine>
-          {walletState?.cpkAddress && (
-            <EthHashInfo
-              hash={walletState?.cpkAddress}
-              showIdenticon
-              showCopyBtn
-              showEtherscanBtn
-              shortenHash={4}
-            />
-          )}
+        <TitleLine>
+          <Text size="xl" strong>
+            CPK address:
+          </Text>
+        </TitleLine>
+        {walletState?.cpkAddress && (
+          <EthHashInfo
+            hash={walletState?.cpkAddress}
+            showIdenticon
+            showCopyBtn
+            showEtherscanBtn
+            shortenHash={4}
+          />
+        )}
       </Line>
       <Line>
-        <TitleLine><Text size="xl" strong>CPK Balance:</Text></TitleLine>
+        <TitleLine>
+          <Text size="xl" strong>
+            CPK Balance:
+          </Text>
+        </TitleLine>
         <Text size="xl">{walletState?.cpkBalance}</Text>
       </Line>
     </>

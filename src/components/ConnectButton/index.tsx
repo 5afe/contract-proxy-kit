@@ -11,7 +11,7 @@ const Web3ConnectButton = styled.div`
 
 const {
   default: WalletConnectProvider
-} = require("@walletconnect/web3-provider")
+} = require('@walletconnect/web3-provider')
 
 type ConnectButtonProps = {
   onConnect: Function
@@ -26,7 +26,7 @@ const ConnectButton = ({ onConnect, networkName }: ConnectButtonProps) => (
         walletconnect: {
           package: WalletConnectProvider,
           options: {
-            infuraId: "b42c928da8fd4c1f90374b18aa9ac6ba"
+            infuraId: 'b42c928da8fd4c1f90374b18aa9ac6ba'
           }
         }
       }}

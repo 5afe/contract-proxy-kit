@@ -36,27 +36,31 @@ const initialWalletState = {
   txManager: undefined
 }
 
-const tabs: TabItem[] = [{
-  id: "1",
-  label: "CPK Info",
-  icon: "info"
-},
-{
-  id: "2",
-  label: "CPK Transactions",
-  icon: "transactionsInactive"
-},
-{
-  id: "3",
-  label: "CPK Modules",
-  icon: "apps"
-}]
+const tabs: TabItem[] = [
+  {
+    id: '1',
+    label: 'CPK Info',
+    icon: 'info'
+  },
+  {
+    id: '2',
+    label: 'CPK Transactions',
+    icon: 'transactionsInactive'
+  },
+  {
+    id: '3',
+    label: 'CPK Modules',
+    icon: 'apps'
+  }
+]
 
 const App = () => {
-  const [selectedTab, setSelectedTab] = useState('1');
+  const [selectedTab, setSelectedTab] = useState('1')
   const [web3, setWeb3] = React.useState<Web3 | undefined>(undefined)
   const [cpk, setCpk] = useState<CPK | undefined>(undefined)
-  const [walletState, updateWalletState] = useState<WalletState>(initialWalletState)
+  const [walletState, updateWalletState] = useState<WalletState>(
+    initialWalletState
+  )
   const network = 'rinkeby'
 
   const onWeb3Connect = (provider: any) => {
@@ -65,12 +69,17 @@ const App = () => {
     }
   }
 
-  const getEthBalance = useCallback(async (address?: string): Promise<string | undefined> => {
-    if (!web3 || !address) return
-    const ethBalance = new BigNumber(await web3.eth.getBalance(address))
-    const ethDecimals = new BigNumber(10).pow(18)
-    return web3 && ethBalance.div(ethDecimals).decimalPlaces(7).toString() + ' ETH'
-  }, [web3])
+  const getEthBalance = useCallback(
+    async (address?: string): Promise<string | undefined> => {
+      if (!web3 || !address) return
+      const ethBalance = new BigNumber(await web3.eth.getBalance(address))
+      const ethDecimals = new BigNumber(10).pow(18)
+      return (
+        web3 && ethBalance.div(ethDecimals).decimalPlaces(7).toString() + ' ETH'
+      )
+    },
+    [web3]
+  )
 
   const updateCpk = useCallback(async (): Promise<void> => {
     if (!cpk) return
@@ -100,8 +109,10 @@ const App = () => {
 
   return (
     <Container>
-      <Line><Title size="sm">Contract Proxy Kit Configuration</Title></Line>
-      <ConnectButton onConnect={onWeb3Connect} networkName={network}/>
+      <Line>
+        <Title size="sm">Contract Proxy Kit Configuration</Title>
+      </Line>
+      <ConnectButton onConnect={onWeb3Connect} networkName={network} />
       {cpk && (
         <>
           <Tab
@@ -110,9 +121,13 @@ const App = () => {
             variant="outlined"
             items={tabs}
           />
-          {selectedTab === "1" && <CpkInfo walletState={walletState} />}
-          {selectedTab === "2" && <Transactions cpk={cpk} walletState={walletState} />}
-          {selectedTab === "3" && <SafeModules cpk={cpk} walletState={walletState} />}
+          {selectedTab === '1' && <CpkInfo walletState={walletState} />}
+          {selectedTab === '2' && (
+            <Transactions cpk={cpk} walletState={walletState} />
+          )}
+          {selectedTab === '3' && (
+            <SafeModules cpk={cpk} walletState={walletState} />
+          )}
         </>
       )}
     </Container>
