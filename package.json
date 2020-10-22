@@ -1,6 +1,7 @@
 {
   "name": "cpk-configuration-app",
   "version": "0.1.0",
+  "homepage": "https://germartinez.github.io/cpk-configuration-app/",
   "private": true,
   "dependencies": {
     "@gnosis.pm/safe-react-components": "^0.3.0",
@@ -30,6 +31,8 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "format": "prettier --write src/**/*.{js,jsx,ts,tsx,json}",
+    "predeploy": "yarn build",
+    "deploy": "gh-pages -d build"
   },
   "eslintConfig": {
     "extends": "react-app"
