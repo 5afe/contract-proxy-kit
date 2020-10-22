@@ -1,6 +1,13 @@
 import * as React from 'react'
 import Web3Connect from 'web3connect'
+import styled from 'styled-components'
 import './styles.scss'
+
+const Web3ConnectButton = styled.div`
+  display: flex;
+  justify-content: center;
+  margin-bottom: 10px;
+`
 
 const {
   default: WalletConnectProvider
@@ -12,7 +19,7 @@ type ConnectButtonProps = {
 }
 
 const ConnectButton = ({ onConnect, networkName }: ConnectButtonProps) => (
-  <div className="connectButton">
+  <Web3ConnectButton>
     <Web3Connect.Button
       network={networkName}
       providerOptions={{
@@ -26,7 +33,7 @@ const ConnectButton = ({ onConnect, networkName }: ConnectButtonProps) => (
       onConnect={onConnect}
       onClose={() => {}}
     />
-  </div>
+  </Web3ConnectButton>
 )
 
 export default ConnectButton

@@ -1,95 +1,64 @@
-import React, { useState, useEffect } from 'react'
-import {
-  TransactionManager,
-  SafeRelayTransactionManager,
-  CpkTransactionManager
-} from 'contract-proxy-kit'
-import './styles.scss'
+import React from 'react'
+import styled from 'styled-components'
+import { EthHashInfo, Text, Title } from '@gnosis.pm/safe-react-components'
+import { WalletState } from 'components/App'
+
+const Line = styled.div`
+  display: flex;
+  align-items: center;
+  height: 40px;
+`
+
+const TitleLine = styled.div`
+  margin-right: 10px;
+`
 
 interface CpkInfoProps {
-  cpk: any
-  walletState: any
-  updateCpk: any
+  walletState: WalletState
 }
 
-const CpkInfo = ({
-  cpk,
-  walletState,
-  updateCpk,
-}: CpkInfoProps) => {
-  const [isRelayChecked, setIsRelayChecked] = useState<boolean>(false)
-  const [relayEndpoint, setRelayEndpoint] = useState<string | undefined>(undefined)
-
-  const setRelay = (): void => {
-    if (!cpk) return
-    if (walletState.txManager?.url === relayEndpoint) return
-
-    const txManager: TransactionManager = (relayEndpoint)
-      ? new SafeRelayTransactionManager({ url: relayEndpoint })
-      : new CpkTransactionManager()
-
-    cpk.setTransactionManager(txManager)
-    updateCpk()
-  }
-
-  useEffect(() => {
-    if (!isRelayChecked) {
-      setRelay()
-    }
-  }, [isRelayChecked])
-
-  const handleRelayChecked = (isChecked: boolean): void => {
-    setRelayEndpoint(undefined)
-    setIsRelayChecked(isChecked)
-  }
-
+const CpkInfo = ({ walletState }: CpkInfoProps) => {
   return (
-    <div className="cpkData">
-      <div className="dataLine">
-        <div className="dataTitle">Running as a:</div>
-        <div className="dataValue">{walletState?.isSafeApp ? "Safe App" : "Standalone App"}</div>
-      </div>
-      <div className="dataLine">
-        <div className="dataTitle">State of the Proxy:</div>
-        <div className="dataValue">{walletState?.isProxyDeployed ? "Deployed" : "Not deployed"}</div>
-      </div>
-      <div className="dataLine">
-        <div className="dataTitle">CPK address:</div>
-        <div className="dataValue">{walletState?.cpkAddress}</div>
-      </div>
-      <div className="dataLine">
-        <div className="dataTitle">CPK Balance:</div>
-        <div className="dataValue">{walletState?.cpkBalance}</div>
-      </div>
-      <div className="dataLine">
-        <div className="dataTitle">Owner address:</div>
-        <div className="dataValue">{walletState?.ownerAddress}</div>
-      </div>
-      <div className="dataLine">
-        <div className="dataTitle">Relay service:</div>
-        <div className="dataValue">{walletState?.txManager?.url && (walletState?.txManager?.url)}</div>
-      </div>
-      <div className="dataLine">
-        <div className="dataTitle">
-          <input type="checkbox" onChange={(e) => handleRelayChecked(e.target.checked)}/>
-          {' '}Use relay service
-        </div>
-      </div>
-      <div className="dataLine">
-        {isRelayChecked && (
-          <div className="relayForm">
-            <input
-              type="text"
-              placeholder="https://safe-relay.rinkeby.gnosis.io"
-              onChange={(e) => setRelayEndpoint(e.target.value)}
+    <>
+      <Title size="sm">Information</Title>
+      <Line>
+        <TitleLine><Text size="xl" strong>Running as a:</Text></TitleLine>
+        <Text size="xl">{walletState?.isSafeApp ? "Safe App" : "Standalone App"}</Text>
+      </Line>
+      <Line>
+        <TitleLine><Text size="xl" strong>State of the Proxy:</Text></TitleLine>
+        <Text size="xl">{walletState?.isProxyDeployed ? "Deployed" : "Not deployed"}</Text>
+      </Line>
+      <Line>
+        <TitleLine><Text size="xl" strong>Owner address:</Text></TitleLine>
+          {walletState?.ownerAddress && (
+            <EthHashInfo
+              hash={walletState?.ownerAddress}
+              showIdenticon
+              showCopyBtn
+              showEtherscanBtn
+              shortenHash={4}
             />
-            <button disabled={!relayEndpoint} onClick={() => setRelay()}>
-              Set Safe relay service URL
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
+          )}
+        
+      </Line>
+      <Line>
+        <TitleLine><Text size="xl" strong>CPK address:</Text></TitleLine>
+          {walletState?.cpkAddress && (
+            <EthHashInfo
+              hash={walletState?.cpkAddress}
+              showIdenticon
+              showCopyBtn
+              showEtherscanBtn
+              shortenHash={4}
+            />
+          )}
+      </Line>
+      <Line>
+        <TitleLine><Text size="xl" strong>CPK Balance:</Text></TitleLine>
+        <Text size="xl">{walletState?.cpkBalance}</Text>
+      </Line>
+    </>
   )
 }
 
