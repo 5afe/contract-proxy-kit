@@ -4,7 +4,7 @@ An example Dapp using the Gnosis Safe [Contract Proxy Kit](https://github.com/gn
 
 Only available for Rinkeby at this moment.
 
-App can be found live here: http://cpkconfig.surge.sh.
+App can be found live here: https://germartinez.github.io/cpk-configuration-app/.
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
