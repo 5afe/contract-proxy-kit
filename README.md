@@ -9,11 +9,15 @@ Enable batched transactions and contract account interactions using a unique det
 
     npm install contract-proxy-kit
 
-## API Documentation
+## Resources
 
-[Method list](https://github.com/gnosis/contract-proxy-kit/tree/master/docs/cpk.md)
+[Video introduction to Building with Safe Apps SDK & Contract Proxy Kit](https://www.youtube.com/watch?v=YGw8WfBw5OI)
 
-[Architecture diagram](https://github.com/gnosis/contract-proxy-kit/tree/master/docs/CPKdiagram.png)
+[CPK basic tutorial](https://docs.gnosis.io/safe/docs/cpktutorial1/)
+
+[CPK API Documentation](https://github.com/gnosis/contract-proxy-kit/tree/master/docs/cpk.md)
+
+[CPK architecture diagram](https://github.com/gnosis/contract-proxy-kit/tree/master/docs/CPKdiagram.png)
 
 ## Usage
 
