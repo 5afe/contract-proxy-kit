@@ -1,7 +1,7 @@
 {
   "name": "cpk-configuration-app",
   "version": "0.1.0",
-  "homepage": "https://germartinez.github.io/cpk-configuration-app/",
+  "homepage": "https://gnosis.github.io/cpk-configuration-app/",
   "private": true,
   "dependencies": {
     "@gnosis.pm/safe-react-components": "^0.3.0",
