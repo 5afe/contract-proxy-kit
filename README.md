@@ -8,6 +8,11 @@ App can be found live here: https://gnosis.github.io/cpk-configuration-app/.
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
+## Useful links
+
+- [Contract Proxy Kit documentation](https://github.com/gnosis/contract-proxy-kit)
+- [Video introduction to Building with Safe Apps SDK & Contract Proxy Kit](https://www.youtube.com/watch?v=YGw8WfBw5OI)
+
 ## Available Scripts
 
 In the project directory, you can run:
