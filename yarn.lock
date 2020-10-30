@@ -4652,10 +4652,10 @@ growl@1.10.5:
   resolved "https://registry.yarnpkg.com/growl/-/growl-1.10.5.tgz#f2735dc2283674fa67478b10181059355c369e5e"
   integrity sha512-qBr4OuELkhPenW6goKVXiv47US3clb3/IbuWF9KNKEijAy9oeHxU9IgzjvJhHkUzhaj7rOUD7+YGWqUjLp5oSA==
 
-gunash@^0.2.0:
-  version "0.2.0"
-  resolved "https://registry.yarnpkg.com/gunash/-/gunash-0.2.0.tgz#280819e1ab38c52f34bc127d8b9f195a6764f59b"
-  integrity sha512-isyQACWL4TA32/BWrd1q/XlCvqGXZYD+CO6hSfUi8eXnI+JIkho+YcVCpj1mK9YV1gVIrt+HrTuBUSXegE31zg==
+gunash@^0.2.2:
+  version "0.2.2"
+  resolved "https://registry.yarnpkg.com/gunash/-/gunash-0.2.2.tgz#dfa454d67ebbbc9e7b9a1534b6c506ff746f1602"
+  integrity sha512-uoPNqALVLFDTS6zdl1+rgMTEQHSUmd8hUDY38ZH8Nbzq5JQxGQDPF1UhV1JUTbkjeXJrTM1idpCur2JCvdqxKA==
   dependencies:
     web3 "^1.3.0"
     yargs "^16.1.0"
