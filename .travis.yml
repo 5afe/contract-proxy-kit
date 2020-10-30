@@ -34,7 +34,4 @@ jobs:
   - name: OpenEthereum
     env: NODE_TYPE=openethereum
 
-  - name: Nethermind
-    env: NODE_TYPE=nethermind
-
 after_success: yarn coverage
