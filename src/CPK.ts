@@ -24,6 +24,7 @@ export interface CPKConfig {
   transactionManager?: TransactionManager
   ownerAccount?: string
   networks?: NetworksConfig
+  saltNonce?: string
 }
 
 class CPK {
@@ -35,6 +36,7 @@ class CPK {
   #transactionManager?: TransactionManager
   #networks: NetworksConfig
   #ownerAccount?: Address
+  #saltNonce = predeterminedSaltNonce
   #isConnectedToSafe = false
   #contract?: Contract
   #multiSend?: Contract
@@ -58,7 +60,7 @@ class CPK {
     if (!opts) {
       return
     }
-    const { ethLibAdapter, transactionManager, ownerAccount, networks } = opts
+    const { ethLibAdapter, transactionManager, ownerAccount, networks, saltNonce } = opts
     if (!ethLibAdapter) {
       throw new Error('ethLibAdapter property missing from options')
     }
@@ -68,6 +70,9 @@ class CPK {
     this.#networks = {
       ...defaultNetworks,
       ...networks
+    }
+    if (saltNonce) {
+      this.#saltNonce = saltNonce
     }
   }
 
@@ -106,7 +111,7 @@ class CPK {
       const salt = this.#ethLibAdapter.keccak256(
         this.#ethLibAdapter.abiEncode(
           ['address', 'uint256'],
-          [ownerAccount, predeterminedSaltNonce]
+          [ownerAccount, this.#saltNonce]
         )
       )
       const initCode = this.#ethLibAdapter.abiEncodePacked(
@@ -187,6 +192,10 @@ class CPK {
 
   get fallbackHandlerAddress(): Address | undefined {
     return this.#fallbackHandlerAddress
+  }
+
+  get saltNonce(): string {
+    return this.#saltNonce
   }
 
   get address(): Address | undefined {
@@ -295,6 +304,7 @@ class CPK {
       transactions,
       contracts: cpkContracts,
       ethLibAdapter: this.#ethLibAdapter,
+      saltNonce: this.#saltNonce,
       isDeployed,
       isConnectedToSafe: this.#isConnectedToSafe,
       sendOptions
