@@ -78,11 +78,15 @@ export function shouldWorkWithWeb3({
       waitSafeTxReceipt: async (txResult: TransactionResult): Promise<any> => {
         let receipt: any
         if (!txResult.promiEvent) return
-        receipt = await new Promise((resolve, reject) =>
-          (txResult.promiEvent as any)
-            ?.on('confirmation', (confirmationNumber: any, receipt: any) => resolve(receipt))
-            .catch(reject)
-        )
+        if (isCpkTransactionManager) {
+          receipt = await new Promise((resolve, reject) =>
+            txResult.promiEvent
+              .on('confirmation', (confirmationNumber: any, receipt: any) => resolve(receipt))
+              .catch(reject)
+          )
+        } else {
+          receipt = txResult.promiEvent.transactionHash
+        }
         if (!receipt) return
         txResult.hash?.should.equal(receipt.transactionHash)
         return receipt
