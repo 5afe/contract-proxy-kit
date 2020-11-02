@@ -25,8 +25,8 @@ after_script:
 
 jobs:
   include:
-  - name: Ganache
-    env: NODE_TYPE=ganache
+  - name: Ganache with --noVMErrorsOnRPCResponse
+    env: NODE_TYPE=ganache --noVMErrorsOnRPCResponse
 
   - name: Geth
     env: NODE_TYPE=geth
