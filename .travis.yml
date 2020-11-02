@@ -28,9 +28,6 @@ jobs:
   - name: Ganache with --noVMErrorsOnRPCResponse
     env: NODE_TYPE=ganache --noVMErrorsOnRPCResponse
 
-  - name: Geth
-    env: NODE_TYPE=geth
-
   - name: OpenEthereum
     env: NODE_TYPE=openethereum
 
