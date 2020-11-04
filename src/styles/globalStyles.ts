@@ -25,6 +25,15 @@ const GlobalStyle = createGlobalStyle`
     url(${avertaFont}) format('woff2'),
     url(${avertaBoldFont}) format('woff');
   }
+
+  .web3connect-connect-button {
+    outline: none;
+    background: #008c73;
+    border: 1px solid #008c73;
+    color: #fff;
+    cursor: pointer;
+    transform: none;
+  }
 `
 
 export default GlobalStyle

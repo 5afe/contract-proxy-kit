@@ -16,7 +16,6 @@
     "bignumber.js": "^9.0.1",
     "contract-proxy-kit": "2.1.0",
     "gh-pages": "^3.1.0",
-    "node-sass": "^4.14.1",
     "prettier": "^2.1.2",
     "react": "^17.0.1",
     "react-dom": "^17.0.1",
