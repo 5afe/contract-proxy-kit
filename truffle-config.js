@@ -10,13 +10,14 @@ const networks = Object.assign(...[
   [4, 'rinkeby'],
   [5, 'goerli', `${2e9}`],
   [42, 'kovan'],
-].map(([networkId, network, gasPrice]) => ({
+  [100, 'dai',, true],
+].map(([networkId, network, gasPrice, isPoa]) => ({
   [network]: {
     network_id: networkId,
     gasPrice,
     provider: () => new HDWalletProvider(
       seed,
-      `https://${network}.infura.io/v3/17d5bb5953564f589d48d535f573e486`,
+      isPoa ? `https://${network}.poa.network` : `https://${network}.infura.io/v3/17d5bb5953564f589d48d535f573e486`,
     ),
   },
 })), {
