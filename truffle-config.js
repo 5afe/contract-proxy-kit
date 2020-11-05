@@ -10,7 +10,6 @@ const networks = Object.assign(...[
   [4, 'rinkeby'],
   [5, 'goerli', `${2e9}`],
   [42, 'kovan'],
-  [77, 'sokol',, true],
   [100, 'dai',, true],
 ].map(([networkId, network, gasPrice, isPoa]) => ({
   [network]: {
