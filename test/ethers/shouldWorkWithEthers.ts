@@ -1,6 +1,12 @@
 import should from 'should'
 import Web3Maj1Min3 from 'web3-1-3'
-import CPK, { NetworksConfig, EthersAdapter, TransactionManager, Transaction, TransactionResult } from '../../src'
+import CPK, {
+  NetworksConfig,
+  EthersAdapter,
+  TransactionManager,
+  Transaction,
+  TransactionResult
+} from '../../src'
 import { Address } from '../../src/utils/basicTypes'
 import { testSafeTransactions } from '../transactions/testSafeTransactions'
 import { testConnectedSafeTransactionsWithRelay } from '../transactions/testConnectedSafeTransactionsWithRelay'
@@ -78,17 +84,26 @@ export function shouldWorkWithEthers({
         signer.provider.getTransactionCount(address),
       getBalance: (address: Address): Promise<number> => signer.provider.getBalance(address),
       testedTxObjProps: 'the TransactionResponse and the hash',
-      checkTxObj: ({
-        transactionResponse,
-        hash
-      }: {
-        transactionResponse: any
-        hash: string
-      }): void => {
-        should.exist(transactionResponse)
-        should.exist(hash)
+      checkTxObj: (
+        txsSize: number,
+        accountType: AccountType,
+        txResult: TransactionResult
+      ): void => {
+        const safeConnected = accountType === AccountType.Connected
+        should.exist(txResult.hash)
+        if (!safeConnected || (safeConnected && txsSize === 1)) {
+          should.exist(txResult.transactionResponse)
+        }
       },
-      waitTxReceipt: (txResult: TransactionResult): any => signer.provider.waitForTransaction(txResult.hash)
+      waitTxReceipt: (txResult: TransactionResult): any =>
+        signer.provider.waitForTransaction(txResult.hash),
+      waitSafeTxReceipt: async (txResult: TransactionResult): Promise<any> => {
+        if (!txResult.transactionResponse) return
+        const receipt = await txResult.transactionResponse
+        if (!receipt) return
+        txResult.hash?.should.equal(receipt.hash)
+        return receipt
+      }
     })
 
     before('setup contracts', async () => {

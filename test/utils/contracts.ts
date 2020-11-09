@@ -113,7 +113,7 @@ export const getContracts = (): TestContracts => ({
   MultiStep,
   ERC20Mintable,
   ConditionalTokens,
-  DailyLimitModule,
+  DailyLimitModule
 })
 
 export const getContractInstances = (): TestContractInstances => ({
@@ -125,5 +125,5 @@ export const getContractInstances = (): TestContractInstances => ({
   multiStep,
   erc20,
   conditionalTokens,
-  dailyLimitModule,
+  dailyLimitModule
 })

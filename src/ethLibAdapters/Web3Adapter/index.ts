@@ -1,12 +1,12 @@
 import EthLibAdapter, { Contract } from '../EthLibAdapter'
 import Web3ContractAdapter from './Web3ContractAdapter'
 import {
-  TransactionResult,
   SendOptions,
   EthCallTx,
   formatCallTx,
   EthSendTx,
-  normalizeGasLimit
+  normalizeGasLimit,
+  Web3TransactionResult
 } from '../../utils/transactions'
 import { Address, Abi } from '../../utils/basicTypes'
 
@@ -23,11 +23,6 @@ export function toTxResult(
 
 export interface Web3AdapterConfig {
   web3: any
-}
-
-export interface Web3TransactionResult extends TransactionResult {
-  sendOptions?: SendOptions
-  promiEvent: Promise<any>
 }
 
 class Web3Adapter extends EthLibAdapter {
@@ -151,6 +146,8 @@ class Web3Adapter extends EthLibAdapter {
   }
 
   toSafeRelayTxResult(txHash: string, tx: Record<string, any>): Promise<Web3TransactionResult> {
+    tx['transactionHash'] = tx['txHash']
+    delete tx['txHash']
     return new Promise((resolve, reject) =>
       resolve({
         promiEvent: new Promise((resolve, reject) => resolve(tx)),
