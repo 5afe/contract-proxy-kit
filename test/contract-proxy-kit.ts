@@ -54,7 +54,7 @@ describe('CPK', () => {
         '0x',
         defaultCallbackHandler.address,
         zeroAddress,
-        '0x',
+        0,
         zeroAddress
       )
       .encodeABI()

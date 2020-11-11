@@ -196,15 +196,13 @@ export function shouldWorkWithEthers({
             networks
           })
 
-          if (transactionManager) {
-            await toTxHashPromise(
-              web3.eth.sendTransaction({
+          await toTxHashPromise(
+            web3.eth.sendTransaction({
                 from: defaultAccountBox[0],
-                to: cpk.address,
-                value: `${3e18}`
-              })
-            )
-          }
+              to: cpk.address,
+              value: `${5e18}`
+            })
+          )
         })
 
         before('warm instance', async () => {
@@ -247,7 +245,17 @@ export function shouldWorkWithEthers({
             )
 
             const ethLibAdapter = new EthersAdapter({ ethers, signer: freshSignerBox[0] })
-            return CPK.create({ ethLibAdapter, transactionManager, networks })
+            const cpk = await CPK.create({ ethLibAdapter, transactionManager, networks })
+
+            await toTxHashPromise(
+              web3.eth.sendTransaction({
+                from: defaultAccountBox[0],
+                to: cpk.address,
+                value: `${5e18}`
+              })
+            )
+
+            return cpk
           },
           isCpkTransactionManager,
           accountType: AccountType.Fresh
@@ -268,15 +276,13 @@ export function shouldWorkWithEthers({
           const ethLibAdapter = new EthersAdapter({ ethers, signer: safeSignerBox[0] })
           cpk = await CPK.create({ ethLibAdapter, transactionManager, networks })
 
-          if (transactionManager) {
-            await toTxHashPromise(
-              web3.eth.sendTransaction({
-                from: defaultAccountBox[0],
-                to: cpk.address,
-                value: `${3e18}`
-              })
-            )
-          }
+          await toTxHashPromise(
+            web3.eth.sendTransaction({
+              from: defaultAccountBox[0],
+              to: cpk.address,
+              value: `${5e18}`
+            })
+          )
         })
 
         if (!isCpkTransactionManager) {

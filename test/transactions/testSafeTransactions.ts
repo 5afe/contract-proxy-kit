@@ -1,8 +1,9 @@
+import BigNumber from 'bignumber.js'
 import should from 'should'
 import CPK, { TransactionResult } from '../../src'
 import { Address } from '../../src/utils/basicTypes'
-import { getContracts } from '../utils/contracts'
 import { AccountType } from '../utils'
+import { getContracts } from '../utils/contracts'
 
 interface TestSafeTransactionsProps {
   web3: any
@@ -98,7 +99,7 @@ export function testSafeTransactions({
       await waitTxReceipt({ hash })
     })
 
-    it('can execute a single transaction', async () => {
+    it('can execute a single transaction with data', async () => {
       ;(await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0)
 
       const txs = [
@@ -313,9 +314,9 @@ export function testSafeTransactions({
         const { gasUsed } = receipt
 
         const endingBalance = await getBalance((executor && executor[0]) || proxyOwner)
-        const gasCosts = startingBalance.sub(endingBalance).toNumber()
+        const gasCosts = startingBalance.sub(endingBalance)
 
-        gasCosts.should.be.equal(gasPrice * gasUsed)
+        gasCosts.toString().should.be.equal((gasPrice * gasUsed).toString())
       }
     )
     ;(!isCpkTransactionManager || ownerIsRecognizedContract ? it.skip : it)(
