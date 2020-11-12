@@ -99,6 +99,86 @@ export function testSafeTransactions({
       await waitTxReceipt({ hash })
     })
 
+    it('can execute a single transaction with string value', async () => {
+      if (!cpk.address) return
+      const startingBalance = await getBalance(cpk.address)
+      startingBalance.should.be.greaterThan(0)
+
+      const value = `${11e17}`
+      const txs = [
+        {
+          to: proxyOwner,
+          value
+        }
+      ]
+      const txResult = await cpk.execTransactions(txs)
+      checkTxObj(txs.length, accountType, txResult, isCpkTransactionManager)
+      await waitSafeTxReceipt(txResult)
+
+      const endingBalance = await getBalance(cpk.address)
+      startingBalance
+        .toString()
+        .should.be.equal(
+          new BigNumber(endingBalance.toString()).plus(new BigNumber(value)).toString()
+        )
+    })
+
+    it('can execute a single transaction with BigNumber value', async () => {
+      if (!cpk.address) return
+      const startingBalance = await getBalance(cpk.address)
+      startingBalance.should.be.greaterThan(0)
+
+      const value = new BigNumber(11e17)
+      const txs = [
+        {
+          to: proxyOwner,
+          value
+        }
+      ]
+      const txResult = await cpk.execTransactions(txs)
+      checkTxObj(txs.length, accountType, txResult, isCpkTransactionManager)
+      await waitSafeTxReceipt(txResult)
+
+      const endingBalance = await getBalance(cpk.address)
+      startingBalance
+        .toString()
+        .should.be.equal(
+          new BigNumber(endingBalance.toString()).plus(new BigNumber(value)).toString()
+        )
+    })
+
+    it('can execute a batch transaction with values', async () => {
+      if (!cpk.address) return
+      const startingBalance = await getBalance(cpk.address)
+      startingBalance.should.be.greaterThan(0)
+
+      const value1 = `${11e17}`
+      const value2 = new BigNumber(11e17)
+      const txs = [
+        {
+          to: proxyOwner,
+          value: value1
+        },
+        {
+          to: proxyOwner,
+          value: value2
+        }
+      ]
+      const txResult = await cpk.execTransactions(txs)
+      checkTxObj(txs.length, accountType, txResult, isCpkTransactionManager)
+      await waitSafeTxReceipt(txResult)
+
+      const endingBalance = await getBalance(cpk.address)
+      startingBalance
+        .toString()
+        .should.be.equal(
+          new BigNumber(endingBalance.toString())
+            .plus(new BigNumber(value1))
+            .plus(new BigNumber(value2))
+            .toString()
+        )
+    })
+
     it('can execute a single transaction with data', async () => {
       ;(await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0)
 
