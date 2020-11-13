@@ -22,10 +22,10 @@ export interface CPKContracts {
 export interface ExecTransactionProps {
   ownerAccount: Address
   safeExecTxParams: StandardTransaction
-  transactions: Transaction[]
+  transactions: StandardTransaction[]
   contracts: CPKContracts
   ethLibAdapter: EthLibAdapter
-  saltNonce: string,
+  saltNonce: string
   isDeployed: boolean
   isConnectedToSafe: boolean
   sendOptions: any

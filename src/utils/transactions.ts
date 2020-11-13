@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js'
 import { Address, NumberLike } from './basicTypes'
 import { defaultTxData, defaultTxOperation, defaultTxValue } from './constants'
 import { toHex } from './hexData'
@@ -76,7 +77,7 @@ export class TransactionError extends Error {
 export interface StandardTransaction {
   operation: OperationType
   to: Address
-  value: number
+  value: string
   data: string
 }
 
@@ -84,7 +85,7 @@ export function standardizeTransaction(tx: Transaction): StandardTransaction {
   return {
     operation: tx.operation ? tx.operation : defaultTxOperation,
     to: tx.to,
-    value: tx.value ? Number(tx.value.toString()) : defaultTxValue,
+    value: tx.value ? tx.value.toString() : defaultTxValue,
     data: tx.data ? tx.data : defaultTxData
   }
 }
@@ -100,7 +101,7 @@ export function standardizeSafeAppsTransaction(tx: Transaction): StandardSafeApp
   return {
     operation: tx.operation ? tx.operation : defaultTxOperation,
     to: tx.to,
-    value: tx.value ? tx.value.toString() : defaultTxValue.toString(),
+    value: tx.value ? tx.value.toString() : defaultTxValue,
     data: tx.data ? tx.data : defaultTxData
   }
 }

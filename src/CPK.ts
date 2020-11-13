@@ -106,10 +106,7 @@ class CPK {
       )
 
       const salt = this.#ethLibAdapter.keccak256(
-        this.#ethLibAdapter.abiEncode(
-          ['address', 'uint256'],
-          [ownerAccount, this.#saltNonce]
-        )
+        this.#ethLibAdapter.abiEncode(['address', 'uint256'], [ownerAccount, this.#saltNonce])
       )
       const initCode = this.#ethLibAdapter.abiEncodePacked(
         { type: 'bytes', value: await this.#proxyFactory.call('proxyCreationCode', []) },
@@ -252,8 +249,8 @@ class CPK {
     options?: ExecOptions
   ): Promise<TransactionResult> {
     if (this.isSafeApp() && transactions.length >= 1) {
-      const standardizedTxs = transactions.map(standardizeSafeAppsTransaction)
-      return this.#safeAppsSdkConnector.sendTransactions(standardizedTxs)
+      const standardizedSafeTxs = transactions.map(standardizeSafeAppsTransaction)
+      return this.#safeAppsSdkConnector.sendTransactions(standardizedSafeTxs)
     }
 
     if (!this.address) {
@@ -274,6 +271,8 @@ class CPK {
     if (!this.#transactionManager) {
       throw new Error('CPK transactionManager uninitialized')
     }
+
+    const standardizedTxs = transactions.map(standardizeTransaction)
 
     const ownerAccount = await this.getOwnerAccount()
     if (!ownerAccount) {
@@ -298,7 +297,7 @@ class CPK {
     return txManager.execTransactions({
       ownerAccount,
       safeExecTxParams,
-      transactions,
+      transactions: standardizedTxs,
       contracts: cpkContracts,
       ethLibAdapter: this.#ethLibAdapter,
       saltNonce: this.#saltNonce,
@@ -386,7 +385,7 @@ class CPK {
 
     return {
       to: this.#multiSend.address,
-      value: 0,
+      value: '0',
       data: this.encodeMultiSendCallData(transactions),
       operation: CPK.DelegateCall
     }

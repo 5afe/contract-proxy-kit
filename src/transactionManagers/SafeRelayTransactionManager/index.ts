@@ -19,7 +19,7 @@ interface SafeRelayTransactionManagerConfig {
 interface TransactionEstimationsProps {
   safe: Address
   to: Address
-  value: number
+  value: string
   data: string
   operation: OperationType
   gasToken?: Address

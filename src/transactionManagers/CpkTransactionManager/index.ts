@@ -88,7 +88,7 @@ class CpkTransactionManager implements TransactionManager {
 
   private async execTxsWhileConnectedToSafe(
     ethLibAdapter: EthLibAdapter,
-    transactions: Transaction[],
+    transactions: StandardTransaction[],
     sendOptions: SendOptions
   ): Promise<SimpleTransactionResult> {
     if (transactions.some(({ operation }) => operation === OperationType.DelegateCall)) {
@@ -150,15 +150,7 @@ class CpkTransactionManager implements TransactionManager {
     return {
       contract: proxyFactory,
       methodName: 'createProxyAndExecTransaction',
-      params: [
-        masterCopyAddress,
-        saltNonce,
-        fallbackHandlerAddress,
-        to,
-        value,
-        data,
-        operation
-      ]
+      params: [masterCopyAddress, saltNonce, fallbackHandlerAddress, to, value, data, operation]
     }
   }
 
