@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import CPK, { Web3Adapter, TransactionManagerConfig } from 'contract-proxy-kit'
 import Web3 from 'web3'
 import styled from 'styled-components'
+import keccak256 from 'keccak256'
 import { BigNumber } from 'bignumber.js'
 import { Title, TabItem, Tab } from '@gnosis.pm/safe-react-components'
 import ConnectButton from '../ConnectButton'
@@ -21,15 +22,17 @@ const Line = styled.div`
 export interface WalletState {
   isSafeApp?: boolean
   isProxyDeployed?: boolean
+  saltNonce?: string
   cpkAddress?: string
   cpkBalance?: string
   ownerAddress?: string
   txManager?: TransactionManagerConfig
 }
 
-const initialWalletState = {
+const initialWalletState: WalletState = {
   isSafeApp: undefined,
   isProxyDeployed: undefined,
+  saltNonce: undefined,
   cpkAddress: undefined,
   cpkBalance: undefined,
   ownerAddress: undefined,
@@ -57,6 +60,7 @@ const tabs: TabItem[] = [
 const App = () => {
   const [selectedTab, setSelectedTab] = useState('1')
   const [web3, setWeb3] = React.useState<Web3 | undefined>(undefined)
+  const [saltNonce, setSaltNonce] = React.useState<string>('Contract Proxy Kit')
   const [cpk, setCpk] = useState<CPK | undefined>(undefined)
   const [walletState, updateWalletState] = useState<WalletState>(
     initialWalletState
@@ -86,6 +90,7 @@ const App = () => {
     updateWalletState({
       isSafeApp: cpk.isSafeApp(),
       isProxyDeployed: await cpk.isProxyDeployed(),
+      saltNonce: await cpk.saltNonce,
       cpkAddress: cpk.address,
       cpkBalance: await getEthBalance(cpk.address),
       ownerAddress: await cpk.getOwnerAccount()
@@ -94,10 +99,17 @@ const App = () => {
 
   const initializeCpk = useCallback(async (): Promise<void> => {
     if (!web3) return
+    let formatedSaltNonce = saltNonce
+    if (saltNonce) {
+      formatedSaltNonce = '0x' + keccak256(saltNonce).toString('hex')
+    }
     const ethLibAdapter = new Web3Adapter({ web3 })
-    const newCpk = await CPK.create({ ethLibAdapter })
+    const newCpk = await CPK.create({
+      ethLibAdapter,
+      saltNonce: formatedSaltNonce
+    })
     setCpk(newCpk)
-  }, [web3])
+  }, [web3, saltNonce])
 
   useEffect(() => {
     initializeCpk()
@@ -121,7 +133,13 @@ const App = () => {
             variant="outlined"
             items={tabs}
           />
-          {selectedTab === '1' && <CpkInfo walletState={walletState} />}
+          {selectedTab === '1' && (
+            <CpkInfo
+              walletState={walletState}
+              saltNonce={saltNonce}
+              setSaltNonce={setSaltNonce}
+            />
+          )}
           {selectedTab === '2' && (
             <Transactions cpk={cpk} walletState={walletState} />
           )}
