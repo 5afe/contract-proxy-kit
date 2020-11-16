@@ -104,11 +104,16 @@ const App = () => {
       formatedSaltNonce = '0x' + keccak256(saltNonce).toString('hex')
     }
     const ethLibAdapter = new Web3Adapter({ web3 })
-    const newCpk = await CPK.create({
-      ethLibAdapter,
-      saltNonce: formatedSaltNonce
-    })
-    setCpk(newCpk)
+
+    try {
+      const newCpk = await CPK.create({
+        ethLibAdapter,
+        saltNonce: formatedSaltNonce
+      })
+      setCpk(newCpk)
+    } catch (e) {
+      console.log(e)
+    }
   }, [web3, saltNonce])
 
   useEffect(() => {
