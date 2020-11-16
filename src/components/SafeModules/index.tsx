@@ -49,12 +49,16 @@ const SafeModules = ({ cpk, walletState }: SafeModulesProps) => {
   const [rows, setRows] = useState<TableRow[]>([])
 
   const getModules = useCallback(async () => {
-    const modules = await cpk.getModules()
-    const newRows: TableRow[] = modules.map((module, index) => ({
-      id: index.toString(),
-      cells: [{ content: module }]
-    }))
-    setRows(newRows)
+    try {
+      const modules = await cpk.getModules()
+      const newRows: TableRow[] = modules.map((module, index) => ({
+        id: index.toString(),
+        cells: [{ content: module }]
+      }))
+      setRows(newRows)
+    } catch (e) {
+      console.error(e)
+    }
   }, [cpk])
 
   useEffect(() => {
@@ -80,6 +84,7 @@ const SafeModules = ({ cpk, walletState }: SafeModulesProps) => {
       )
       await getModules()
     } catch (e) {
+      console.error(e)
       setShowTxError(true)
     }
     setIsLoading(false)
@@ -104,6 +109,7 @@ const SafeModules = ({ cpk, walletState }: SafeModulesProps) => {
       )
       await getModules()
     } catch (e) {
+      console.error(e)
       setShowTxError(true)
     }
     setIsLoading(false)
