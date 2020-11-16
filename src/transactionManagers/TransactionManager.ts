@@ -1,10 +1,11 @@
-import { TransactionResult, StandardTransaction, Transaction } from '../utils/transactions'
 import EthLibAdapter, { Contract } from '../ethLibAdapters/EthLibAdapter'
 import { Address } from '../utils/basicTypes'
+import { StandardTransaction, Transaction, TransactionResult } from '../utils/transactions'
 
 export enum TransactionManagerNames {
-  CpkTransactionManager = 'CpkTransactionManager',
-  SafeRelayTransactionManager = 'SafeRelayTransactionManager'
+  CpkTxManager = 'CpkTransactionManager',
+  SafeTxRelayManager = 'SafeTransactionRelayManager',
+  RocksideTxRelayManager = 'RocksideTransactionRelayManager'
 }
 
 export interface TransactionManagerConfig {
