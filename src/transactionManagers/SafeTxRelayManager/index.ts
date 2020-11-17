@@ -110,7 +110,7 @@ class SafeTxRelayManager implements TransactionManager {
     signatures,
     ethLibAdapter
   }: TransactionToRelayProps): Promise<any> {
-    const url = this.url + '/api/v1/safes/' + safe + '/transactions/'
+    const url = `${this.url}/api/v1/safes/${safe}/transactions/`
     const headers = {
       Accept: 'application/json',
       'Content-Type': 'application/json'
