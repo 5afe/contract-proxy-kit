@@ -1,6 +1,7 @@
 import { rocksideTxRelayUrl, safeTxRelayUrl } from '../../config/transactionManagers'
 import EthLibAdapter from '../../ethLibAdapters/EthLibAdapter'
 import { Address } from '../../utils/basicTypes'
+import { zeroAddress } from '../../utils/constants'
 import { TransactionResult } from '../../utils/transactions'
 import TransactionManager, {
   ExecTransactionProps,
@@ -46,8 +47,20 @@ class RocksideRelayTransactionManager implements TransactionManager {
     ethLibAdapter
   }: ExecTransactionProps): Promise<TransactionResult> {
     const { safeContract } = contracts
-    const network = 'mainnet'
 
+    let network
+    const networkId = await ethLibAdapter.getNetworkId()
+    switch (networkId) {
+      case 1: 
+        network = 'mainnet'
+        break
+      //case 3:
+      //  network = 'ropsten'
+      //  break
+      default:
+        throw new Error('Network not supported when using Rockside transaction relay')
+    }
+    
     const relayEstimations = await getTransactionEstimations({
       safeTxRelayUrl,
       safe: safeContract.address,
@@ -65,9 +78,9 @@ class RocksideRelayTransactionManager implements TransactionManager {
       data: safeExecTxParams.data,
       operation: safeExecTxParams.operation,
       safeTxGas: relayEstimations.safeTxGas,
-      baseGas: relayEstimations.dataGas,
+      baseGas: relayEstimations.baseGas,
       gasPrice: txRelayParams.gas_price,
-      gasToken: relayEstimations.gasToken,
+      gasToken: zeroAddress,
       refundReceiver: txRelayParams.relayer,
       nonce: relayEstimations.lastUsedNonce + 1
     }
