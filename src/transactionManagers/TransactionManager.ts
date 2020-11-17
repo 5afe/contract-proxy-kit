@@ -11,6 +11,7 @@ export enum TransactionManagerNames {
 export interface TransactionManagerConfig {
   name: string
   url?: string
+  speed?: string
 }
 
 export interface CPKContracts {

@@ -22,6 +22,7 @@ export {
   CpkTransactionManager,
   SafeTxRelayManager,
   RocksideTxRelayManager,
+  RocksideSpeed,
   TransactionManagerNames,
   // Transactions
   OperationType,
