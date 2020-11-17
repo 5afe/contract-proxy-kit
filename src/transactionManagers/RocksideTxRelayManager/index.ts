@@ -69,8 +69,10 @@ class RocksideRelayTransactionManager implements TransactionManager {
       data: safeExecTxParams.data,
       operation: safeExecTxParams.operation
     })
+    console.log({relayEstimations})
 
     const txRelayParams = await this.getTxRelayParams(safeContract.address, network)
+    console.log({txRelayParams})
 
     const safeTransaction = {
       to: safeExecTxParams.to,
@@ -84,6 +86,7 @@ class RocksideRelayTransactionManager implements TransactionManager {
       refundReceiver: txRelayParams.relayer,
       nonce: relayEstimations.lastUsedNonce + 1
     }
+    console.log({safeTransaction})
 
     const transactionHash = await contracts.safeContract.call('getTransactionHash', [
       safeTransaction.to,
@@ -97,12 +100,14 @@ class RocksideRelayTransactionManager implements TransactionManager {
       safeTransaction.refundReceiver,
       safeTransaction.nonce
     ])
+    console.log({transactionHash})
 
     const signatures = await getTransactionHashSignature(
       ethLibAdapter,
       ownerAccount,
       transactionHash
     )
+    console.log({signatures})
 
     const data = safeContract.encode('execTransaction', [
       safeTransaction.to,
@@ -116,6 +121,7 @@ class RocksideRelayTransactionManager implements TransactionManager {
       safeTransaction.refundReceiver,
       signatures
     ])
+    console.log({data})
 
     return this.sendTxToRelay(safeContract.address, data, ethLibAdapter, network)
   }
