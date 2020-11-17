@@ -9,7 +9,11 @@ import TransactionManager, {
   TransactionManagerConfig,
   TransactionManagerNames
 } from '../TransactionManager'
-import { getTransactionEstimations, getTransactionHashSignatureRSV, SafeTransaction } from '../utils'
+import {
+  getTransactionEstimations,
+  getTransactionHashSignatureRSV,
+  SafeTransaction
+} from '../utils'
 
 BigNumber.set({ EXPONENTIAL_AT: [-7, 255] })
 
@@ -93,7 +97,11 @@ class SafeTxRelayManager implements TransactionManager {
       safeTransaction.nonce
     ])
 
-    const rsvSignature = await getTransactionHashSignatureRSV(ethLibAdapter, ownerAccount, transactionHash)
+    const rsvSignature = await getTransactionHashSignatureRSV(
+      ethLibAdapter,
+      ownerAccount,
+      transactionHash
+    )
 
     return this.sendTransactionToRelay({
       url: this.url,

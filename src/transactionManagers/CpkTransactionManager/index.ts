@@ -150,15 +150,7 @@ class CpkTransactionManager implements TransactionManager {
     return {
       contract: proxyFactory,
       methodName: 'createProxyAndExecTransaction',
-      params: [
-        masterCopyAddress,
-        saltNonce,
-        fallbackHandlerAddress,
-        to,
-        value,
-        data,
-        operation
-      ]
+      params: [masterCopyAddress, saltNonce, fallbackHandlerAddress, to, value, data, operation]
     }
   }
 

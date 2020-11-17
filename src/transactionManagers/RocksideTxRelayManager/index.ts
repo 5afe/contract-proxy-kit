@@ -1,9 +1,13 @@
-import { rocksideTxRelayUrl, safeTxRelayUrl } from "../../config/transactionManagers"
-import EthLibAdapter from "../../ethLibAdapters/EthLibAdapter"
-import { Address } from "../../utils/basicTypes"
-import { TransactionResult } from "../../utils/transactions"
-import TransactionManager, { ExecTransactionProps, TransactionManagerConfig, TransactionManagerNames } from "../TransactionManager"
-import { getTransactionEstimations, getTransactionHashSignature } from "../utils"
+import { rocksideTxRelayUrl, safeTxRelayUrl } from '../../config/transactionManagers'
+import EthLibAdapter from '../../ethLibAdapters/EthLibAdapter'
+import { Address } from '../../utils/basicTypes'
+import { TransactionResult } from '../../utils/transactions'
+import TransactionManager, {
+  ExecTransactionProps,
+  TransactionManagerConfig,
+  TransactionManagerNames
+} from '../TransactionManager'
+import { getTransactionEstimations, getTransactionHashSignature } from '../utils'
 
 export enum RocksideSpeed {
   Fast = 'fast',
@@ -39,10 +43,10 @@ class RocksideRelayTransactionManager implements TransactionManager {
     ownerAccount,
     safeExecTxParams,
     contracts,
-    ethLibAdapter,
+    ethLibAdapter
   }: ExecTransactionProps): Promise<TransactionResult> {
     const { safeContract } = contracts
-    const network = "mainnet"
+    const network = 'mainnet'
 
     const relayEstimations = await getTransactionEstimations({
       safeTxRelayUrl,
@@ -81,7 +85,11 @@ class RocksideRelayTransactionManager implements TransactionManager {
       safeTransaction.nonce
     ])
 
-    const signatures = await getTransactionHashSignature(ethLibAdapter, ownerAccount, transactionHash)
+    const signatures = await getTransactionHashSignature(
+      ethLibAdapter,
+      ownerAccount,
+      transactionHash
+    )
 
     const data = safeContract.encode('execTransaction', [
       safeTransaction.to,
@@ -126,7 +134,7 @@ class RocksideRelayTransactionManager implements TransactionManager {
     data: string,
     ethLibAdapter: EthLibAdapter,
     network: string
-): Promise<any> {
+  ): Promise<any> {
     const url = `${rocksideTxRelayUrl}/ethereum/${network}/relay/${safeAccount}`
     const headers = {
       Accept: 'application/json',
@@ -142,9 +150,9 @@ class RocksideRelayTransactionManager implements TransactionManager {
       headers,
       body: JSON.stringify(body)
     })
-  
+
     const jsonResponse = await response.json()
-  
+
     if (response.status !== 200) {
       throw new Error(jsonResponse.exception)
     }

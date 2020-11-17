@@ -109,10 +109,7 @@ class CPK {
       )
 
       const salt = this.#ethLibAdapter.keccak256(
-        this.#ethLibAdapter.abiEncode(
-          ['address', 'uint256'],
-          [ownerAccount, this.#saltNonce]
-        )
+        this.#ethLibAdapter.abiEncode(['address', 'uint256'], [ownerAccount, this.#saltNonce])
       )
       const initCode = this.#ethLibAdapter.abiEncodePacked(
         { type: 'bytes', value: await this.#proxyFactory.call('proxyCreationCode', []) },

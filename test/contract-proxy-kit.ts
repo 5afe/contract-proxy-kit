@@ -11,9 +11,9 @@ import { Address } from '../src/utils/basicTypes'
 import { zeroAddress } from '../src/utils/constants'
 import { shouldWorkWithEthers } from './ethers/shouldWorkWithEthers'
 import {
-  getContractInstances, getContracts, initializeContracts,
-
-
+  getContractInstances,
+  getContracts,
+  initializeContracts,
   TestContractInstances
 } from './utils/contracts'
 import makeEmulatedSafeProvider from './utils/makeEmulatedSafeProvider'
@@ -151,9 +151,7 @@ describe('CPK', () => {
   })
 
   it('should not produce SafeTxRelayManager instances when url not provided', async () => {
-    ;(() => new SafeTxRelayManager({} as any)).should.throw(
-      'url property missing from options'
-    )
+    ;(() => new SafeTxRelayManager({} as any)).should.throw('url property missing from options')
   })
 
   describe('with CPK transaction manager', () => {

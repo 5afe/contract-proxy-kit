@@ -1,7 +1,7 @@
-import BigNumber from "bignumber.js"
-import EthLibAdapter from "../ethLibAdapters/EthLibAdapter"
-import { Address } from "../utils/basicTypes"
-import { OperationType } from "../utils/transactions"
+import BigNumber from 'bignumber.js'
+import EthLibAdapter from '../ethLibAdapters/EthLibAdapter'
+import { Address } from '../utils/basicTypes'
+import { OperationType } from '../utils/transactions'
 
 export interface SafeTransaction {
   to: Address
@@ -84,7 +84,7 @@ export const getTransactionEstimations = async ({
   operation,
   gasToken
 }: TransactionEstimationsProps): Promise<RelayEstimation> => {
-  const url =  `${safeTxRelayUrl}/api/v1/safes/${safe}/transactions/estimate/`
+  const url = `${safeTxRelayUrl}/api/v1/safes/${safe}/transactions/estimate/`
   const headers = { Accept: 'application/json', 'Content-Type': 'application/json' }
   const body: { [key: string]: any } = {
     safe,
