@@ -7,7 +7,9 @@ export async function checkConnectedToSafe(provider: any): Promise<boolean> {
     provider.wc ||
     provider.connection?.wc
 
-  if (wc?.peerMeta?.name?.startsWith?.('Gnosis Safe')) {
+  const peerName = wc?.peerMeta?.name
+
+  if (peerName === 'Safe Multisig WalletConnect' || peerName?.startsWith?.('Gnosis Safe')) {
     return true
   }
 
