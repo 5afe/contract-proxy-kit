@@ -18,6 +18,7 @@ import {
   StandardTransaction,
   normalizeGasLimit
 } from './utils/transactions'
+import { checkConnectedToSafe } from './utils/checkConnectedToSafe'
 
 export interface CPKConfig {
   ethLibAdapter: EthLibAdapter
@@ -92,11 +93,7 @@ class CPK {
 
     const ownerAccount = await this.getOwnerAccount()
 
-    const provider = this.#ethLibAdapter.getProvider()
-    const wc = provider && (provider.wc || (provider.connection && provider.connection.wc))
-    if (wc && wc.peerMeta && wc.peerMeta.name && wc.peerMeta.name.startsWith('Gnosis Safe')) {
-      this.#isConnectedToSafe = true
-    }
+    this.#isConnectedToSafe = await checkConnectedToSafe(this.#ethLibAdapter.getProvider())
 
     this.#multiSend = this.#ethLibAdapter.getContract(multiSendAbi, network.multiSendAddress)
 
