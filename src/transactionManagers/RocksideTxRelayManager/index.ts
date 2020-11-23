@@ -1,3 +1,4 @@
+import fetch from 'node-fetch'
 import { rocksideTxRelayUrl, safeTxRelayUrl } from '../../config/transactionManagers'
 import EthLibAdapter from '../../ethLibAdapters/EthLibAdapter'
 import { Address } from '../../utils/basicTypes'
@@ -22,7 +23,7 @@ interface RocksideRelayTxManagerConfig {
 }
 
 interface TxRelayParamsResult {
-  gas_price: number
+  gas_price: string
   relayer: Address
 }
 
@@ -81,7 +82,7 @@ class RocksideRelayTransactionManager implements TransactionManager {
       operation: safeExecTxParams.operation,
       safeTxGas: relayEstimations.safeTxGas,
       baseGas: relayEstimations.baseGas,
-      gasPrice: txRelayParams.gas_price,
+      gasPrice: Number(txRelayParams.gas_price),
       gasToken: zeroAddress,
       refundReceiver: txRelayParams.relayer,
       nonce: relayEstimations.lastUsedNonce + 1
