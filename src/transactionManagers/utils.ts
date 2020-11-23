@@ -1,7 +1,9 @@
+import fetch from 'node-fetch'
 import BigNumber from 'bignumber.js'
 import EthLibAdapter from '../ethLibAdapters/EthLibAdapter'
 import { Address } from '../utils/basicTypes'
 import { OperationType } from '../utils/transactions'
+import { bufferToHex, ecrecover, pubToAddress } from 'ethereumjs-util'
 
 export interface SafeTransaction {
   to: Address
@@ -42,8 +44,9 @@ export const getTransactionHashSignature = async (
   txHash: string
 ) => {
   let signature = await ethLibAdapter.signMessage(txHash, ownerAccount)
-  let signatureV = parseInt(signature.slice(-2), 16)
+  const hasPrefix = isTxHashSignedWithPrefix(txHash, signature, ownerAccount)
 
+  let signatureV = parseInt(signature.slice(-2), 16)
   switch (signatureV) {
     case 0:
     case 1:
@@ -51,7 +54,9 @@ export const getTransactionHashSignature = async (
       break
     case 27:
     case 28:
-      signatureV += 4
+      if (hasPrefix) {
+        signatureV += 4
+      }
       break
     default:
       throw new Error('Invalid signature')
@@ -73,6 +78,32 @@ export const getTransactionHashSignatureRSV = async (
     s: new BigNumber('0x' + signature.slice(66, 130)).toString(10),
     v: new BigNumber('0x' + signature.slice(130, 132)).toString(10)
   }
+}
+
+const isTxHashSignedWithPrefix = (
+  txHash: string,
+  signature: string,
+  ownerAccount: string
+): boolean => {
+  let hasPrefix
+  try {
+    const rsvSig = {
+      r: Buffer.from(signature.slice(2, 66), 'hex'),
+      s: Buffer.from(signature.slice(66, 130), 'hex'),
+      v: parseInt(signature.slice(130, 132), 16)
+    }
+    const recoveredData = ecrecover(
+      Buffer.from(txHash.slice(2), 'hex'),
+      rsvSig.v,
+      rsvSig.r,
+      rsvSig.s
+    )
+    const recoveredAccount = bufferToHex(pubToAddress(recoveredData))
+    hasPrefix = recoveredAccount.toLowerCase() !== ownerAccount.toLowerCase()
+  } catch (e) {
+    hasPrefix = true
+  }
+  return hasPrefix
 }
 
 export const getTransactionEstimations = async ({
