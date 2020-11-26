@@ -29,6 +29,11 @@ const networks = Object.assign(...[
 
 module.exports = {
   networks,
+  compilers: {
+    solc: {
+      version: "0.6.12",
+    },
+  },
   mocha: {
     bail: true,
   }
