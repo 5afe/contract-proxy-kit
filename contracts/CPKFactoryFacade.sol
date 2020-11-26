@@ -38,6 +38,7 @@ contract CPKFactoryFacade {
         returns (bool)
     {
         address owner;
+        // the following assembly block extracts the owner from the signature data
         // solium-disable-next-line security/no-inline-assembly
         assembly {
             owner := and(
