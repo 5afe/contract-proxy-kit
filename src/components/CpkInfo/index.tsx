@@ -1,5 +1,3 @@
-import React from 'react'
-import styled from 'styled-components'
 import {
   EthHashInfo,
   Text,
@@ -7,6 +5,8 @@ import {
   Title
 } from '@gnosis.pm/safe-react-components'
 import { WalletState } from 'components/App'
+import React from 'react'
+import styled from 'styled-components'
 
 const Line = styled.div`
   display: flex;
@@ -20,23 +20,14 @@ const TitleLine = styled.div`
 
 interface CpkInfoProps {
   walletState: WalletState
-  saltNonce: string
-  setSaltNonce: Function
+  //saltNonce: string
+  //setSaltNonce: Function
 }
 
-const CpkInfo = ({ walletState, saltNonce, setSaltNonce }: CpkInfoProps) => {
+const CpkInfo = ({ walletState /*, saltNonce, setSaltNonce*/ }: CpkInfoProps) => {
   return (
     <>
-      <Title size="sm">Configuration</Title>
-      <Line>
-        <TextField
-          id="saltnonce"
-          label="Custom CPK salt nonce"
-          value={saltNonce}
-          onChange={(e) => setSaltNonce(e.target.value)}
-        />
-      </Line>
-      <br />
+      
       <Title size="sm">Information</Title>
       <Line>
         <TitleLine>
@@ -93,14 +84,6 @@ const CpkInfo = ({ walletState, saltNonce, setSaltNonce }: CpkInfoProps) => {
       <Line>
         <TitleLine>
           <Text size="xl" strong>
-            CPK Balance:
-          </Text>
-        </TitleLine>
-        <Text size="xl">{walletState?.cpkBalance}</Text>
-      </Line>
-      <Line>
-        <TitleLine>
-          <Text size="xl" strong>
             CPK salt nonce:
           </Text>
         </TitleLine>
@@ -112,6 +95,17 @@ const CpkInfo = ({ walletState, saltNonce, setSaltNonce }: CpkInfoProps) => {
           />
         )}
       </Line>
+      {/*
+      <Title size="sm">Configuration</Title>
+      <Line>
+        <TextField
+          id="saltnonce"
+          label="Custom CPK salt nonce"
+          value={saltNonce}
+          onChange={(e) => setSaltNonce(e.target.value)}
+        />
+      </Line>
+      */}
     </>
   )
 }

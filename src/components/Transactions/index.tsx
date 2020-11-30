@@ -1,18 +1,20 @@
-import React, { useState } from 'react'
-import CPK from 'contract-proxy-kit'
-import styled from 'styled-components'
 import {
   Button,
+  Checkbox,
   EthHashInfo,
   Text,
   Title
 } from '@gnosis.pm/safe-react-components'
 import { WalletState } from 'components/App'
+import CPK from 'contract-proxy-kit'
+import React, { useState } from 'react'
+import styled from 'styled-components'
 
 const Line = styled.div`
   display: flex;
   align-items: center;
-  height: 40px;
+  --height: 40px;
+  padding: 10px 0;
 `
 
 const TitleLine = styled.div`
@@ -22,9 +24,11 @@ const TitleLine = styled.div`
 interface TransactionsProps {
   cpk: CPK
   walletState: WalletState
+  enabledRocksideTxRelay: boolean
+  setEnabledRocksideTxRelay: Function
 }
 
-const Transactions = ({ cpk, walletState }: TransactionsProps) => {
+const Transactions = ({ cpk, walletState, enabledRocksideTxRelay, setEnabledRocksideTxRelay }: TransactionsProps) => {
   const [txHash, setTxHash] = useState<string>('')
   const [showTxError, setShowTxError] = useState<boolean>(false)
 
@@ -34,7 +38,8 @@ const Transactions = ({ cpk, walletState }: TransactionsProps) => {
     setTxHash('')
     const txs = [
       {
-        to: walletState.ownerAddress
+        to: walletState.ownerAddress,
+        //value: `${1e15}`
       }
     ]
     try {
@@ -44,13 +49,33 @@ const Transactions = ({ cpk, walletState }: TransactionsProps) => {
         setTxHash(hash)
       }
     } catch (e) {
+      console.log(e)
       setShowTxError(true)
     }
   }
 
   return (
     <>
+      <Title size="sm">Information</Title>
+      <Title size="sm">Configuration</Title>
+      <Line>
+        <Checkbox
+          name="checkboxTxRelay"
+          checked={enabledRocksideTxRelay}
+          onChange={(_, checked) => setEnabledRocksideTxRelay(checked)}
+          label="Rockside transaction relay"
+        />
+      </Line>
+      <br />
       <Title size="sm">Transactions</Title>
+      <Line>
+        <TitleLine>
+          <Text size="xl" strong>
+            CPK Balance:
+          </Text>
+        </TitleLine>
+        <Text size="xl">{walletState?.cpkBalance}</Text>
+      </Line>
       <Line>
         <Button
           onClick={makeTransaction}
@@ -58,7 +83,7 @@ const Transactions = ({ cpk, walletState }: TransactionsProps) => {
           color="primary"
           variant="contained"
         >
-          Send empty tx to the CPK owner
+          Send transaction
         </Button>
       </Line>
       {showTxError && (

@@ -1,14 +1,15 @@
-import React, { useState, useEffect, useCallback } from 'react'
-import CPK, { Web3Adapter, TransactionManagerConfig } from 'contract-proxy-kit'
-import Web3 from 'web3'
-import styled from 'styled-components'
-import keccak256 from 'keccak256'
-import { BigNumber } from 'bignumber.js'
-import { Title, TabItem, Tab } from '@gnosis.pm/safe-react-components'
-import ConnectButton from '../ConnectButton'
+import { Tab, TabItem, Title } from '@gnosis.pm/safe-react-components'
+import BigNumber from 'bignumber.js'
 import CpkInfo from 'components/CpkInfo'
-import Transactions from 'components/Transactions'
 import SafeModules from 'components/SafeModules'
+import Transactions from 'components/Transactions'
+import CPK, { RocksideTxRelayManager, TransactionManagerConfig, Web3Adapter } from 'contract-proxy-kit'
+import { RocksideSpeed } from 'contract-proxy-kit/lib/cjs/transactionManagers/RocksideTxRelayManager'
+import keccak256 from 'keccak256'
+import React, { useCallback, useEffect, useState } from 'react'
+import styled from 'styled-components'
+import Web3 from 'web3'
+import ConnectButton from '../ConnectButton'
 
 const Container = styled.div`
   padding: 10px;
@@ -59,13 +60,13 @@ const tabs: TabItem[] = [
 
 const App = () => {
   const [selectedTab, setSelectedTab] = useState('1')
+  const [enabledRocksideTxRelay, setEnabledRocksideTxRelay] = useState(false)
   const [web3, setWeb3] = React.useState<Web3 | undefined>(undefined)
-  const [saltNonce, setSaltNonce] = React.useState<string>('Contract Proxy Kit')
+  //const [saltNonce, setSaltNonce] = React.useState<string>('Contract Proxy Kit')
   const [cpk, setCpk] = useState<CPK | undefined>(undefined)
   const [walletState, updateWalletState] = useState<WalletState>(
     initialWalletState
   )
-  const network = 'rinkeby'
 
   const onWeb3Connect = (provider: any) => {
     if (provider) {
@@ -85,51 +86,55 @@ const App = () => {
     [web3]
   )
 
-  const updateCpk = useCallback(async (): Promise<void> => {
-    if (!cpk) return
-    updateWalletState({
-      isSafeApp: cpk.isSafeApp(),
-      isProxyDeployed: await cpk.isProxyDeployed(),
-      saltNonce: await cpk.saltNonce,
-      cpkAddress: cpk.address,
-      cpkBalance: await getEthBalance(cpk.address),
-      ownerAddress: await cpk.getOwnerAccount()
-    })
-  }, [cpk, getEthBalance])
-
-  const initializeCpk = useCallback(async (): Promise<void> => {
-    if (!web3) return
-    let formatedSaltNonce = saltNonce
-    if (saltNonce) {
-      formatedSaltNonce = '0x' + keccak256(saltNonce).toString('hex')
-    }
-    const ethLibAdapter = new Web3Adapter({ web3 })
-
-    try {
-      const newCpk = await CPK.create({
-        ethLibAdapter,
-        saltNonce: formatedSaltNonce
-      })
-      setCpk(newCpk)
-    } catch (e) {
-      console.log(e)
-    }
-  }, [web3, saltNonce])
-
   useEffect(() => {
+    const initializeCpk = async () => {
+      if (!web3) return
+      let transactionManager
+      const ethLibAdapter = new Web3Adapter({ web3 })
+      //let formatedSaltNonce = saltNonce
+
+      if (enabledRocksideTxRelay) {
+        transactionManager = new RocksideTxRelayManager({ speed: RocksideSpeed.Fastest })
+      }
+      //if (saltNonce) {
+      //  formatedSaltNonce = '0x' + keccak256(saltNonce).toString('hex')
+      //}
+
+      try {
+        const newCpk = await CPK.create({
+          ethLibAdapter,
+          transactionManager
+          //saltNonce: formatedSaltNonce
+        })
+        setCpk(newCpk)
+      } catch (e) {
+        console.log(e)
+      }
+    }
     initializeCpk()
-  }, [initializeCpk])
+  }, [web3, /* saltNonce,*/ enabledRocksideTxRelay])
 
   useEffect(() => {
+    const updateCpk = async () => {
+      if (!cpk) return
+      updateWalletState({
+        isSafeApp: cpk.isSafeApp(),
+        isProxyDeployed: await cpk.isProxyDeployed(),
+        //saltNonce: await cpk.saltNonce,
+        cpkAddress: cpk.address,
+        cpkBalance: await getEthBalance(cpk.address),
+        ownerAddress: await cpk.getOwnerAccount(),
+      })
+    }
     updateCpk()
-  }, [updateCpk])
+  }, [cpk, getEthBalance])
 
   return (
     <Container>
       <Line>
         <Title size="sm">Contract Proxy Kit Configuration</Title>
       </Line>
-      <ConnectButton onConnect={onWeb3Connect} networkName={network} />
+      <ConnectButton onConnect={onWeb3Connect} />
       {cpk && (
         <>
           <Tab
@@ -141,12 +146,17 @@ const App = () => {
           {selectedTab === '1' && (
             <CpkInfo
               walletState={walletState}
-              saltNonce={saltNonce}
-              setSaltNonce={setSaltNonce}
+              //saltNonce={saltNonce}
+              //setSaltNonce={setSaltNonce}
             />
           )}
           {selectedTab === '2' && (
-            <Transactions cpk={cpk} walletState={walletState} />
+            <Transactions
+              cpk={cpk}
+              walletState={walletState}
+              enabledRocksideTxRelay={enabledRocksideTxRelay}
+              setEnabledRocksideTxRelay={setEnabledRocksideTxRelay}
+            />
           )}
           {selectedTab === '3' && (
             <SafeModules cpk={cpk} walletState={walletState} />
