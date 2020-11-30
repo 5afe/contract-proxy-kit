@@ -111,7 +111,8 @@ class RocksideRelayTransactionManager implements TransactionManager {
       signatures
     ])
 
-    return this.sendTxToRelay(safeContract.address, data, ethLibAdapter, network)
+    const trackingId = await this.sendTxToRelay(safeContract.address, data, network)
+    return this.followTransaction(network, trackingId, ethLibAdapter)
   }
 
   private async getTxRelayParams(
@@ -139,9 +140,8 @@ class RocksideRelayTransactionManager implements TransactionManager {
   private async sendTxToRelay(
     safeAccount: Address,
     data: string,
-    ethLibAdapter: EthLibAdapter,
     network: string
-  ): Promise<any> {
+  ): Promise<string> {
     const url = `${rocksideTxRelayUrl}/ethereum/${network}/relay/${safeAccount}`
     const headers = {
       Accept: 'application/json',
@@ -163,7 +163,31 @@ class RocksideRelayTransactionManager implements TransactionManager {
     if (response.status !== 200) {
       throw new Error(jsonResponse.exception)
     }
-    return ethLibAdapter.toSafeRelayTxResult(jsonResponse.transaction_hash, {})
+    return jsonResponse.tracking_id
+  }
+
+  private async followTransaction(
+    network: string,
+    trackingId: string,
+    ethLibAdapter: EthLibAdapter,
+  ): Promise<any> {
+    const url = `${rocksideTxRelayUrl}/ethereum/${network}/transactions/${trackingId}`
+    const headers = {
+      Accept: 'application/json',
+      'Content-Type': 'application/json'
+    }
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers,
+    })
+
+    const jsonResponse = await response.json()
+
+    if (response.status !== 200) {
+      throw new Error(jsonResponse.exception)
+    }
+    return ethLibAdapter.toRocksideRelayTxResult(jsonResponse)
   }
 }
 

@@ -155,6 +155,17 @@ class Web3Adapter extends EthLibAdapter {
       })
     )
   }
+
+  toRocksideRelayTxResult(tx: Record<string, any>): Promise<Web3TransactionResult> {
+    tx['transactionHash'] = tx['transaction_hash']
+    delete tx['transaction_hash']
+    return new Promise((resolve, reject) =>
+      resolve({
+        promiEvent: new Promise((resolve, reject) => resolve(tx)),
+        hash: tx['transactionHash']
+      })
+    )
+  }
 }
 
 export default Web3Adapter

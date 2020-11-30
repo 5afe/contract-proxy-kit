@@ -47,6 +47,8 @@ abstract class EthLibAdapter {
 
   abstract toSafeRelayTxResult(txHash: string, tx: Record<string, any>): Promise<TransactionResult>
 
+  abstract toRocksideRelayTxResult(tx: Record<string, any>): Promise<TransactionResult>
+
   abiEncodePacked(...params: { type: string; value: any }[]): string {
     return joinHexData(
       params.map(({ type, value }) => {
