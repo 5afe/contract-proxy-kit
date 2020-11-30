@@ -52,44 +52,37 @@ class RocksideRelayTransactionManager implements TransactionManager {
     let network
     const networkId = await ethLibAdapter.getNetworkId()
     switch (networkId) {
-      case 1: 
+      case 1:
         network = 'mainnet'
         break
-      //case 3:
-      //  network = 'ropsten'
-      //  break
+      case 3:
+        network = 'ropsten'
+        break
       default:
         throw new Error('Network not supported when using Rockside transaction relay')
     }
-    
-    const relayEstimations = await getTransactionEstimations({
-      safeTxRelayUrl,
-      safe: safeContract.address,
-      to: safeExecTxParams.to,
-      value: safeExecTxParams.value,
-      data: safeExecTxParams.data,
-      operation: safeExecTxParams.operation
-    })
-    console.log({relayEstimations})
+
+    const nonce = await safeContract.call('nonce', [])
+    console.log({nonce})
 
     const txRelayParams = await this.getTxRelayParams(safeContract.address, network)
-    console.log({txRelayParams})
+    console.log({ txRelayParams })
 
     const safeTransaction = {
       to: safeExecTxParams.to,
       value: safeExecTxParams.value,
       data: safeExecTxParams.data,
       operation: safeExecTxParams.operation,
-      safeTxGas: relayEstimations.safeTxGas,
-      baseGas: relayEstimations.baseGas,
+      safeTxGas: 0,
+      baseGas: 0,
       gasPrice: Number(txRelayParams.gas_price),
       gasToken: zeroAddress,
       refundReceiver: txRelayParams.relayer,
-      nonce: relayEstimations.lastUsedNonce + 1
+      nonce
     }
-    console.log({safeTransaction})
+    console.log({ safeTransaction })
 
-    const transactionHash = await contracts.safeContract.call('getTransactionHash', [
+    const transactionHash = await safeContract.call('getTransactionHash', [
       safeTransaction.to,
       safeTransaction.value,
       safeTransaction.data,
@@ -101,14 +94,14 @@ class RocksideRelayTransactionManager implements TransactionManager {
       safeTransaction.refundReceiver,
       safeTransaction.nonce
     ])
-    console.log({transactionHash})
+    console.log({ transactionHash })
 
     const signatures = await getTransactionHashSignature(
       ethLibAdapter,
       ownerAccount,
       transactionHash
     )
-    console.log({signatures})
+    console.log({ signatures })
 
     const data = safeContract.encode('execTransaction', [
       safeTransaction.to,
@@ -122,7 +115,7 @@ class RocksideRelayTransactionManager implements TransactionManager {
       safeTransaction.refundReceiver,
       signatures
     ])
-    console.log({data})
+    console.log({ data })
 
     return this.sendTxToRelay(safeContract.address, data, ethLibAdapter, network)
   }
