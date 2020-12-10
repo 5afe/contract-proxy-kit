@@ -198,7 +198,7 @@ export function shouldWorkWithEthers({
 
           await toTxHashPromise(
             web3.eth.sendTransaction({
-                from: defaultAccountBox[0],
+              from: defaultAccountBox[0],
               to: cpk.address,
               value: `${5e18}`
             })
