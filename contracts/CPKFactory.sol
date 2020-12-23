@@ -15,8 +15,6 @@ contract CPKFactory {
         gnosisSafeProxyFactory = _gnosisSafeProxyFactory;
     }
 
-    event ProxyCreation(GnosisSafeProxy proxy);
-
     function proxyCreationCode() external pure returns (bytes memory) {
         return type(GnosisSafeProxy).creationCode;
     }
@@ -51,7 +49,5 @@ contract CPKFactory {
         }
 
         proxy.call.value(msg.value)(execTxCalldata);
-
-        emit ProxyCreation(GnosisSafeProxy(proxy));
     }
 }
