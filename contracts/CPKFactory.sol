@@ -8,6 +8,7 @@ import { ProxyImplSetter } from "./ProxyImplSetter.sol";
 contract CPKFactory {
     ProxyImplSetter public proxyImplSetter;
     GnosisSafeProxyFactory public gnosisSafeProxyFactory;
+    bytes32 public proxyExtCodeHash = keccak256(type(GnosisSafeProxy).runtimeCode);
 
     constructor(GnosisSafeProxyFactory _gnosisSafeProxyFactory) public {
         proxyImplSetter = new ProxyImplSetter(address(this));
