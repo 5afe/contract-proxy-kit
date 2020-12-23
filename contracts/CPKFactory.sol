@@ -13,6 +13,7 @@ contract CPKFactory {
         uint256 saltNonceSalt
     );
 
+    uint256 public constant version = 2;
     ProxyImplSetter public proxyImplSetter;
     GnosisSafeProxyFactory public gnosisSafeProxyFactory;
     bytes32 public proxyExtCodeHash = keccak256(type(GnosisSafeProxy).runtimeCode);
