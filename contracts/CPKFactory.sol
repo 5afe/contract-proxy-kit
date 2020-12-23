@@ -20,6 +20,10 @@ contract CPKFactory {
         return type(GnosisSafeProxy).creationCode;
     }
 
+    function proxyRuntimeCode() external pure returns (bytes memory) {
+        return type(GnosisSafeProxy).runtimeCode;
+    }
+
     function createProxyAndExecTransaction(
         address owner,
         address safeVersion,
