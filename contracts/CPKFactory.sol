@@ -6,6 +6,13 @@ import { GnosisSafe } from "@gnosis.pm/safe-contracts/contracts/GnosisSafe.sol";
 import { ProxyImplSetter } from "./ProxyImplSetter.sol";
 
 contract CPKFactory {
+    event CPKCreation(
+        GnosisSafeProxy indexed proxy,
+        address initialImpl,
+        address initialOwner,
+        uint256 saltNonceSalt
+    );
+
     ProxyImplSetter public proxyImplSetter;
     GnosisSafeProxyFactory public gnosisSafeProxyFactory;
     bytes32 public proxyExtCodeHash = keccak256(type(GnosisSafeProxy).runtimeCode);
@@ -49,5 +56,7 @@ contract CPKFactory {
         }
 
         proxy.call.value(msg.value)(execTxCalldata);
+
+        emit CPKCreation(GnosisSafeProxy(proxy), safeVersion, owner, saltNonceSalt);
     }
 }
