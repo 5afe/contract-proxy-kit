@@ -41,8 +41,16 @@ contract CPKFactoryFacade {
         // the following assembly block extracts the owner from the signature data
         // solium-disable-next-line security/no-inline-assembly
         assembly {
+            // 0x124 is the start of the calldata word for the signature parameter
+            // since it's a dynamic type, it stores the offset to the part of the calldata
+            // that stores the actual data being sent as a signature so we load the
+            // offset to the data, and then load the first word of the data which is
+            // the length of the signature. Adding this offset to the signature data position
+            // lets us grab the trailing word of the signature, which we will interpret
+            // as the owner.
+            let sigPos := calldataload(0x124)
             owner := and(
-                calldataload(add(calldataload(0x124), 0x61)),
+                calldataload(add(sigPos, calldataload(sigPos))),
                 0xffffffffffffffffffffffffffffffffffffffff
             )
         }
