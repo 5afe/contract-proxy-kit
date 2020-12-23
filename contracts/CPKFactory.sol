@@ -16,20 +16,24 @@ contract CPKFactory {
     uint256 public constant version = 2;
     ProxyImplSetter public proxyImplSetter;
     GnosisSafeProxyFactory public gnosisSafeProxyFactory;
-    bytes32 public proxyExtCodeHash = keccak256(type(GnosisSafeProxy).runtimeCode);
 
     constructor(GnosisSafeProxyFactory _gnosisSafeProxyFactory) public {
         proxyImplSetter = new ProxyImplSetter(address(this));
         gnosisSafeProxyFactory = _gnosisSafeProxyFactory;
     }
 
-    function proxyCreationCode() external pure returns (bytes memory) {
-        return type(GnosisSafeProxy).creationCode;
-    }
+    // Accessors removed until something is figured out about the fact that these depend on the compiler
+    // but really should depend instead on the specific gnosisSafeProxyFactory instance used
 
-    function proxyRuntimeCode() external pure returns (bytes memory) {
-        return type(GnosisSafeProxy).runtimeCode;
-    }
+    // function proxyCreationCode() external pure returns (bytes memory) {
+    //     return type(GnosisSafeProxy).creationCode;
+    // }
+
+    // function proxyRuntimeCode() external pure returns (bytes memory) {
+    //     return type(GnosisSafeProxy).runtimeCode;
+    // }
+
+    // bytes32 public constant proxyExtCodeHash = keccak256(type(GnosisSafeProxy).runtimeCode);
 
     function createProxyAndExecTransaction(
         address owner,
