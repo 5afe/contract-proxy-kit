@@ -6,18 +6,18 @@ import { CPKFactory } from "./CPKFactory.sol";
 contract CPKFactoryFacade {
     CPKFactory cpkFactory;
     address safeVersion;
-    uint256 saltNonceSalt;
+    uint256 salt;
     address fallbackHandler;
 
     constructor(
         CPKFactory _cpkFactory,
         address _safeVersion,
-        uint256 _saltNonceSalt,
+        uint256 _salt,
         address _fallbackHandler
     ) public {
         cpkFactory = _cpkFactory;
         safeVersion = _safeVersion;
-        saltNonceSalt = _saltNonceSalt;
+        salt = _salt;
         fallbackHandler = _fallbackHandler;
     }
 
@@ -58,7 +58,7 @@ contract CPKFactoryFacade {
         return cpkFactory.createProxyAndExecTransaction.value(msg.value)(
             owner,
             safeVersion,
-            saltNonceSalt,
+            salt,
             fallbackHandler,
             msg.data
         );

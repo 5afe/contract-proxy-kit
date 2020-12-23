@@ -10,7 +10,7 @@ contract CPKFactory {
         GnosisSafeProxy indexed proxy,
         address initialImpl,
         address initialOwner,
-        uint256 saltNonceSalt
+        uint256 salt
     );
 
     uint256 public constant version = 2;
@@ -38,7 +38,7 @@ contract CPKFactory {
     function createProxyAndExecTransaction(
         address owner,
         address safeVersion,
-        uint256 saltNonceSalt,
+        uint256 salt,
         address fallbackHandler,
         bytes calldata execTxCalldata
     )
@@ -46,7 +46,7 @@ contract CPKFactory {
         payable
         returns (bool execTransactionSuccess)
     {
-        bytes32 saltNonce = keccak256(abi.encode(owner, saltNonceSalt));
+        bytes32 saltNonce = keccak256(abi.encode(owner, salt));
 
         address payable proxy = address(gnosisSafeProxyFactory.createProxyWithNonce(
             address(proxyImplSetter),
@@ -64,6 +64,6 @@ contract CPKFactory {
 
         proxy.call.value(msg.value)(execTxCalldata);
 
-        emit CPKCreation(GnosisSafeProxy(proxy), safeVersion, owner, saltNonceSalt);
+        emit CPKCreation(GnosisSafeProxy(proxy), safeVersion, owner, salt);
     }
 }
