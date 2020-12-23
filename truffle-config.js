@@ -31,7 +31,7 @@ module.exports = {
   networks,
   compilers: {
     solc: {
-      version: "0.6.12",
+      version: "0.5.17",
     },
   },
   mocha: {
