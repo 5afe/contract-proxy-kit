@@ -44,11 +44,13 @@ contract CPKFactory {
     {
         bytes32 saltNonce = keccak256(abi.encode(owner, saltNonceSalt));
 
-        gnosisSafeProxyFactory.createProxyWithNonce(
-            proxyImplSetter,
-            abi.encodeWithSelector(proxyImplSetter.setImplementation.selector, safeVersion),
-            saltNonce
-        );
+        address payable proxy = address(gnosisSafeProxyFactory.createProxyWithNonce(
+            address(proxyImplSetter),
+            "",
+            uint256(saltNonce)
+        ));
+
+        ProxyImplSetter(proxy).setImplementation(safeVersion);
 
         {
             address[] memory tmp = new address[](1);
