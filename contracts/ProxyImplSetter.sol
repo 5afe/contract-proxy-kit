@@ -5,7 +5,7 @@ contract ProxyImplSetter {
     // KLUDGE: make this immutable after solc versions get fixed
     address public initialSetter;
 
-    constructor(address _initialSetter) {
+    constructor(address _initialSetter) public {
         initialSetter = _initialSetter;
     }
 
