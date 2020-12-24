@@ -83,7 +83,7 @@ class CPK {
     const networkId = await this.#ethLibAdapter.getNetworkId()
     const network = this.#networks[networkId]
     if (!network) {
-      throw new Error(`unrecognized network ID ${networkId}`)
+      throw new Error(`Unrecognized network ID ${networkId}`)
     }
 
     const ownerAccount = await this.getOwnerAccount()
