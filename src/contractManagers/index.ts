@@ -94,7 +94,7 @@ class ContractManager {
         this.#contractVersionManager = new ContractV111Manager(this.#contract)
         break
       default:
-        throw new Error('CPK Proxy address version is not valid')
+        throw new Error('CPK Proxy version is not valid')
     }
   }
 
