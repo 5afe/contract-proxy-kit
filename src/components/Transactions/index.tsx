@@ -39,11 +39,13 @@ const Transactions = ({ cpk, walletState, enabledRocksideTxRelay, setEnabledRock
     const txs = [
       {
         to: walletState.ownerAddress,
-        //value: `${1e15}`
+        value: `${11e17}`
       }
     ]
     try {
       const txResult = await cpk.execTransactions(txs)
+      console.log({txResult})
+      console.log(await txResult.promiEvent)
       const hash = walletState.isSafeApp ? txResult.safeTxHash : txResult.hash
       if (hash) {
         setTxHash(hash)
@@ -107,6 +109,8 @@ const Transactions = ({ cpk, walletState, enabledRocksideTxRelay, setEnabledRock
             textSize="xl"
             shortenHash={8}
             showCopyBtn
+            showEtherscanBtn
+            network="ropsten"
           />
         </Line>
       )}

@@ -3,7 +3,7 @@ import BigNumber from 'bignumber.js'
 import CpkInfo from 'components/CpkInfo'
 import SafeModules from 'components/SafeModules'
 import Transactions from 'components/Transactions'
-import CPK, { RocksideTxRelayManager, TransactionManagerConfig, Web3Adapter } from 'contract-proxy-kit'
+import CPK, { /*RocksideTxRelayManager, SafeTxRelayManager,*/ TransactionManagerConfig, Web3Adapter } from 'contract-proxy-kit'
 import { RocksideSpeed } from 'contract-proxy-kit/lib/cjs/transactionManagers/RocksideTxRelayManager'
 import keccak256 from 'keccak256'
 import React, { useCallback, useEffect, useState } from 'react'
@@ -92,9 +92,17 @@ const App = () => {
       let transactionManager
       const ethLibAdapter = new Web3Adapter({ web3 })
       //let formatedSaltNonce = saltNonce
-
+      const networks = {
+        3: {
+          masterCopyAddress: '0x798960252148C0215F593c14b7c5B07183826212',
+          proxyFactoryAddress: '0x8240eE136011392736920419cB7CB8bBadAc27E4',
+          multiSendAddress: '0xe637DE43c1702fd59A2E7ab8F4224C7CBb0e9D3D',
+          fallbackHandlerAddress: '0x83B1CB4017acf298b9Ff47FC4e380282738406B2'
+        }
+      }
       if (enabledRocksideTxRelay) {
-        transactionManager = new RocksideTxRelayManager({ speed: RocksideSpeed.Fastest })
+        //transactionManager = new RocksideTxRelayManager({ speed: RocksideSpeed.Fastest })
+        //transactionManager = new SafeTxRelayManager({ url: "http://localhost:8000" })
       }
       //if (saltNonce) {
       //  formatedSaltNonce = '0x' + keccak256(saltNonce).toString('hex')
@@ -102,6 +110,7 @@ const App = () => {
 
       try {
         const newCpk = await CPK.create({
+          networks,
           ethLibAdapter,
           transactionManager
           //saltNonce: formatedSaltNonce
