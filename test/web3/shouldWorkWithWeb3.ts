@@ -107,7 +107,7 @@ export function shouldWorkWithWeb3({
 
     it('should not produce CPK instances when web3 not connected to a recognized network', async () => {
       const ethLibAdapter = new Web3Adapter({ web3: ueb3 })
-      await CPK.create({ ethLibAdapter }).should.be.rejectedWith(/unrecognized network ID \d+/)
+      await CPK.create({ ethLibAdapter }).should.be.rejectedWith(/Unrecognized network ID \d+/)
     })
 
     describe('with valid networks configuration', () => {

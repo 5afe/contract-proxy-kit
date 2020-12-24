@@ -86,7 +86,7 @@ abstract class EthLibAdapter {
   }
 
   decodeError(revertData: string): string {
-    if (!revertData.startsWith('0x08c379a0')) throw new Error('unrecognized error format')
+    if (!revertData.startsWith('0x08c379a0')) throw new Error('Unrecognized error format')
 
     return this.abiDecode(['string'], `0x${revertData.slice(10)}`)[0]
   }

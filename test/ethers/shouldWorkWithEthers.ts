@@ -119,7 +119,7 @@ export function shouldWorkWithEthers({
 
     it('should not produce CPK instances when ethers not connected to a recognized network', async () => {
       const ethLibAdapter = new EthersAdapter({ ethers, signer })
-      await CPK.create({ ethLibAdapter }).should.be.rejectedWith(/unrecognized network ID \d+/)
+      await CPK.create({ ethLibAdapter }).should.be.rejectedWith(/Unrecognized network ID \d+/)
     })
 
     describe('with valid networks configuration', () => {
