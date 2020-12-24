@@ -140,7 +140,6 @@ export function shouldWorkWithEthers({
                 version: '1.1.1'
               }
             ],
-            masterCopyAddress: gnosisSafe.address,
             proxyFactoryAddress: cpkFactory.address,
             multiSendAddress: multiSend.address,
             fallbackHandlerAddress: defaultCallbackHandler.address

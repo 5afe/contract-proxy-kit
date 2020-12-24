@@ -6,7 +6,7 @@ interface MasterCopyAddressVersion {
 }
 
 export interface NetworkConfigEntry {
-  masterCopyAddress: Address
+  masterCopyAddress?: Address
   masterCopyAddressVersions?: Array<MasterCopyAddressVersion>
   proxyFactoryAddress: Address
   multiSendAddress: Address
@@ -87,20 +87,28 @@ export function normalizeNetworksConfig(
   }
   const normalizedNetworks: NormalizedNetworksConfig = {}
   for (const networkId of Object.keys(networks)) {
+    const currentNetwork = networks[networkId]
     let mcVersions: MasterCopyAddressVersion[] = []
-    if (networks[networkId].masterCopyAddress) {
+    if (currentNetwork.masterCopyAddress) {
       mcVersions = [
         {
           version: masterCopyAddressVersions[0].version,
-          address: networks[networkId].masterCopyAddress
+          address: currentNetwork.masterCopyAddress
         }
       ]
+    } else if (currentNetwork.masterCopyAddressVersions) {
+      mcVersions = currentNetwork.masterCopyAddressVersions
+    }
+    if (mcVersions.length === 0) {
+      throw new Error(
+        'Properties "masterCopyAddress" or "masterCopyAddressVersions" are missing in CPK network configuration'
+      )
     }
     normalizedNetworks[networkId] = {
       masterCopyAddressVersions: mcVersions,
-      proxyFactoryAddress: networks[networkId].proxyFactoryAddress,
-      multiSendAddress: networks[networkId].multiSendAddress,
-      fallbackHandlerAddress: networks[networkId].fallbackHandlerAddress
+      proxyFactoryAddress: currentNetwork.proxyFactoryAddress,
+      multiSendAddress: currentNetwork.multiSendAddress,
+      fallbackHandlerAddress: currentNetwork.fallbackHandlerAddress
     }
   }
   return {
