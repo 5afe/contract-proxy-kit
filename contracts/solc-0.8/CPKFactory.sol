@@ -1,13 +1,13 @@
-pragma solidity >=0.5.0 <0.7.0;
+// SPDX-License-Identifier: GPL-3.0-only
+pragma solidity >=0.8.0;
 
-import { GnosisSafeProxy } from "@gnosis.pm/safe-contracts/contracts/proxies/GnosisSafeProxy.sol";
-import { GnosisSafeProxyFactory } from "@gnosis.pm/safe-contracts/contracts/proxies/GnosisSafeProxyFactory.sol";
-import { GnosisSafe } from "@gnosis.pm/safe-contracts/contracts/GnosisSafe.sol";
+import { IGnosisSafe } from "./dep-ports/IGnosisSafe.sol";
+import { IGnosisSafeProxyFactory } from "./dep-ports/IGnosisSafeProxyFactory.sol";
 import { ProxyImplSetter } from "./ProxyImplSetter.sol";
 
 contract CPKFactory {
     event CPKCreation(
-        GnosisSafeProxy indexed proxy,
+        address indexed proxy,
         address initialImpl,
         address initialOwner,
         uint256 salt
@@ -15,9 +15,9 @@ contract CPKFactory {
 
     uint256 public constant version = 2;
     ProxyImplSetter public proxyImplSetter;
-    GnosisSafeProxyFactory public gnosisSafeProxyFactory;
+    IGnosisSafeProxyFactory public gnosisSafeProxyFactory;
 
-    constructor(GnosisSafeProxyFactory _gnosisSafeProxyFactory) public {
+    constructor(IGnosisSafeProxyFactory _gnosisSafeProxyFactory) {
         proxyImplSetter = new ProxyImplSetter(address(this));
         gnosisSafeProxyFactory = _gnosisSafeProxyFactory;
     }
@@ -48,22 +48,22 @@ contract CPKFactory {
     {
         bytes32 saltNonce = keccak256(abi.encode(owner, salt));
 
-        address payable proxy = address(gnosisSafeProxyFactory.createProxyWithNonce(
+        address payable proxy = gnosisSafeProxyFactory.createProxyWithNonce(
             address(proxyImplSetter),
             "",
             uint256(saltNonce)
-        ));
+        );
 
         ProxyImplSetter(proxy).setImplementation(safeVersion);
 
         {
             address[] memory tmp = new address[](1);
             tmp[0] = address(owner);
-            GnosisSafe(proxy).setup(tmp, 1, address(0), "", fallbackHandler, address(0), 0, address(0));
+            IGnosisSafe(proxy).setup(tmp, 1, address(0), "", fallbackHandler, address(0), 0, payable(0));
         }
 
-        proxy.call.value(msg.value)(execTxCalldata);
+        proxy.call{value: msg.value}(execTxCalldata);
 
-        emit CPKCreation(GnosisSafeProxy(proxy), safeVersion, owner, salt);
+        emit CPKCreation(proxy, safeVersion, owner, salt);
     }
 }

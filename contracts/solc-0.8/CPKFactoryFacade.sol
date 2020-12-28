@@ -1,6 +1,7 @@
-pragma solidity >=0.5.0 <0.7.0;
+// SPDX-License-Identifier: GPL-3.0-only
+pragma solidity >=0.8.0;
 
-import { Enum } from "@gnosis.pm/safe-contracts/contracts/common/Enum.sol";
+import { Enum } from "./dep-ports/Enum.sol";
 import { CPKFactory } from "./CPKFactory.sol";
 
 contract CPKFactoryFacade {
@@ -14,7 +15,7 @@ contract CPKFactoryFacade {
         address _safeVersion,
         uint256 _salt,
         address _fallbackHandler
-    ) public {
+    ) {
         cpkFactory = _cpkFactory;
         safeVersion = _safeVersion;
         salt = _salt;
@@ -55,7 +56,7 @@ contract CPKFactoryFacade {
             )
         }
 
-        return cpkFactory.createProxyAndExecTransaction.value(msg.value)(
+        return cpkFactory.createProxyAndExecTransaction{value: msg.value}(
             owner,
             safeVersion,
             salt,
