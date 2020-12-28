@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity >=0.8.0;
 
-import { IGnosisSafe } from "./dep-ports/IGnosisSafe.sol";
 import { IGnosisSafeProxyFactory } from "./dep-ports/IGnosisSafeProxyFactory.sol";
 import { ProxyImplSetter } from "./ProxyImplSetter.sol";
 
@@ -39,8 +38,7 @@ contract CPKFactory {
         address owner,
         address safeVersion,
         uint256 salt,
-        address fallbackHandler,
-        bytes calldata execTxCalldata
+        bytes[] calldata txsCalldata
     )
         external
         payable
@@ -56,13 +54,27 @@ contract CPKFactory {
 
         ProxyImplSetter(proxy).setImplementation(safeVersion);
 
-        {
-            address[] memory tmp = new address[](1);
-            tmp[0] = address(owner);
-            IGnosisSafe(proxy).setup(tmp, 1, address(0), "", fallbackHandler, address(0), 0, payable(0));
+        bytes memory lastReturnData;
+
+        for (uint i = 0; i < txsCalldata.length; i++) {
+            bool txSuccess;
+            (txSuccess, lastReturnData) = proxy.call{value: msg.value}(txsCalldata[i]);
+            assembly {
+                // txSuccess == 0 means the call failed
+                if iszero(txSuccess) {
+                    // The revert data begins one word after the lastReturnData pointer.
+                    // At the location lastReturnData in memory, the length of the bytes is stored.
+                    // This differs from the high-level revert(string(lastReturnData))
+                    // as the high-level version encodes the lastReturnData in a Error(string) object.
+                    // We want to avoid that because the underlying call should have already
+                    // formatted the data in an Error(string) object
+                    revert(add(0x20, lastReturnData), mload(lastReturnData))
+                }
+            }
         }
 
-        proxy.call{value: msg.value}(execTxCalldata);
+        // final call in txsCalldata is assumed to be execTransaction
+        execTransactionSuccess = abi.decode(lastReturnData, (bool));
 
         emit CPKCreation(proxy, safeVersion, owner, salt);
     }
