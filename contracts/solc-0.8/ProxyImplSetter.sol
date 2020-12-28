@@ -2,9 +2,9 @@
 pragma solidity >=0.8.0;
 
 contract ProxyImplSetter {
+    address public immutable initialSetter;
+
     address implementation;
-    // KLUDGE: make this immutable after solc versions get fixed
-    address public initialSetter;
 
     constructor(address _initialSetter) {
         initialSetter = _initialSetter;

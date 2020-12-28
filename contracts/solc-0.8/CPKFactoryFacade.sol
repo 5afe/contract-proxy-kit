@@ -5,10 +5,10 @@ import { Enum } from "./dep-ports/Enum.sol";
 import { CPKFactory, CPKFactoryTx } from "./CPKFactory.sol";
 
 contract CPKFactoryFacade {
-    CPKFactory cpkFactory;
-    address safeVersion;
-    uint256 salt;
-    address fallbackHandler;
+    CPKFactory immutable cpkFactory;
+    address immutable safeVersion;
+    uint256 immutable salt;
+    address immutable fallbackHandler;
 
     constructor(
         CPKFactory _cpkFactory,
