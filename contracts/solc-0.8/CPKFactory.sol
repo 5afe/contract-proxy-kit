@@ -4,6 +4,11 @@ pragma solidity >=0.8.0;
 import { IGnosisSafeProxyFactory } from "./dep-ports/IGnosisSafeProxyFactory.sol";
 import { ProxyImplSetter } from "./ProxyImplSetter.sol";
 
+struct CPKFactoryTx {
+    uint value;
+    bytes data;
+}
+
 contract CPKFactory {
     event CPKCreation(
         address indexed proxy,
@@ -38,7 +43,7 @@ contract CPKFactory {
         address owner,
         address safeVersion,
         uint256 salt,
-        bytes[] calldata txsCalldata
+        CPKFactoryTx[] calldata txs
     )
         external
         payable
@@ -54,11 +59,13 @@ contract CPKFactory {
 
         ProxyImplSetter(proxy).setImplementation(safeVersion);
 
+        uint sumTxsValues = 0;
         bytes memory lastReturnData;
-
-        for (uint i = 0; i < txsCalldata.length; i++) {
+        for (uint i = 0; i < txs.length; i++) {
             bool txSuccess;
-            (txSuccess, lastReturnData) = proxy.call{value: msg.value}(txsCalldata[i]);
+            uint txValue = txs[i].value;
+            sumTxsValues += txValue;
+            (txSuccess, lastReturnData) = proxy.call{value: txValue}(txs[i].data);
             assembly {
                 // txSuccess == 0 means the call failed
                 if iszero(txSuccess) {
@@ -73,7 +80,11 @@ contract CPKFactory {
             }
         }
 
-        // final call in txsCalldata is assumed to be execTransaction
+        // it is up to the caller to make sure that the msg.value of this method
+        // equals the sum of all the values in the txs
+        require(msg.value == sumTxsValues, "msg.value must equal sum of txs' values");
+
+        // final call in txs is assumed to be execTransaction
         execTransactionSuccess = abi.decode(lastReturnData, (bool));
 
         emit CPKCreation(proxy, safeVersion, owner, salt);

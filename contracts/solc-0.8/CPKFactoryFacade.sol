@@ -2,7 +2,7 @@
 pragma solidity >=0.8.0;
 
 import { Enum } from "./dep-ports/Enum.sol";
-import { CPKFactory } from "./CPKFactory.sol";
+import { CPKFactory, CPKFactoryTx } from "./CPKFactory.sol";
 
 contract CPKFactoryFacade {
     CPKFactory cpkFactory;
@@ -56,32 +56,42 @@ contract CPKFactoryFacade {
             )
         }
 
-        bytes[] memory txsCalldata = new bytes[](2);
+        CPKFactoryTx[] memory txs = new CPKFactoryTx[](2);
         {
             address[] memory owners = new address[](1);
             owners[0] = address(owner);
-            txsCalldata[0] = abi.encodeWithSignature("setup("
-                "address[]," // owners
-                "uint256,"   // threshold
-                "address,"   // to
-                "bytes,"     // data
-                "address,"   // fallbackHandler
-                "address,"   // paymentToken
-                "uint256,"   // payment
-                "address"    // paymentReceiver
-            ")", owners, uint256(1), address(0), "", fallbackHandler, address(0), uint256(0), payable(0));
+            txs[0] = CPKFactoryTx({
+                value: 0,
+                data: abi.encodeWithSignature(
+                    "setup("
+                        "address[]," // owners
+                        "uint256,"   // threshold
+                        "address,"   // to
+                        "bytes,"     // data
+                        "address,"   // fallbackHandler
+                        "address,"   // paymentToken
+                        "uint256,"   // payment
+                        "address"    // paymentReceiver
+                    ")",
+                    owners, uint256(1), address(0), "",
+                    fallbackHandler, address(0), uint256(0), payable(0)
+                )
+            });
         }
 
         // msg.data works here as a substitute for encoding because this function's signature
         // exactly matches the execTransaction signature from the Gnosis Safe, so the calldata
         // encoding will be the same.
-        txsCalldata[1] = msg.data;
+        txs[1] = CPKFactoryTx({
+            value: msg.value,
+            data: msg.data
+        });
 
         return cpkFactory.createProxyAndExecTransaction{value: msg.value}(
             owner,
             safeVersion,
             salt,
-            txsCalldata
+            txs
         );
     }
 }
