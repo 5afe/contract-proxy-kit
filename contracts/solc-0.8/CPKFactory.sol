@@ -20,7 +20,7 @@ contract CPKFactory {
     uint256 public constant version = 2;
     ProxyImplSetter public immutable proxyImplSetter;
     IGnosisSafeProxyFactory public immutable gnosisSafeProxyFactory;
-    address public immutable proxyExtCodeHash;
+    bytes32 public immutable proxyExtCodeHash;
 
     constructor(IGnosisSafeProxyFactory _gnosisSafeProxyFactory) {
         proxyImplSetter = new ProxyImplSetter(address(this));
