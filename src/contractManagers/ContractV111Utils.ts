@@ -1,7 +1,7 @@
 import { Address } from '../utils/basicTypes'
-import CommonContractManager from './CommonContractManager'
+import ContractVersionUtils from './ContractVersionUtils'
 
-class ContractV111Manager extends CommonContractManager {
+class ContractV111Utils extends ContractVersionUtils {
   async isModuleEnabled(moduleAddress: Address): Promise<boolean> {
     const modules = await super.contract.call('getModules', [])
     const selectedModules = modules.filter(
@@ -11,4 +11,4 @@ class ContractV111Manager extends CommonContractManager {
   }
 }
 
-export default ContractV111Manager
+export default ContractV111Utils
