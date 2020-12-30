@@ -48,16 +48,16 @@ class ContractManager {
     let proxyAddress
     let properVersion
 
-    const salt = ethLibAdapter.keccak256(
-      ethLibAdapter.abiEncode(['address', 'uint256'], [ownerAccount, saltNonce])
-    )
-
+    
     if (isSafeApp || isConnectedToSafe) {
-      const temporaryContract = ethLibAdapter.getContract(safeAbiV120, ownerAccount)
-      const version: string = await temporaryContract.call('VERSION', [])
-      properVersion = version
+      const temporaryContract = ethLibAdapter.getContract(safeAbiV111, ownerAccount)
+      properVersion = await temporaryContract.call('VERSION', [])
       proxyAddress = ownerAccount
     } else {
+      const salt = ethLibAdapter.keccak256(
+        ethLibAdapter.abiEncode(['address', 'uint256'], [ownerAccount, saltNonce])
+      )
+
       for (const masterCopyVersion of network.masterCopyAddressVersions) {
         proxyAddress = await this.calculateProxyAddress(
           masterCopyVersion.address,
@@ -68,7 +68,8 @@ class ContractManager {
         const codeAtAddress = await ethLibAdapter.getCode(proxyAddress)
         const isDeployed = codeAtAddress !== '0x'
         if (isDeployed) {
-          properVersion = masterCopyVersion.version
+          const temporaryContract = ethLibAdapter.getContract(safeAbiV111, proxyAddress)
+          properVersion = await temporaryContract.call('VERSION', [])
           break
         }
       }
