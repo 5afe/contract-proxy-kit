@@ -5,7 +5,7 @@ import {
   NormalizedNetworksConfig,
   normalizeNetworksConfig
 } from './config/networks'
-import ContractManager from './contractManagers'
+import ContractManager from './contractManager'
 import EthLibAdapter, { Contract } from './ethLibAdapters/EthLibAdapter'
 import SafeAppsSdkConnector from './safeAppsSdkConnector'
 import CpkTransactionManager from './transactionManagers/CpkTransactionManager'
