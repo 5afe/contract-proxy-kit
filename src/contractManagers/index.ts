@@ -5,9 +5,9 @@ import safeAbiV120 from '../abis/SafeAbiV1-2-0.json'
 import { NormalizedNetworkConfigEntry } from '../config/networks'
 import EthLibAdapter, { Contract } from '../ethLibAdapters/EthLibAdapter'
 import { Address } from '../utils/basicTypes'
-import CommonContractManager from './CommonContractManager'
-import ContractV111Manager from './ContractV111Manager'
-import ContractV120Manager from './ContractV120Manager'
+import ContractVersionUtils from './ContractVersionUtils'
+import ContractV111Utils from './ContractV111Utils'
+import ContractV120Utils from './ContractV120Utils'
 
 export interface ContractManagerProps {
   ethLibAdapter: EthLibAdapter
@@ -19,7 +19,7 @@ export interface ContractManagerProps {
 }
 
 class ContractManager {
-  #contractVersionManager?: CommonContractManager
+  #versionUtils?: ContractVersionUtils
   #contract?: Contract
   #proxyFactory: Contract
   #masterCopyAddress: Address
@@ -40,15 +40,14 @@ class ContractManager {
   }
 
   async init(opts: ContractManagerProps): Promise<void> {
-    await this.calculateContractVersionManager(opts)
+    await this.calculateVersionUtils(opts)
   }
 
-  private async calculateContractVersionManager(opts: ContractManagerProps) {
+  private async calculateVersionUtils(opts: ContractManagerProps) {
     const { ethLibAdapter, ownerAccount, saltNonce, network, isSafeApp, isConnectedToSafe } = opts
     let proxyAddress
     let properVersion
 
-    
     if (isSafeApp || isConnectedToSafe) {
       const temporaryContract = ethLibAdapter.getContract(safeAbiV111, ownerAccount)
       properVersion = await temporaryContract.call('VERSION', [])
@@ -88,11 +87,11 @@ class ContractManager {
     switch (properVersion) {
       case '1.2.0':
         this.#contract = ethLibAdapter.getContract(safeAbiV120, proxyAddress)
-        this.#contractVersionManager = new ContractV120Manager(this.#contract)
+        this.#versionUtils = new ContractV120Utils(this.#contract)
         break
       case '1.1.1':
         this.#contract = ethLibAdapter.getContract(safeAbiV111, proxyAddress)
-        this.#contractVersionManager = new ContractV111Manager(this.#contract)
+        this.#versionUtils = new ContractV111Utils(this.#contract)
         break
       default:
         throw new Error('CPK Proxy version is not valid')
@@ -119,8 +118,8 @@ class ContractManager {
     return proxyAddress
   }
 
-  get contractVersionManager(): CommonContractManager | undefined {
-    return this.#contractVersionManager
+  get versionUtils(): ContractVersionUtils | undefined {
+    return this.#versionUtils
   }
 
   get contract(): Contract | undefined {

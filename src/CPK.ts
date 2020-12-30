@@ -268,10 +268,10 @@ class CPK {
     if (!isProxyDeployed) {
       throw new Error('CPK Proxy contract is not deployed')
     }
-    if (!this.#contractManager?.contractVersionManager) {
+    if (!this.#contractManager?.versionUtils) {
       throw new Error('CPK contractManager uninitialized')
     }
-    return await this.#contractManager.contractVersionManager.getModules()
+    return await this.#contractManager.versionUtils.getModules()
   }
 
   async isModuleEnabled(moduleAddress: Address): Promise<boolean> {
@@ -279,14 +279,14 @@ class CPK {
     if (!isProxyDeployed) {
       throw new Error('CPK Proxy contract is not deployed')
     }
-    if (!this.#contractManager?.contractVersionManager) {
+    if (!this.#contractManager?.versionUtils) {
       throw new Error('CPK contractManager uninitialized')
     }
-    return await this.#contractManager.contractVersionManager.isModuleEnabled(moduleAddress)
+    return await this.#contractManager.versionUtils.isModuleEnabled(moduleAddress)
   }
 
   async enableModule(moduleAddress: Address): Promise<TransactionResult> {
-    if (!this.#contractManager?.contractVersionManager) {
+    if (!this.#contractManager?.versionUtils) {
       throw new Error('CPK contractManager uninitialized')
     }
     if (!this.address) {
@@ -295,7 +295,7 @@ class CPK {
     return await this.execTransactions([
       {
         to: this.address,
-        data: await this.#contractManager.contractVersionManager.encodeEnableModule(moduleAddress),
+        data: await this.#contractManager.versionUtils.encodeEnableModule(moduleAddress),
         operation: CPK.Call
       }
     ])
@@ -306,7 +306,7 @@ class CPK {
     if (!isProxyDeployed) {
       throw new Error('CPK Proxy contract is not deployed')
     }
-    if (!this.#contractManager?.contractVersionManager) {
+    if (!this.#contractManager?.versionUtils) {
       throw new Error('CPK contractManager uninitialized')
     }
     if (!this.address) {
@@ -315,7 +315,7 @@ class CPK {
     return await this.execTransactions([
       {
         to: this.address,
-        data: await this.#contractManager.contractVersionManager.encodeDisableModule(moduleAddress),
+        data: await this.#contractManager.versionUtils.encodeDisableModule(moduleAddress),
         operation: CPK.Call
       }
     ])

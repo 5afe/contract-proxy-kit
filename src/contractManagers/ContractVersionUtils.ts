@@ -2,7 +2,7 @@ import { Contract } from '../ethLibAdapters/EthLibAdapter'
 import { Address } from '../utils/basicTypes'
 import { sentinelModules } from '../utils/constants'
 
-abstract class CommonContractManager {
+abstract class ContractVersionUtils {
   contract: Contract
 
   constructor(contract: Contract) {
@@ -29,4 +29,4 @@ abstract class CommonContractManager {
   }
 }
 
-export default CommonContractManager
+export default ContractVersionUtils
