@@ -25,14 +25,14 @@ contract CPKFactory {
     constructor(IGnosisSafeProxyFactory _gnosisSafeProxyFactory) {
         proxyImplSetter = new ProxyImplSetter(address(this));
         gnosisSafeProxyFactory = _gnosisSafeProxyFactory;
-        proxyExtCodeHash = keccak256(gnosisSafeProxyFactory.proxyRuntimeCode());
+        proxyExtCodeHash = keccak256(_gnosisSafeProxyFactory.proxyRuntimeCode());
     }
 
-    function proxyCreationCode() external pure returns (bytes memory) {
+    function proxyCreationCode() external view returns (bytes memory) {
         return gnosisSafeProxyFactory.proxyCreationCode();
     }
 
-    function proxyRuntimeCode() external pure returns (bytes memory) {
+    function proxyRuntimeCode() external view returns (bytes memory) {
         return gnosisSafeProxyFactory.proxyRuntimeCode();
     }
 
