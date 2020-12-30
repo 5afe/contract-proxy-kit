@@ -1,12 +1,10 @@
-module.exports = function(deployer: Truffle.Deployer, network: string) {
+module.exports = async function(deployer: Truffle.Deployer, network: string) {
   const deploy = (
     name: string
   ): Truffle.Deployer => deployer.deploy(artifacts.require(name as any));
 
-  ['Migrations', 'CPKFactory'].forEach(deploy);
-
   if (network === 'test' || network === 'local') {
-    [
+    await Promise.all([
       'GnosisSafe',
       'GnosisSafe2',
       'GnosisSafeProxyFactory',
@@ -16,10 +14,15 @@ module.exports = function(deployer: Truffle.Deployer, network: string) {
       'DailyLimitModule',
       'ERC20Mintable',
       'ConditionalTokens'
-    ].forEach(deploy);
+    ].map(deploy));
   }
 
-  deployer.deploy(
+  await deployer.deploy(
+    artifacts.require('CPKFactory'),
+    artifacts.require('GnosisSafeProxyFactory').address,
+  );
+
+  await deployer.deploy(
     artifacts.require('CPKFactoryFacade'),
     artifacts.require('CPKFactory').address,
     artifacts.require('GnosisSafe').address,
