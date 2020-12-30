@@ -1,4 +1,4 @@
-import ContractManager from '../contractManagers'
+import ContractManager from '../contractManager'
 import EthLibAdapter, { Contract } from '../ethLibAdapters/EthLibAdapter'
 import { Address } from '../utils/basicTypes'
 import { StandardTransaction, Transaction, TransactionResult } from '../utils/transactions'
