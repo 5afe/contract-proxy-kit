@@ -8,7 +8,7 @@
     "generate-types": "typechain --target=truffle-v5 './build/contracts/*.json'",
     "compile-contracts": "truffle compile --config ./truffle-config.solc-0.5.js && truffle compile --config ./truffle-config.solc-0.8.js",
     "migrate": "tsc -p ./tsconfig.migrate.json --outDir ./migrations && yarn compile-contracts && truffle migrate --network local --config ./truffle-config.solc-0.8.js",
-    "test-ts": "TS_NODE_PROJECT='./tsconfig.cjs.json' nyc mocha -t 20000 -r ts-node/register -r jsdom-global/register ./test/contract-proxy-kit.ts --exit",
+    "test-ts": "TS_NODE_PROJECT='./tsconfig.cjs.json' nyc mocha -t 40000 -r ts-node/register -r jsdom-global/register ./test/contract-proxy-kit.ts --exit",
     "test": "yarn generate-types && yarn migrate && yarn test-ts",
     "test-rpc": "run-with-testrpc --noVMErrorsOnRPCResponse 'yarn test'",
     "coverage": "nyc report --reporter=text-lcov | coveralls",
