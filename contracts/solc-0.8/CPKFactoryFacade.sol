@@ -137,7 +137,7 @@ contract CPKFactoryFacade {
             });
         }
 
-        return cpkFactory.createProxyAndExecTransaction{value: msg.value}(
+        return cpkFactory.createProxyAndExecTransactions{value: msg.value}(
             owner,
             safeVersion,
             salt,

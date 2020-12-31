@@ -46,7 +46,7 @@ contract CPKFactory {
         return gnosisSafeProxyFactory.proxyRuntimeCode();
     }
 
-    function createProxyAndExecTransaction(
+    function createProxyAndExecTransactions(
         address owner,
         address safeVersion,
         uint256 salt,
