@@ -4,7 +4,7 @@ import { Enum } from "@gnosis.pm/safe-contracts/contracts/common/Enum.sol";
 import { GnosisSafeProxy } from "@gnosis.pm/safe-contracts/contracts/proxies/GnosisSafeProxy.sol";
 import { GnosisSafe } from "@gnosis.pm/safe-contracts/contracts/GnosisSafe.sol";
 
-contract CPKFactory {
+contract CPKFactoryV1 {
     event ProxyCreation(GnosisSafeProxy proxy);
 
     function proxyCreationCode() external pure returns (bytes memory) {

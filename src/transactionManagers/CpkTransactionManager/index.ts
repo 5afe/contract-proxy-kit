@@ -1,6 +1,6 @@
 import EthLibAdapter, { Contract } from '../../ethLibAdapters/EthLibAdapter'
 import { Address, NumberLike } from '../../utils/basicTypes'
-import { zeroAddress } from '../../utils/constants'
+import { defaultTxData, sentinelOwner, zeroAddress } from '../../utils/constants'
 import {
   NormalizeGas,
   OperationType,
@@ -9,7 +9,8 @@ import {
   StandardTransaction,
   Transaction,
   TransactionError,
-  TransactionResult
+  TransactionResult,
+  TxReaction
 } from '../../utils/transactions'
 import TransactionManager, {
   ExecTransactionProps,
@@ -56,23 +57,29 @@ class CpkTransactionManager implements TransactionManager {
       return this.execTxsWhileConnectedToSafe(ethLibAdapter, transactions, sendOptions)
     }
 
-    // (r, s, v) where v is 1 means this signature is approved by the address encoded in value r
-    // "Hashes are automatically approved by the sender of the message"
-    const autoApprovedSignature = ethLibAdapter.abiEncodePacked(
-      { type: 'uint256', value: ownerAccount }, // r
-      { type: 'uint256', value: 0 }, // s
-      { type: 'uint8', value: 1 } // v
-    )
-
-    const txObj: ContractTxObj = isDeployed
-      ? this.getSafeProxyTxObj(safeContract, safeExecTxParams, autoApprovedSignature)
-      : this.getCPKFactoryTxObj(
-          masterCopyAddress,
-          fallbackHandlerAddress,
-          safeExecTxParams,
-          saltNonce,
-          proxyFactory
-        )
+    let txObj
+    if (isDeployed) {
+      txObj = this.getSafeProxyTxObj(
+        safeContract,
+        safeExecTxParams,
+        this.makeAutoApprovedSignature(ethLibAdapter, ownerAccount),
+      );
+    } else {
+      if (!proxyFactory) {
+        throw new Error('missing proxy factory for undeployed transactions');
+      }
+      txObj = this.getCPKFactoryTxObj(
+        ownerAccount,
+        masterCopyAddress,
+        saltNonce,
+        fallbackHandlerAddress,
+        safeExecTxParams,
+        this.makeAutoApprovedSignature(ethLibAdapter, ownerAccount),
+        this.makeAutoApprovedSignature(ethLibAdapter, proxyFactory.address),
+        proxyFactory,
+        safeContract,
+      );
+    }
 
     const { success, gasLimit } = await this.findGasLimit(ethLibAdapter, txObj, sendOptions)
     sendOptions.gas = gasLimit
@@ -145,16 +152,70 @@ class CpkTransactionManager implements TransactionManager {
   }
 
   private getCPKFactoryTxObj(
+    ownerAccount: Address,
     masterCopyAddress: Address,
+    salt: string,
     fallbackHandlerAddress: Address,
-    { to, value, data, operation }: StandardTransaction,
-    saltNonce: string,
-    proxyFactory: Contract
+    transaction: StandardTransaction,
+    safeOwnerApprovedSignature: string,
+    safeFactoryApprovedSignature: string,
+    proxyFactory: Contract,
+    safeContract: Contract,
   ): ContractTxObj {
+    const execTxObj = this.getSafeProxyTxObj(safeContract, transaction, safeFactoryApprovedSignature);
+    const swapTxObj = this.getSafeProxyTxObj(
+      safeContract,
+      {
+        to: safeContract.address,
+        value: 0,
+        data: safeContract.encode('swapOwner', [
+          sentinelOwner,
+          proxyFactory.address,
+          ownerAccount,
+        ]),
+        operation: OperationType.Call,
+      },
+      safeFactoryApprovedSignature,
+    );
+    const txs = [
+      {
+        // setup new Safe with the factory as the owner
+        value: 0,
+        data: safeContract.encode('setup', [
+          [proxyFactory.address], // address[] owners
+          1, // uint256 threshold
+          zeroAddress, // address to
+          defaultTxData, // bytes data
+          fallbackHandlerAddress, // address fallbackHandler
+          zeroAddress, // address paymentToken
+          0, // uint256 payment
+          zeroAddress, // address payable paymentReceiver
+        ]),
+        reaction: TxReaction.IgnoreReturn,
+      },
+      {
+        // execute first transactions with the factory
+        value: transaction.value,
+        data: execTxObj.contract.encode(execTxObj.methodName, execTxObj.params),
+        reaction: TxReaction.CaptureBoolReturn,
+      },
+      {
+        // change the owner of the Safe from the factory to the owner account
+        value: 0,
+        data: swapTxObj.contract.encode(swapTxObj.methodName, swapTxObj.params),
+        reaction: TxReaction.RevertOnReturnFalse,
+      },
+    ]
     return {
       contract: proxyFactory,
-      methodName: 'createProxyAndExecTransaction',
-      params: [masterCopyAddress, saltNonce, fallbackHandlerAddress, to, value, data, operation]
+      methodName: 'createProxyAndExecTransactions',
+      params: [
+        ownerAccount,
+        masterCopyAddress,
+        salt,
+        txs,
+        safeOwnerApprovedSignature,
+      ]
     }
   }
 
@@ -247,6 +308,19 @@ class CpkTransactionManager implements TransactionManager {
       }
     }
     return new TransactionError(errorMessage, revertData, revertMessage)
+  }
+
+  private makeAutoApprovedSignature(
+    ethLibAdapter: EthLibAdapter,
+    msgSender: Address
+  ): string {
+    // (r, s, v) where v is 1 means this signature is approved by the address encoded in value r
+    // "Hashes are automatically approved by the sender of the message"
+    return ethLibAdapter.abiEncodePacked(
+      { type: 'uint256', value: msgSender }, // r
+      { type: 'uint256', value: 0 }, // s
+      { type: 'uint8', value: 1 } // v
+    )
   }
 }
 

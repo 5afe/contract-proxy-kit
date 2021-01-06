@@ -1,6 +1,7 @@
-pragma solidity >=0.5.0 <0.7.0;
+// SPDX-License-Identifier: GPL-3.0-only
+pragma solidity >=0.8.0;
 
-import { IERC20 } from "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
+import { IERC20 } from "./dep-ports/IERC20.sol";
 
 contract Multistep {
     event ExpensiveHashMade(bytes32 h);
@@ -35,7 +36,7 @@ contract Multistep {
         require(lastStepFinished[msg.sender] + 1 == step, "must do the next ether step");
         require(msg.value >= step * 1 ether, "must provide right amount of ether");
         lastStepFinished[msg.sender]++;
-        msg.sender.transfer(msg.value - step * 1 ether);
+        payable(msg.sender).transfer(msg.value - step * 1 ether);
         makeExpensiveHash(step);
     }
 
