@@ -1,14 +1,14 @@
 import { Address } from '../utils/basicTypes'
 
-interface MasterCopyAddressVersion {
-  version: string
-  address: Address
+interface ProxySearchParams {
+  proxyFactoryAddress: Address
+  initialImplAddress: Address
 }
 
 export interface NetworkConfigEntry {
+  proxySearchParams?: ProxySearchParams[]
+  proxyFactoryAddress?: Address
   masterCopyAddress?: Address
-  masterCopyAddressVersions?: Array<MasterCopyAddressVersion>
-  proxyFactoryAddress: Address
   multiSendAddress: Address
   fallbackHandlerAddress: Address
 }
@@ -18,8 +18,8 @@ export interface NetworksConfig {
 }
 
 export interface NormalizedNetworkConfigEntry {
-  masterCopyAddressVersions: MasterCopyAddressVersion[]
-  proxyFactoryAddress: Address
+  proxySearchParams: ProxySearchParams[]
+  masterCopyAddress: Address
   multiSendAddress: Address
   fallbackHandlerAddress: Address
 }
@@ -28,44 +28,72 @@ export interface NormalizedNetworksConfig {
   [id: string]: NormalizedNetworkConfigEntry
 }
 
-// First element belongs to latest release. Do not alter this order. New releases go first.
-const masterCopyAddressVersions: MasterCopyAddressVersion[] = [
-  {
-    version: '1.2.0',
-    address: '0x6851D6fDFAfD08c0295C392436245E5bc78B0185'
-  },
-  {
-    version: '1.1.1',
-    address: '0x34CfAC646f301356fAa8B21e94227e3583Fe3F5F'
-  }
-]
+const defaultMasterCopyAddress = '0x6851D6fDFAfD08c0295C392436245E5bc78B0185'
 
 export const defaultNetworks: NormalizedNetworksConfig = {
   // mainnet
   1: {
-    masterCopyAddressVersions,
-    proxyFactoryAddress: '0x0fB4340432e56c014fa96286de17222822a9281b',
+    // For proxy search params, the first element belongs to latest release.
+    // Do not alter this order. New releases go first.
+    proxySearchParams: [
+      {
+        proxyFactoryAddress: '0x0fB4340432e56c014fa96286de17222822a9281b',
+        initialImplAddress: defaultMasterCopyAddress
+      },
+      {
+        proxyFactoryAddress: '0x0fB4340432e56c014fa96286de17222822a9281b',
+        initialImplAddress: '0x34CfAC646f301356fAa8B21e94227e3583Fe3F5F'
+      },
+    ],
+    masterCopyAddress: defaultMasterCopyAddress,
     multiSendAddress: '0x8D29bE29923b68abfDD21e541b9374737B49cdAD',
     fallbackHandlerAddress: '0x40A930851BD2e590Bd5A5C981b436de25742E980'
   },
   // rinkeby
   4: {
-    masterCopyAddressVersions,
-    proxyFactoryAddress: '0x336c19296d3989e9e0c2561ef21c964068657c38',
+    proxySearchParams: [
+      {
+        proxyFactoryAddress: '0x336c19296d3989e9e0c2561ef21c964068657c38',
+        initialImplAddress: defaultMasterCopyAddress
+      },
+      {
+        proxyFactoryAddress: '0x336c19296d3989e9e0c2561ef21c964068657c38',
+        initialImplAddress: '0x34CfAC646f301356fAa8B21e94227e3583Fe3F5F'
+      },
+    ],
+    masterCopyAddress: defaultMasterCopyAddress,
     multiSendAddress: '0x8D29bE29923b68abfDD21e541b9374737B49cdAD',
     fallbackHandlerAddress: '0x40A930851BD2e590Bd5A5C981b436de25742E980'
   },
   // goerli
   5: {
-    masterCopyAddressVersions,
-    proxyFactoryAddress: '0xfC7577774887aAE7bAcdf0Fc8ce041DA0b3200f7',
+    proxySearchParams: [
+      {
+        proxyFactoryAddress: '0xfC7577774887aAE7bAcdf0Fc8ce041DA0b3200f7',
+        initialImplAddress: defaultMasterCopyAddress
+      },
+      {
+        proxyFactoryAddress: '0xfC7577774887aAE7bAcdf0Fc8ce041DA0b3200f7',
+        initialImplAddress: '0x34CfAC646f301356fAa8B21e94227e3583Fe3F5F'
+      },
+    ],
+    masterCopyAddress: defaultMasterCopyAddress,
     multiSendAddress: '0x8D29bE29923b68abfDD21e541b9374737B49cdAD',
     fallbackHandlerAddress: '0x40A930851BD2e590Bd5A5C981b436de25742E980'
   },
   // kovan
   42: {
-    masterCopyAddressVersions,
-    proxyFactoryAddress: '0xfC7577774887aAE7bAcdf0Fc8ce041DA0b3200f7',
+    proxySearchParams: [
+      {
+        proxyFactoryAddress: '0xfC7577774887aAE7bAcdf0Fc8ce041DA0b3200f7',
+        initialImplAddress: defaultMasterCopyAddress
+      },
+      {
+        proxyFactoryAddress: '0xfC7577774887aAE7bAcdf0Fc8ce041DA0b3200f7',
+        initialImplAddress: '0x34CfAC646f301356fAa8B21e94227e3583Fe3F5F'
+      },
+    ],
+    masterCopyAddress: defaultMasterCopyAddress,
     multiSendAddress: '0x8D29bE29923b68abfDD21e541b9374737B49cdAD',
     fallbackHandlerAddress: '0x40A930851BD2e590Bd5A5C981b436de25742E980'
   }
@@ -81,25 +109,25 @@ export function normalizeNetworksConfig(
   const normalizedNetworks: NormalizedNetworksConfig = {}
   for (const networkId of Object.keys(networks)) {
     const currentNetwork = networks[networkId]
-    let mcVersions: MasterCopyAddressVersion[] = []
-    if (currentNetwork.masterCopyAddress) {
-      mcVersions = [
+    let searchParams: ProxySearchParams[] = []
+    if (currentNetwork.proxySearchParams) {
+      searchParams = currentNetwork.proxySearchParams
+    } else if (currentNetwork.proxyFactoryAddress && currentNetwork.masterCopyAddress) {
+      searchParams = [
         {
-          version: masterCopyAddressVersions[0].version,
-          address: currentNetwork.masterCopyAddress
+          proxyFactoryAddress: currentNetwork.proxyFactoryAddress,
+          initialImplAddress: currentNetwork.masterCopyAddress,
         }
       ]
-    } else if (currentNetwork.masterCopyAddressVersions) {
-      mcVersions = currentNetwork.masterCopyAddressVersions
     }
-    if (mcVersions.length === 0) {
+    if (searchParams.length === 0) {
       throw new Error(
-        'Properties "masterCopyAddress" or "masterCopyAddressVersions" are missing in CPK network configuration'
+        'Properties "proxySearchParams" or "proxyFactoryAddress" and "masterCopyAddress" are missing in CPK network configuration'
       )
     }
     normalizedNetworks[networkId] = {
-      masterCopyAddressVersions: mcVersions,
-      proxyFactoryAddress: currentNetwork.proxyFactoryAddress,
+      proxySearchParams: searchParams,
+      masterCopyAddress: currentNetwork.masterCopyAddress || defaultMasterCopyAddress,
       multiSendAddress: currentNetwork.multiSendAddress,
       fallbackHandlerAddress: currentNetwork.fallbackHandlerAddress
     }

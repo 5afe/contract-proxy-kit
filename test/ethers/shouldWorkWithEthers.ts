@@ -130,17 +130,22 @@ export function shouldWorkWithEthers({
 
         networks = {
           [(await signer.provider.getNetwork()).chainId]: {
-            masterCopyAddressVersions: [
+            proxySearchParams: [
               {
-                address: gnosisSafe.address,
-                version: '1.2.0'
+                proxyFactoryAddress: cpkFactory.address,
+                initialImplAddress: await cpkFactory.proxyImplSetter(),
               },
               {
-                address: gnosisSafe2.address,
-                version: '1.1.1'
-              }
+                // TODO: Use v1 addr
+                proxyFactoryAddress: cpkFactory.address,
+                initialImplAddress: gnosisSafe.address,
+              },
+              {
+                proxyFactoryAddress: cpkFactory.address,
+                initialImplAddress: gnosisSafe2.address,
+              },
             ],
-            proxyFactoryAddress: cpkFactory.address,
+            masterCopyAddress: gnosisSafe.address,
             multiSendAddress: multiSend.address,
             fallbackHandlerAddress: defaultCallbackHandler.address
           }

@@ -7,6 +7,12 @@ export enum OperationType {
   DelegateCall // 1
 }
 
+export enum TxReaction {
+  RevertOnReturnFalse,
+  CaptureBoolReturn,
+  IgnoreReturn
+}
+
 interface GasLimitOptions {
   gas?: NumberLike
   gasLimit?: NumberLike

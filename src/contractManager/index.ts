@@ -21,7 +21,7 @@ export interface ContractManagerProps {
 class ContractManager {
   #versionUtils?: ContractVersionUtils
   #contract?: Contract
-  #proxyFactory: Contract
+  #proxyFactory?: Contract
   #masterCopyAddress: Address
   #multiSend: Contract
   #fallbackHandlerAddress: Address
@@ -33,10 +33,9 @@ class ContractManager {
   }
 
   constructor(ethLibAdapter: EthLibAdapter, network: NormalizedNetworkConfigEntry) {
-    this.#masterCopyAddress = network.masterCopyAddressVersions[0].address
+    this.#masterCopyAddress = network.masterCopyAddress
     this.#fallbackHandlerAddress = network.fallbackHandlerAddress
     this.#multiSend = ethLibAdapter.getContract(multiSendAbi, network.multiSendAddress)
-    this.#proxyFactory = ethLibAdapter.getContract(cpkFactoryAbi, network.proxyFactoryAddress)
   }
 
   async init(opts: ContractManagerProps): Promise<void> {
@@ -47,6 +46,7 @@ class ContractManager {
     const { ethLibAdapter, ownerAccount, saltNonce, network, isSafeApp, isConnectedToSafe } = opts
     let proxyAddress
     let properVersion
+    let proxyFactory
 
     if (isSafeApp || isConnectedToSafe) {
       const temporaryContract = ethLibAdapter.getContract(safeAbiV111, ownerAccount)
@@ -57,9 +57,11 @@ class ContractManager {
         ethLibAdapter.abiEncode(['address', 'uint256'], [ownerAccount, saltNonce])
       )
 
-      for (const masterCopyVersion of network.masterCopyAddressVersions) {
+      for (const { proxyFactoryAddress, initialImplAddress } of network.proxySearchParams) {
+        proxyFactory = ethLibAdapter.getContract(cpkFactoryAbi, proxyFactoryAddress)
         proxyAddress = await this.calculateProxyAddress(
-          masterCopyVersion.address,
+          proxyFactory,
+          initialImplAddress,
           salt,
           ethLibAdapter
         )
@@ -75,9 +77,12 @@ class ContractManager {
 
       if (!properVersion) {
         // Last version released
-        properVersion = network.masterCopyAddressVersions[0].version
+        const { proxyFactoryAddress, initialImplAddress } = network.proxySearchParams[0]
+        properVersion = '1.2.0'
+        proxyFactory = ethLibAdapter.getContract(cpkFactoryAbi, proxyFactoryAddress)
         proxyAddress = await this.calculateProxyAddress(
-          network.masterCopyAddressVersions[0].address,
+          proxyFactory,
+          initialImplAddress,
           salt,
           ethLibAdapter
         )
@@ -96,22 +101,49 @@ class ContractManager {
       default:
         throw new Error('CPK Proxy version is not valid')
     }
+
+    this.#proxyFactory = proxyFactory
   }
 
   private async calculateProxyAddress(
-    masterCopyAddress: Address,
+    proxyFactory: Contract,
+    initialImplAddress: Address,
     salt: string,
     ethLibAdapter: EthLibAdapter
   ): Promise<Address> {
+    let proxyFactoryVersion;
+
+    try {
+      proxyFactoryVersion = (await proxyFactory.call('version', [])).toString()
+    } catch(e) {}
+
     const initCode = ethLibAdapter.abiEncodePacked(
-      { type: 'bytes', value: await this.#proxyFactory.call('proxyCreationCode', []) },
+      { type: 'bytes', value: await proxyFactory.call('proxyCreationCode', []) },
       {
         type: 'bytes',
-        value: ethLibAdapter.abiEncode(['address'], [masterCopyAddress])
+        value: ethLibAdapter.abiEncode(['address'], [initialImplAddress])
       }
     )
+
+    let proxyDeployer;
+    if (proxyFactoryVersion == '2') {
+      salt = ethLibAdapter.keccak256(
+        ethLibAdapter.abiEncodePacked(
+          {
+            type: "bytes32",
+            // hardcoded keccak256('') because Web3 returns null for that in v1
+            value: '0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470'
+          },
+          { type: "bytes32", value: salt },
+        )
+      );
+      proxyDeployer = await proxyFactory.call('gnosisSafeProxyFactory', []);
+    } else {
+      proxyDeployer = proxyFactory.address
+    }
+
     const proxyAddress = ethLibAdapter.calcCreate2Address(
-      this.#proxyFactory.address,
+      proxyDeployer,
       salt,
       initCode
     )
@@ -126,7 +158,7 @@ class ContractManager {
     return this.#contract
   }
 
-  get proxyFactory(): Contract {
+  get proxyFactory(): Contract | undefined {
     return this.#proxyFactory
   }
 

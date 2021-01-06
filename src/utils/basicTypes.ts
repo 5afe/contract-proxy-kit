@@ -1,4 +1,4 @@
-type Json = string | number | boolean | null | JsonObject | Json[]
+type Json = string | number | boolean | null | undefined | JsonObject | Json[]
 
 type JsonObject = { [property: string]: Json }
 

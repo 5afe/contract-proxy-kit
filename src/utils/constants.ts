@@ -3,6 +3,7 @@ import { OperationType } from './transactions'
 export const zeroAddress = `0x${'0'.repeat(40)}`
 
 export const sentinelModules = '0x0000000000000000000000000000000000000001'
+export const sentinelOwner = '0x0000000000000000000000000000000000000001'
 
 export const defaultTxOperation = OperationType.Call
 export const defaultTxValue = 0

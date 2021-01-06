@@ -1,6 +1,103 @@
 [
   {
-    "constant": true,
+    "inputs": [
+      {
+        "internalType": "contract IGnosisSafeProxyFactory",
+        "name": "_gnosisSafeProxyFactory",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "proxy",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "initialImpl",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "initialOwner",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "salt",
+        "type": "uint256"
+      }
+    ],
+    "name": "CPKCreation",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "gnosisSafeProxyFactory",
+    "outputs": [
+      {
+        "internalType": "contract IGnosisSafeProxyFactory",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function",
+    "constant": true
+  },
+  {
+    "inputs": [],
+    "name": "proxyExtCodeHash",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function",
+    "constant": true
+  },
+  {
+    "inputs": [],
+    "name": "proxyImplSetter",
+    "outputs": [
+      {
+        "internalType": "contract ProxyImplSetter",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function",
+    "constant": true
+  },
+  {
+    "inputs": [],
+    "name": "version",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function",
+    "constant": true
+  },
+  {
     "inputs": [],
     "name": "proxyCreationCode",
     "outputs": [
@@ -10,50 +107,70 @@
         "type": "bytes"
       }
     ],
-    "payable": false,
-    "stateMutability": "pure",
-    "type": "function"
+    "stateMutability": "view",
+    "type": "function",
+    "constant": true
   },
   {
-    "constant": false,
+    "inputs": [],
+    "name": "proxyRuntimeCode",
+    "outputs": [
+      {
+        "internalType": "bytes",
+        "name": "",
+        "type": "bytes"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function",
+    "constant": true
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
-        "name": "masterCopy",
-        "type": "address"
-      },
-      {
-        "internalType": "uint256",
-        "name": "saltNonce",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "fallbackHandler",
+        "name": "owner",
         "type": "address"
       },
       {
         "internalType": "address",
-        "name": "to",
+        "name": "safeVersion",
         "type": "address"
       },
       {
         "internalType": "uint256",
-        "name": "value",
+        "name": "salt",
         "type": "uint256"
+      },
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "value",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes",
+            "name": "data",
+            "type": "bytes"
+          },
+          {
+            "internalType": "enum TxReaction",
+            "name": "reaction",
+            "type": "uint8"
+          }
+        ],
+        "internalType": "struct CPKFactoryTx[]",
+        "name": "txs",
+        "type": "tuple[]"
       },
       {
         "internalType": "bytes",
-        "name": "data",
+        "name": "signature",
         "type": "bytes"
-      },
-      {
-        "internalType": "enum Enum.Operation",
-        "name": "operation",
-        "type": "uint8"
       }
     ],
-    "name": "createProxyAndExecTransaction",
+    "name": "createProxyAndExecTransactions",
     "outputs": [
       {
         "internalType": "bool",
@@ -61,8 +178,8 @@
         "type": "bool"
       }
     ],
-    "payable": false,
-    "stateMutability": "nonpayable",
-    "type": "function"
+    "stateMutability": "payable",
+    "type": "function",
+    "payable": true
   }
 ]
