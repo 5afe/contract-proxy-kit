@@ -2,6 +2,7 @@ const TruffleContract = require('@truffle/contract')
 import Web3Maj1Min3 from 'web3-1-3'
 import ConditionalTokensJson from '../../build/contracts/ConditionalTokens.json'
 import CPKFactoryJson from '../../build/contracts/CPKFactory.json'
+import CPKFactoryV1Json from '../../build/contracts/CPKFactoryV1.json'
 import DailyLimitModuleJson from '../../build/contracts/DailyLimitModule.json'
 import DefaultCallbackHandlerJson from '../../build/contracts/DefaultCallbackHandler.json'
 import ERC20MintableJson from '../../build/contracts/ERC20Mintable.json'
@@ -13,6 +14,7 @@ import MultistepJson from '../../build/contracts/Multistep.json'
 import { Address } from '../../src/utils/basicTypes'
 
 let CPKFactory: any
+let CPKFactoryV1: any
 let GnosisSafe: any
 let GnosisSafe2: any
 let GnosisSafeProxyFactory: any
@@ -24,6 +26,7 @@ let ConditionalTokens: any
 let DailyLimitModule: any
 
 let cpkFactory: any
+let cpkFactoryV1: any
 let gnosisSafe: any
 let gnosisSafe2: any
 let gnosisSafeProxyFactory: any
@@ -36,6 +39,7 @@ let dailyLimitModule: any
 
 export interface TestContractInstances {
   cpkFactory: any
+  cpkFactoryV1: any
   gnosisSafe: any
   gnosisSafe2: any
   gnosisSafeProxyFactory: any
@@ -49,6 +53,7 @@ export interface TestContractInstances {
 
 export interface TestContracts {
   CPKFactory: any
+  CPKFactoryV1: any
   GnosisSafe: any
   GnosisSafe2: any
   GnosisSafeProxyFactory: any
@@ -67,6 +72,11 @@ export const initializeContracts = async (safeOwner: Address): Promise<void> => 
   CPKFactory.setProvider(provider)
   CPKFactory.defaults({ from: safeOwner })
   cpkFactory = await CPKFactory.deployed()
+
+  CPKFactoryV1 = TruffleContract(CPKFactoryV1Json)
+  CPKFactoryV1.setProvider(provider)
+  CPKFactoryV1.defaults({ from: safeOwner })
+  cpkFactoryV1 = await CPKFactoryV1.deployed()
 
   GnosisSafe = TruffleContract(GnosisSafeJson)
   GnosisSafe.setProvider(provider)
@@ -116,6 +126,7 @@ export const initializeContracts = async (safeOwner: Address): Promise<void> => 
 
 export const getContracts = (): TestContracts => ({
   CPKFactory,
+  CPKFactoryV1,
   GnosisSafe,
   GnosisSafe2,
   GnosisSafeProxyFactory,
@@ -129,6 +140,7 @@ export const getContracts = (): TestContracts => ({
 
 export const getContractInstances = (): TestContractInstances => ({
   cpkFactory,
+  cpkFactoryV1,
   gnosisSafe,
   gnosisSafe2,
   gnosisSafeProxyFactory,

@@ -114,7 +114,7 @@ export function shouldWorkWithWeb3({
       let networks: NetworksConfig
 
       before('obtain addresses from artifacts', async () => {
-        const { gnosisSafe, gnosisSafe2, cpkFactory, multiSend, defaultCallbackHandler } = contracts
+        const { gnosisSafe, gnosisSafe2, cpkFactory, cpkFactoryV1, multiSend, defaultCallbackHandler } = contracts
 
         networks = {
           [await ueb3.eth.net.getId()]: {
@@ -124,12 +124,11 @@ export function shouldWorkWithWeb3({
                 initialImplAddress: await cpkFactory.proxyImplSetter(),
               },
               {
-                // TODO: Use v1 addr
-                proxyFactoryAddress: cpkFactory.address,
+                proxyFactoryAddress: cpkFactoryV1.address,
                 initialImplAddress: gnosisSafe.address,
               },
               {
-                proxyFactoryAddress: cpkFactory.address,
+                proxyFactoryAddress: cpkFactoryV1.address,
                 initialImplAddress: gnosisSafe2.address,
               },
             ],

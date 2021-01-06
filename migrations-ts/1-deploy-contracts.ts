@@ -17,6 +17,8 @@ module.exports = async function(deployer: Truffle.Deployer, network: string) {
     ].map(deploy));
   }
 
+  await deployer.deploy(artifacts.require('CPKFactoryV1'));
+
   await deployer.deploy(
     artifacts.require('CPKFactory'),
     artifacts.require('GnosisSafeProxyFactory').address,
