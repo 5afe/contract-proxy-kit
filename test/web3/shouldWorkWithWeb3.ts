@@ -2,17 +2,17 @@ import should from 'should'
 import Web3Maj1Min3 from 'web3-1-3'
 import Web3Maj2Alpha from 'web3-2-alpha'
 import CPK, {
-  Web3Adapter,
+  NetworksConfig,
   Transaction,
-  TransactionResult,
   TransactionManager,
-  NetworksConfig
+  TransactionResult,
+  Web3Adapter
 } from '../../src'
-import { testSafeTransactions } from '../transactions/testSafeTransactions'
-import { testConnectedSafeTransactionsWithRelay } from '../transactions/testConnectedSafeTransactionsWithRelay'
-import { toTxHashPromise, AccountType } from '../utils'
-import { getContractInstances, TestContractInstances } from '../utils/contracts'
 import { Address } from '../../src/utils/basicTypes'
+import { testConnectedSafeTransactionsWithRelay } from '../transactions/testConnectedSafeTransactionsWithRelay'
+import { testSafeTransactions } from '../transactions/testSafeTransactions'
+import { AccountType, toTxHashPromise } from '../utils'
+import { getContractInstances, TestContractInstances } from '../utils/contracts'
 
 interface ShouldWorkWithWeb3Props {
   Web3: typeof Web3Maj1Min3 | typeof Web3Maj2Alpha
@@ -107,18 +107,27 @@ export function shouldWorkWithWeb3({
 
     it('should not produce CPK instances when web3 not connected to a recognized network', async () => {
       const ethLibAdapter = new Web3Adapter({ web3: ueb3 })
-      await CPK.create({ ethLibAdapter }).should.be.rejectedWith(/unrecognized network ID \d+/)
+      await CPK.create({ ethLibAdapter }).should.be.rejectedWith(/Unrecognized network ID \d+/)
     })
 
     describe('with valid networks configuration', () => {
       let networks: NetworksConfig
 
       before('obtain addresses from artifacts', async () => {
-        const { gnosisSafe, cpkFactory, multiSend, defaultCallbackHandler } = contracts
+        const { gnosisSafe, gnosisSafe2, cpkFactory, multiSend, defaultCallbackHandler } = contracts
 
         networks = {
           [await ueb3.eth.net.getId()]: {
-            masterCopyAddress: gnosisSafe.address,
+            masterCopyAddressVersions: [
+              {
+                address: gnosisSafe.address,
+                version: '1.2.0'
+              },
+              {
+                address: gnosisSafe2.address,
+                version: '1.1.1'
+              }
+            ],
             proxyFactoryAddress: cpkFactory.address,
             multiSendAddress: multiSend.address,
             fallbackHandlerAddress: defaultCallbackHandler.address

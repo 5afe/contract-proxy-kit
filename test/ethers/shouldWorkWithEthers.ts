@@ -1,16 +1,11 @@
 import should from 'should'
 import Web3Maj1Min3 from 'web3-1-3'
-import CPK, {
-  NetworksConfig,
-  EthersAdapter,
-  TransactionManager,
-  Transaction,
-  TransactionResult
-} from '../../src'
+import CPK, { EthersAdapter, Transaction, TransactionManager, TransactionResult } from '../../src'
+import { NetworksConfig } from '../../src/config/networks'
 import { Address } from '../../src/utils/basicTypes'
-import { testSafeTransactions } from '../transactions/testSafeTransactions'
 import { testConnectedSafeTransactionsWithRelay } from '../transactions/testConnectedSafeTransactionsWithRelay'
-import { toTxHashPromise, AccountType } from '../utils'
+import { testSafeTransactions } from '../transactions/testSafeTransactions'
+import { AccountType, toTxHashPromise } from '../utils'
 import { getContractInstances, TestContractInstances } from '../utils/contracts'
 
 interface ShouldWorkWithEthersProps {
@@ -124,18 +119,27 @@ export function shouldWorkWithEthers({
 
     it('should not produce CPK instances when ethers not connected to a recognized network', async () => {
       const ethLibAdapter = new EthersAdapter({ ethers, signer })
-      await CPK.create({ ethLibAdapter }).should.be.rejectedWith(/unrecognized network ID \d+/)
+      await CPK.create({ ethLibAdapter }).should.be.rejectedWith(/Unrecognized network ID \d+/)
     })
 
     describe('with valid networks configuration', () => {
       let networks: NetworksConfig
 
       before('obtain addresses from artifacts', async () => {
-        const { gnosisSafe, cpkFactory, multiSend, defaultCallbackHandler } = contracts
+        const { gnosisSafe, gnosisSafe2, cpkFactory, multiSend, defaultCallbackHandler } = contracts
 
         networks = {
           [(await signer.provider.getNetwork()).chainId]: {
-            masterCopyAddress: gnosisSafe.address,
+            masterCopyAddressVersions: [
+              {
+                address: gnosisSafe.address,
+                version: '1.2.0'
+              },
+              {
+                address: gnosisSafe2.address,
+                version: '1.1.1'
+              }
+            ],
             proxyFactoryAddress: cpkFactory.address,
             multiSendAddress: multiSend.address,
             fallbackHandlerAddress: defaultCallbackHandler.address

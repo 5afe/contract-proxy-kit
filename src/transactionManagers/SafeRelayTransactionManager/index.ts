@@ -1,14 +1,14 @@
-import fetch from 'node-fetch'
 import BigNumber from 'bignumber.js'
+import fetch from 'node-fetch'
+import EthLibAdapter from '../../ethLibAdapters/EthLibAdapter'
+import { Address } from '../../utils/basicTypes'
+import { zeroAddress } from '../../utils/constants'
+import { OperationType, TransactionResult } from '../../utils/transactions'
 import TransactionManager, {
   ExecTransactionProps,
   TransactionManagerConfig,
   TransactionManagerNames
 } from '../TransactionManager'
-import { TransactionResult, OperationType } from '../../utils/transactions'
-import { zeroAddress } from '../../utils/constants'
-import { Address } from '../../utils/basicTypes'
-import EthLibAdapter from '../../ethLibAdapters/EthLibAdapter'
 
 BigNumber.set({ EXPONENTIAL_AT: [-7, 255] })
 
@@ -63,11 +63,14 @@ class SafeRelayTransactionManager implements TransactionManager {
   async execTransactions({
     ownerAccount,
     safeExecTxParams,
-    contracts,
+    contractManager,
     ethLibAdapter,
     isConnectedToSafe
   }: ExecTransactionProps): Promise<TransactionResult> {
-    const { safeContract } = contracts
+    const { contract } = contractManager
+    if (!contract) {
+      throw new Error('CPK Proxy contract uninitialized')
+    }
 
     if (isConnectedToSafe) {
       throw new Error(
@@ -76,7 +79,7 @@ class SafeRelayTransactionManager implements TransactionManager {
     }
 
     const relayEstimations = await this.getTransactionEstimations({
-      safe: safeContract.address,
+      safe: contract.address,
       to: safeExecTxParams.to,
       value: safeExecTxParams.value,
       data: safeExecTxParams.data,
@@ -97,7 +100,7 @@ class SafeRelayTransactionManager implements TransactionManager {
       nonce: relayEstimations.lastUsedNonce + 1
     }
 
-    const txHash = await contracts.safeContract.call('getTransactionHash', [
+    const txHash = await contract.call('getTransactionHash', [
       tx.to,
       tx.value,
       tx.data,
@@ -114,7 +117,7 @@ class SafeRelayTransactionManager implements TransactionManager {
 
     return this.sendTransactionToRelay({
       url: this.url,
-      safe: safeContract.address,
+      safe: contract.address,
       tx,
       signatures: [rsvSignature],
       ethLibAdapter
