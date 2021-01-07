@@ -71,7 +71,7 @@ export const defaultNetworks: NormalizedNetworksConfig = {
   },
   // xdai
   100: {
-    masterCopyAddress: '0x6851D6fDFAfD08c0295C392436245E5bc78B0185',
+    masterCopyAddressVersions,
     proxyFactoryAddress: '0xfC7577774887aAE7bAcdf0Fc8ce041DA0b3200f7',
     multiSendAddress: '0x8D29bE29923b68abfDD21e541b9374737B49cdAD',
     fallbackHandlerAddress: '0xd5D82B6aDDc9027B22dCA772Aa68D5d74cdBdF44'
