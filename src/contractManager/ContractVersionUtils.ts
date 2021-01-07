@@ -13,7 +13,7 @@ abstract class ContractVersionUtils {
     return this.contract.call('getModules', [])
   }
 
-  abstract async isModuleEnabled(moduleAddress: Address): Promise<boolean>
+  abstract isModuleEnabled(moduleAddress: Address): Promise<boolean>
 
   async encodeEnableModule(moduleAddress: Address): Promise<string> {
     return this.contract.encode('enableModule', [moduleAddress])
