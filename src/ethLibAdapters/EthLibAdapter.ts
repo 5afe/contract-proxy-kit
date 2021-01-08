@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js'
 import { Abi, Address } from '../utils/basicTypes'
 import { joinHexData } from '../utils/hexData'
 import {
@@ -34,6 +35,8 @@ abstract class EthLibAdapter {
   abstract getNetworkId(): Promise<number>
 
   abstract getAccount(): Promise<Address>
+
+  abstract getBalance(address: Address): Promise<BigNumber>
 
   abstract getCode(address: Address): Promise<string>
 

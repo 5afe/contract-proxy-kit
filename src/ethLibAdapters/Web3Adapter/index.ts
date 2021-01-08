@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js'
 import { Abi, Address } from '../../utils/basicTypes'
 import {
   EthCallTx,
@@ -72,6 +73,10 @@ class Web3Adapter extends EthLibAdapter {
 
   async getAccount(): Promise<Address> {
     return this.web3.eth.defaultAccount || (await this.web3.eth.getAccounts())[0]
+  }
+
+  async getBalance(address: Address): Promise<BigNumber> {
+    return new BigNumber(await this.web3.eth.getBalance(address))
   }
 
   keccak256(data: string): string {

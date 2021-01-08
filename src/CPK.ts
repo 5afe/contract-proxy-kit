@@ -24,6 +24,7 @@ import {
   TransactionResult
 } from './utils/transactions'
 import { checkConnectedToSafe } from './utils/checkConnectedToSafe'
+import BigNumber from 'bignumber.js'
 
 export interface CPKConfig {
   ethLibAdapter: EthLibAdapter
@@ -128,6 +129,16 @@ class CPK {
       throw new Error('CPK uninitialized ethLibAdapter')
     }
     return this.#ethLibAdapter?.getAccount()
+  }
+
+  getBalance(): Promise<BigNumber> {
+    if (!this.address) {
+      throw new Error('CPK address uninitialized')
+    }
+    if (!this.#ethLibAdapter) {
+      throw new Error('CPK ethLibAdapter uninitialized')
+    }
+    return this.#ethLibAdapter?.getBalance(this.address)
   }
 
   get ethLibAdapter(): EthLibAdapter | undefined {

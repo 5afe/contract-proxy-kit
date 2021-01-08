@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js'
 import { Abi, Address } from '../../utils/basicTypes'
 import { zeroAddress } from '../../utils/constants'
 import {
@@ -53,6 +54,10 @@ class EthersAdapter extends EthLibAdapter {
 
   async getAccount(): Promise<Address> {
     return this.signer.getAddress()
+  }
+
+  async getBalance(address: Address): Promise<BigNumber> {
+    return new BigNumber(await this.signer.provider.getBalance(address))
   }
 
   keccak256(data: string): string {
