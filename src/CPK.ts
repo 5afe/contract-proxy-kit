@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js'
 import multiSendAbi from './abis/MultiSendAbi.json'
 import {
   defaultNetworks,
@@ -11,8 +12,10 @@ import SafeAppsSdkConnector from './safeAppsSdkConnector'
 import CpkTransactionManager from './transactionManagers/CpkTransactionManager'
 import TransactionManager from './transactionManagers/TransactionManager'
 import { Address } from './utils/basicTypes'
+import { checkConnectedToSafe } from './utils/checkConnectedToSafe'
 import { predeterminedSaltNonce } from './utils/constants'
 import { getHexDataLength, joinHexData } from './utils/hexData'
+import { getNetworkIdFromName } from './utils/networks'
 import {
   ExecOptions,
   normalizeGasLimit,
@@ -23,8 +26,6 @@ import {
   Transaction,
   TransactionResult
 } from './utils/transactions'
-import { checkConnectedToSafe } from './utils/checkConnectedToSafe'
-import BigNumber from 'bignumber.js'
 
 export interface CPKConfig {
   ethLibAdapter: EthLibAdapter
@@ -139,6 +140,18 @@ class CPK {
       throw new Error('CPK ethLibAdapter uninitialized')
     }
     return this.#ethLibAdapter?.getBalance(this.address)
+  }
+
+  getNetworkId(): Promise<number | undefined> {
+    if (this.isSafeApp()) {
+      const networkName = this.#safeAppsSdkConnector.safeAppInfo?.network
+      const networkId = getNetworkIdFromName(networkName)
+      return new Promise((resolve, reject) => resolve(networkId))
+    }
+    if (!this.#ethLibAdapter) {
+      throw new Error('CPK ethLibAdapter uninitialized')
+    }
+    return this.#ethLibAdapter.getNetworkId()
   }
 
   get ethLibAdapter(): EthLibAdapter | undefined {
