@@ -101,8 +101,7 @@ describe('CPK', () => {
 
     const message: SafeInfo = {
       safeAddress: '0x0000000000000000000000000000000000000001',
-      network: 'rinkeby',
-      ethBalance: '1.0000000'
+      network: 'rinkeby'
     }
     window.postMessage({ messageId: 'ON_SAFE_INFO', message }, '*')
 
@@ -127,8 +126,7 @@ describe('CPK', () => {
 
     const message: SafeInfo = {
       safeAddress: '0x0000000000000000000000000000000000000001',
-      network: 'rinkeby',
-      ethBalance: '1.0000000'
+      network: 'rinkeby'
     }
     window.postMessage({ messageId: 'ON_SAFE_INFO', message }, '*')
 

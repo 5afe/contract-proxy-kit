@@ -1,12 +1,9 @@
-import initSdk, {
-  RequestId,
-  SafeInfo,
-  SdkInstance,
-  TxConfirmationEvent,
-  TxRejectionEvent
-} from '@gnosis.pm/safe-apps-sdk'
-import { v4 as uuidv4 } from 'uuid'
-import { StandardSafeAppsTransaction, SimpleTransactionResult } from '../utils/transactions'
+import SafeAppsSDK, { SafeInfoV1, TxServiceModel } from '@gnosis.pm/safe-apps-sdk'
+import { SimpleTransactionResult, StandardSafeAppsTransaction } from '../utils/transactions'
+
+interface SafeTransactionParams {
+  safeTxGas?: number
+}
 
 interface TxCallback {
   confirm: (txResult: SimpleTransactionResult) => void
@@ -14,49 +11,37 @@ interface TxCallback {
 }
 
 class SafeAppsSdkConnector {
-  appsSdk: SdkInstance
-  safeAppInfo?: SafeInfo
-  txCallbacks = new Map<RequestId, TxCallback>()
+  #appsSdk: SafeAppsSDK
+  #isSafeApp = false
 
   constructor() {
-    const onSafeInfo = (safeInfo: SafeInfo): void => {
-      this.safeAppInfo = safeInfo
-    }
-
-    const onTransactionConfirmation = (txConfirmation: TxConfirmationEvent): void => {
-      const callback = this.txCallbacks.get(txConfirmation.requestId)
-      if (callback) {
-        this.txCallbacks.delete(txConfirmation.requestId)
-        callback.confirm({ safeTxHash: txConfirmation.safeTxHash })
-      }
-    }
-
-    const onTransactionRejection = (txRejection: TxRejectionEvent): void => {
-      const callback = this.txCallbacks.get(txRejection.requestId)
-      if (callback) {
-        this.txCallbacks.delete(txRejection.requestId)
-        callback.reject(new Error('Transaction rejected'))
-      }
-    }
-
-    this.appsSdk = initSdk()
-    this.appsSdk.addListeners({
-      onSafeInfo,
-      onTransactionConfirmation,
-      onTransactionRejection
+    this.#appsSdk = new SafeAppsSDK()
+    this.#appsSdk.getSafeInfo().then((appInfo) => {
+      this.#isSafeApp = !!appInfo.safeAddress
     })
   }
 
-  isSafeApp(): boolean {
-    return !!this.safeAppInfo
+  get isSafeApp(): boolean {
+    return this.#isSafeApp
   }
 
-  sendTransactions(transactions: StandardSafeAppsTransaction[]): Promise<SimpleTransactionResult> {
-    const requestId = uuidv4()
-    return new Promise<SimpleTransactionResult>((confirm, reject) => {
-      this.txCallbacks.set(requestId, { confirm, reject })
-      this.appsSdk.sendTransactions(transactions, requestId)
-    })
+  get appsSdk() {
+    return this.#appsSdk
+  }
+
+  getSafeInfo(): Promise<SafeInfoV1> {
+    return this.#appsSdk.getSafeInfo()
+  }
+
+  getBySafeTxHash(safeTxHash: string): Promise<TxServiceModel> {
+    return this.#appsSdk.txs.getBySafeTxHash(safeTxHash)
+  }
+
+  sendTransactions(
+    transactions: StandardSafeAppsTransaction[],
+    params: SafeTransactionParams
+  ): Promise<SimpleTransactionResult> {
+    return this.#appsSdk.txs.send({ txs: transactions, params })
   }
 }
 
