@@ -15,5 +15,5 @@ export const getNetworkIdFromName = (networkName?: string): number | undefined =
     energy_web_chain: 246,
     volta: 73799
   }
-  return networks[networkName]
+  return networks[networkName.toLowerCase()]
 }
