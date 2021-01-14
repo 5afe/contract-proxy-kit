@@ -259,7 +259,9 @@ class CPK {
   ): Promise<TransactionResult> {
     if (this.isSafeApp() && transactions.length >= 1) {
       const standardizedTxs = transactions.map(standardizeSafeAppsTransaction)
-      return this.#safeAppsSdkConnector.sendTransactions(standardizedTxs)
+      return this.#safeAppsSdkConnector.sendTransactions(standardizedTxs, {
+        safeTxGas: options?.safeTxGas
+      })
     }
 
     const address = await this.address
