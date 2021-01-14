@@ -35,6 +35,12 @@ export interface ExecTransactionProps {
 interface TransactionManager {
   config: TransactionManagerConfig
 
+  /**
+   * Executes a list of transactions.
+   *
+   * @param options
+   * @returns The transaction response
+   */
   execTransactions(options: ExecTransactionProps): Promise<TransactionResult>
 }
 

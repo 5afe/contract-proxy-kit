@@ -46,13 +46,25 @@ interface TransactionToRelayProps {
 class SafeRelayTransactionManager implements TransactionManager {
   url: string
 
-  constructor({ url }: SafeRelayTransactionManagerConfig) {
+  /**
+   * Initializes an instance of the Safe Relay Transaction Manager.
+   *
+   * @param options - The URL pointing to the Safe Transaction Service
+   * @returns The SafeRelayTransactionManager instance
+   */
+  constructor(options: SafeRelayTransactionManagerConfig) {
+    const { url } = options
     if (!url) {
       throw new Error('url property missing from options')
     }
     this.url = url
   }
 
+  /**
+   * Returns the configuration of the Safe Relay Transaction Manager.
+   *
+   * @returns The name of the TransactionManager in use and the URL of the service
+   */
   get config(): TransactionManagerConfig {
     return {
       name: TransactionManagerNames.SafeRelayTransactionManager,
@@ -60,6 +72,12 @@ class SafeRelayTransactionManager implements TransactionManager {
     }
   }
 
+  /**
+   * Executes a list of transactions via the Safe Transaction Relay.
+   *
+   * @param options
+   * @returns The transaction response
+   */
   async execTransactions({
     ownerAccount,
     safeExecTxParams,
