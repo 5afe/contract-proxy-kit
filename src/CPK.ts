@@ -50,6 +50,12 @@ class CPK {
   #saltNonce = predeterminedSaltNonce
   #isConnectedToSafe = false
 
+  /**
+   * Creates and initializes an instance of the CPK with the selected configuration parameters.
+   *
+   * @param opts - CPK configuration
+   * @returns The CPK instance
+   */
   static async create(opts?: CPKConfig): Promise<CPK> {
     const cpk = new CPK(opts)
     if (opts) {
@@ -58,6 +64,11 @@ class CPK {
     return cpk
   }
 
+  /**
+   * Creates a non-initialized instance of the CPK with the selected configuration parameters.
+   *
+   * @param opts - CPK configuration
+   */
   constructor(opts?: CPKConfig) {
     this.#safeAppsSdkConnector = new SafeAppsSdkConnector()
     this.#networks = {
@@ -79,6 +90,9 @@ class CPK {
     }
   }
 
+  /**
+   * Initializes the CPK instance.
+   */
   async init(): Promise<void> {
     if (!this.#ethLibAdapter) {
       throw new Error('CPK uninitialized ethLibAdapter')
@@ -104,6 +118,11 @@ class CPK {
     })
   }
 
+  /**
+   * Checks if the Proxy contract is deployed or not. The deployment of the Proxy contract happens automatically when the first transaction is submitted.
+   *
+   * @returns TRUE when the Proxy contract is deployed
+   */
   async isProxyDeployed(): Promise<boolean> {
     const address = await this.address
     if (!address) {
@@ -117,10 +136,20 @@ class CPK {
     return isDeployed
   }
 
+  /**
+   * Checks if the CPK is running as a Safe App or as a standalone app.
+   *
+   * @returns TRUE if the CPK is running as a Safe App
+   */
   isSafeApp(): boolean {
     return this.#safeAppsSdkConnector.isSafeApp
   }
 
+  /**
+   * Returns the address of the account connected to the CPK (Proxy contract owner). However, if the CPK is running as a Safe App or connected to a Safe, the Safe address will be returned.
+   *
+   * @returns The address of the account connected to the CPK
+   */
   async getOwnerAccount(): Promise<Address | undefined> {
     if (this.isSafeApp()) {
       return (await this.#safeAppsSdkConnector.getSafeInfo()).safeAddress
@@ -134,6 +163,11 @@ class CPK {
     return this.#ethLibAdapter?.getAccount()
   }
 
+  /**
+   * Returns the ETH balance of the Proxy contract.
+   *
+   * @returns The ETH balance of the Proxy contract
+   */
   async getBalance(): Promise<BigNumber> {
     const address = await this.address
     if (!address) {
@@ -145,6 +179,11 @@ class CPK {
     return this.#ethLibAdapter?.getBalance(address)
   }
 
+  /**
+   * Returns the ID of the connected network.
+   *
+   * @returns The ID of the connected network
+   */
   async getNetworkId(): Promise<number | undefined> {
     if (this.isSafeApp()) {
       const networkName = (await this.#safeAppsSdkConnector.getSafeInfo()).network
@@ -156,6 +195,11 @@ class CPK {
     return this.#ethLibAdapter.getNetworkId()
   }
 
+  /**
+   * Returns the information of the connected Safe App.
+   *
+   * @returns The information of the connected Safe App
+   */
   async getSafeAppInfo(): Promise<SafeInfoV1 | undefined> {
     if (!this.isSafeApp()) {
       throw new Error('Method only available when running as a Safe App')
@@ -163,6 +207,12 @@ class CPK {
     return this.#safeAppsSdkConnector.getSafeInfo()
   }
 
+  /**
+   * Returns the transaction response for the given Safe transaction hash.
+   *
+   * @param safeTxHash - The desired Safe transaction hash
+   * @returns The transaction response for the Safe transaction hash
+   */
   async getBySafeTxHash(safeTxHash: string): Promise<TxServiceModel> {
     if (!this.isSafeApp()) {
       throw new Error('Method only available when running as a Safe App')
@@ -170,42 +220,92 @@ class CPK {
     return this.#safeAppsSdkConnector.getBySafeTxHash(safeTxHash)
   }
 
+  /**
+   * Returns the ethLibAdapter used by the CPK.
+   *
+   * @returns The ethLibAdapter used by the CPK
+   */
   get ethLibAdapter(): EthLibAdapter | undefined {
     return this.#ethLibAdapter
   }
 
+  /**
+   * Returns a list of the contract addresses which drive the CPK per network by network ID.
+   *
+   * @returns The list of the contract addresses which drive the CPK per network by network ID
+   */
   get networks(): NormalizedNetworksConfig {
     return this.#networks
   }
 
+  /**
+   * Checks if the CPK is connected to a Safe account or not.
+   *
+   * @returns TRUE if the CPK is connected to a Safe account
+   */
   get isConnectedToSafe(): boolean {
     return this.#isConnectedToSafe
   }
 
+  /**
+   * Returns the instance of the Safe contract in use.
+   *
+   * @returns The instance of the Safe contract in use
+   */
   get contract(): Contract | undefined {
     return this.#contractManager?.contract
   }
 
+  /**
+   * Returns the instance of the MultiSend contract in use.
+   *
+   * @returns The instance of the MultiSend contract in use
+   */
   get multiSend(): Contract | undefined {
     return this.#contractManager?.multiSend
   }
 
+  /**
+   * Returns the instance of the Proxy Factory contract in use.
+   *
+   * @returns The instance of the Proxy Factory contract in use
+   */
   get proxyFactory(): Contract | undefined {
     return this.#contractManager?.proxyFactory
   }
 
+  /**
+   * Returns the Master Copy contract address in use.
+   *
+   * @returns The Master Copy contract address in use
+   */
   get masterCopyAddress(): Address | undefined {
     return this.#contractManager?.masterCopyAddress
   }
 
+  /**
+   * Returns the FallbackHandler contract address in use.
+   *
+   * @returns The FallbackHandler contract address in use
+   */
   get fallbackHandlerAddress(): Address | undefined {
     return this.#contractManager?.fallbackHandlerAddress
   }
 
+  /**
+   * Returns the salt nonce used to deploy the Proxy Contract.
+   *
+   * @returns The salt nonce used to deploy the Proxy Contract
+   */
   get saltNonce(): string {
     return this.#saltNonce
   }
 
+  /**
+   * Returns the address of the Proxy contract.
+   *
+   * @returns The address of the Proxy contract
+   */
   get address(): Promise<Address | undefined> {
     if (this.isSafeApp()) {
       return (async () => (await this.#safeAppsSdkConnector.getSafeInfo()).safeAddress)()
@@ -213,10 +313,16 @@ class CPK {
     return new Promise((resolve, reject) => resolve(this.#contractManager?.contract?.address))
   }
 
+  /**
+   * Sets the ethLibAdapter used by the CPK.
+   */
   setEthLibAdapter(ethLibAdapter: EthLibAdapter): void {
     this.#ethLibAdapter = ethLibAdapter
   }
 
+  /**
+   * Sets the transactionManager used by the CPK.
+   */
   setTransactionManager(transactionManager: TransactionManager): void {
     if (this.isSafeApp()) {
       throw new Error('TransactionManagers are not allowed when the app is running as a Safe App')
@@ -224,10 +330,19 @@ class CPK {
     this.#transactionManager = transactionManager
   }
 
+  /**
+   * Sets the network configuration used by the CPK.
+   */
   setNetworks(networks: NetworksConfig): void {
     this.#networks = normalizeNetworksConfig(defaultNetworks, networks)
   }
 
+  /**
+   * Returns the encoding of a list of transactions.
+   *
+   * @param transactions - The transaction list
+   * @returns The encoding of a list of transactions
+   */
   encodeMultiSendCallData(transactions: Transaction[]): string {
     if (!this.#ethLibAdapter) {
       throw new Error('CPK ethLibAdapter uninitialized')
@@ -253,6 +368,13 @@ class CPK {
     ])
   }
 
+  /**
+   * Executes a list of transactions.
+   *
+   * @param transactions - The transaction list to execute
+   * @param options - Execution configuration options
+   * @returns The transaction response
+   */
   async execTransactions(
     transactions: Transaction[],
     options?: ExecOptions
@@ -303,6 +425,11 @@ class CPK {
     })
   }
 
+  /**
+   * Returns the Master Copy contract version.
+   *
+   * @returns The Master Copy contract version
+   */
   async getContractVersion(): Promise<string> {
     const isProxyDeployed = await this.isProxyDeployed()
     if (!isProxyDeployed) {
@@ -314,6 +441,11 @@ class CPK {
     return await this.#contractManager.versionUtils.getContractVersion()
   }
 
+  /**
+   * Returns the list of addresses of all the enabled Safe modules.
+   *
+   * @returns The list of addresses of all the enabled Safe modules
+   */
   async getModules(): Promise<Address[]> {
     const isProxyDeployed = await this.isProxyDeployed()
     if (!isProxyDeployed) {
@@ -325,6 +457,12 @@ class CPK {
     return await this.#contractManager.versionUtils.getModules()
   }
 
+  /**
+   * Checks if a specific Safe module is enabled or not.
+   *
+   * @param moduleAddress - The desired module address
+   * @returns TRUE if the module is enabled
+   */
   async isModuleEnabled(moduleAddress: Address): Promise<boolean> {
     const isProxyDeployed = await this.isProxyDeployed()
     if (!isProxyDeployed) {
@@ -336,6 +474,12 @@ class CPK {
     return await this.#contractManager.versionUtils.isModuleEnabled(moduleAddress)
   }
 
+  /**
+   * Enables a Safe module
+   *
+   * @param moduleAddress - The desired module address
+   * @returns The transaction response
+   */
   async enableModule(moduleAddress: Address): Promise<TransactionResult> {
     if (!this.#contractManager?.versionUtils) {
       throw new Error('CPK contractManager uninitialized')
@@ -353,6 +497,12 @@ class CPK {
     ])
   }
 
+  /**
+   * Disables a Safe module
+   *
+   * @param moduleAddress - The desired module address
+   * @returns The transaction response
+   */
   async disableModule(moduleAddress: Address): Promise<TransactionResult> {
     const isProxyDeployed = await this.isProxyDeployed()
     if (!isProxyDeployed) {
