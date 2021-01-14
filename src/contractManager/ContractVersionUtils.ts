@@ -9,6 +9,10 @@ abstract class ContractVersionUtils {
     this.contract = contract
   }
 
+  async getContractVersion(): Promise<string> {
+    return this.contract.call('VERSION', [])
+  }
+
   async getModules(): Promise<Address[]> {
     return this.contract.call('getModules', [])
   }

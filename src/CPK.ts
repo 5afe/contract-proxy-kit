@@ -1,3 +1,4 @@
+import { SafeInfoV1, TxServiceModel } from '@gnosis.pm/safe-apps-sdk'
 import BigNumber from 'bignumber.js'
 import multiSendAbi from './abis/MultiSendAbi.json'
 import {
@@ -104,24 +105,25 @@ class CPK {
   }
 
   async isProxyDeployed(): Promise<boolean> {
-    if (!this.address) {
+    const address = await this.address
+    if (!address) {
       throw new Error('CPK address uninitialized')
     }
     if (!this.ethLibAdapter) {
       throw new Error('CPK ethLibAdapter uninitialized')
     }
-    const codeAtAddress = await this.ethLibAdapter.getCode(this.address)
+    const codeAtAddress = await this.ethLibAdapter.getCode(address)
     const isDeployed = codeAtAddress !== '0x'
     return isDeployed
   }
 
   isSafeApp(): boolean {
-    return this.#safeAppsSdkConnector.isSafeApp()
+    return this.#safeAppsSdkConnector.isSafeApp
   }
 
   async getOwnerAccount(): Promise<Address | undefined> {
     if (this.isSafeApp()) {
-      return this.#safeAppsSdkConnector.safeAppInfo?.safeAddress
+      return (await this.#safeAppsSdkConnector.getSafeInfo()).safeAddress
     }
     if (this.#ownerAccount) {
       return this.#ownerAccount
@@ -132,26 +134,40 @@ class CPK {
     return this.#ethLibAdapter?.getAccount()
   }
 
-  getBalance(): Promise<BigNumber> {
-    if (!this.address) {
+  async getBalance(): Promise<BigNumber> {
+    const address = await this.address
+    if (!address) {
       throw new Error('CPK address uninitialized')
     }
     if (!this.#ethLibAdapter) {
       throw new Error('CPK ethLibAdapter uninitialized')
     }
-    return this.#ethLibAdapter?.getBalance(this.address)
+    return this.#ethLibAdapter?.getBalance(address)
   }
 
-  getNetworkId(): Promise<number | undefined> {
+  async getNetworkId(): Promise<number | undefined> {
     if (this.isSafeApp()) {
-      const networkName = this.#safeAppsSdkConnector.safeAppInfo?.network
-      const networkId = getNetworkIdFromName(networkName)
-      return new Promise((resolve, reject) => resolve(networkId))
+      const networkName = (await this.#safeAppsSdkConnector.getSafeInfo()).network
+      return getNetworkIdFromName(networkName)
     }
     if (!this.#ethLibAdapter) {
       throw new Error('CPK ethLibAdapter uninitialized')
     }
     return this.#ethLibAdapter.getNetworkId()
+  }
+
+  async getSafeAppInfo(): Promise<SafeInfoV1 | undefined> {
+    if (!this.isSafeApp()) {
+      throw new Error('Method only available when running as a Safe App')
+    }
+    return this.#safeAppsSdkConnector.getSafeInfo()
+  }
+
+  async getBySafeTxHash(safeTxHash: string): Promise<TxServiceModel> {
+    if (!this.isSafeApp()) {
+      throw new Error('Method only available when running as a Safe App')
+    }
+    return this.#safeAppsSdkConnector.getBySafeTxHash(safeTxHash)
   }
 
   get ethLibAdapter(): EthLibAdapter | undefined {
@@ -190,11 +206,11 @@ class CPK {
     return this.#saltNonce
   }
 
-  get address(): Address | undefined {
+  get address(): Promise<Address | undefined> {
     if (this.isSafeApp()) {
-      return this.#safeAppsSdkConnector.safeAppInfo?.safeAddress
+      return (async () => (await this.#safeAppsSdkConnector.getSafeInfo()).safeAddress)()
     }
-    return this.#contractManager?.contract?.address
+    return new Promise((resolve, reject) => resolve(this.#contractManager?.contract?.address))
   }
 
   setEthLibAdapter(ethLibAdapter: EthLibAdapter): void {
@@ -246,7 +262,8 @@ class CPK {
       return this.#safeAppsSdkConnector.sendTransactions(standardizedTxs)
     }
 
-    if (!this.address) {
+    const address = await this.address
+    if (!address) {
       throw new Error('CPK address uninitialized')
     }
     if (!this.#contractManager) {
@@ -267,7 +284,7 @@ class CPK {
     const safeExecTxParams = this.getSafeExecTxParams(transactions)
     const sendOptions = normalizeGasLimit({ ...options, from: ownerAccount })
 
-    const codeAtAddress = await this.#ethLibAdapter.getCode(this.address)
+    const codeAtAddress = await this.#ethLibAdapter.getCode(address)
     const isDeployed = codeAtAddress !== '0x'
     const txManager = !isDeployed ? new CpkTransactionManager() : this.#transactionManager
 
@@ -282,6 +299,17 @@ class CPK {
       isConnectedToSafe: this.#isConnectedToSafe,
       sendOptions
     })
+  }
+
+  async getContractVersion(): Promise<string> {
+    const isProxyDeployed = await this.isProxyDeployed()
+    if (!isProxyDeployed) {
+      throw new Error('CPK Proxy contract is not deployed')
+    }
+    if (!this.#contractManager?.versionUtils) {
+      throw new Error('CPK contractManager uninitialized')
+    }
+    return await this.#contractManager.versionUtils.getContractVersion()
   }
 
   async getModules(): Promise<Address[]> {
@@ -310,12 +338,13 @@ class CPK {
     if (!this.#contractManager?.versionUtils) {
       throw new Error('CPK contractManager uninitialized')
     }
-    if (!this.address) {
+    const address = await this.address
+    if (!address) {
       throw new Error('CPK address uninitialized')
     }
     return await this.execTransactions([
       {
-        to: this.address,
+        to: address,
         data: await this.#contractManager.versionUtils.encodeEnableModule(moduleAddress),
         operation: CPK.Call
       }
@@ -330,12 +359,13 @@ class CPK {
     if (!this.#contractManager?.versionUtils) {
       throw new Error('CPK contractManager uninitialized')
     }
-    if (!this.address) {
+    const address = await this.address
+    if (!address) {
       throw new Error('CPK address uninitialized')
     }
     return await this.execTransactions([
       {
-        to: this.address,
+        to: address,
         data: await this.#contractManager.versionUtils.encodeDisableModule(moduleAddress),
         operation: CPK.Call
       }
