@@ -1,4 +1,4 @@
-import { SafeInfoV1, TxServiceModel } from '@gnosis.pm/safe-apps-sdk'
+import { SafeInfo, TxServiceModel } from '@gnosis.pm/safe-apps-sdk'
 import BigNumber from 'bignumber.js'
 import multiSendAbi from './abis/MultiSendAbi.json'
 import {
@@ -68,6 +68,7 @@ class CPK {
    * Creates a non-initialized instance of the CPK with the selected configuration parameters.
    *
    * @param opts - CPK configuration
+   * @returns The CPK instance
    */
   constructor(opts?: CPKConfig) {
     this.#safeAppsSdkConnector = new SafeAppsSdkConnector()
@@ -200,7 +201,7 @@ class CPK {
    *
    * @returns The information of the connected Safe App
    */
-  async getSafeAppInfo(): Promise<SafeInfoV1 | undefined> {
+  async getSafeAppInfo(): Promise<SafeInfo | undefined> {
     if (!this.isSafeApp()) {
       throw new Error('Method only available when running as a Safe App')
     }

@@ -1,4 +1,4 @@
-import SafeAppsSDK, { SafeInfoV1, TxServiceModel } from '@gnosis.pm/safe-apps-sdk'
+import SafeAppsSDK, { SafeInfo, TxServiceModel } from '@gnosis.pm/safe-apps-sdk'
 import { SimpleTransactionResult, StandardSafeAppsTransaction } from '../utils/transactions'
 
 interface SafeTransactionParams {
@@ -29,7 +29,7 @@ class SafeAppsSdkConnector {
     return this.#appsSdk
   }
 
-  getSafeInfo(): Promise<SafeInfoV1> {
+  getSafeInfo(): Promise<SafeInfo> {
     return this.#appsSdk.getSafeInfo()
   }
 
