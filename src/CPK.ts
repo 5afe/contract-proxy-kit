@@ -1,4 +1,3 @@
-import { SafeInfo, TxServiceModel } from '@gnosis.pm/safe-apps-sdk'
 import BigNumber from 'bignumber.js'
 import multiSendAbi from './abis/MultiSendAbi.json'
 import {
@@ -8,7 +7,7 @@ import {
   normalizeNetworksConfig
 } from './config/networks'
 import ContractManager from './contractManager'
-import EthLibAdapter, { Contract } from './ethLibAdapters/EthLibAdapter'
+import EthLibAdapter from './ethLibAdapters/EthLibAdapter'
 import SafeAppsSdkConnector from './safeAppsSdkConnector'
 import CpkTransactionManager from './transactionManagers/CpkTransactionManager'
 import TransactionManager from './transactionManagers/TransactionManager'
@@ -107,14 +106,16 @@ class CPK {
 
     const ownerAccount = await this.getOwnerAccount()
 
-    this.#isConnectedToSafe = await checkConnectedToSafe(this.#ethLibAdapter.getProvider())
+    this.#isConnectedToSafe =
+      (await checkConnectedToSafe(this.#ethLibAdapter.getProvider())) ||
+      this.#safeAppsSdkConnector.isSafeApp
 
     this.#contractManager = await ContractManager.create({
       ethLibAdapter: this.#ethLibAdapter,
       network,
       ownerAccount,
       saltNonce: this.#saltNonce,
-      isSafeApp: this.isSafeApp(),
+      isSafeApp: this.#safeAppsSdkConnector.isSafeApp,
       isConnectedToSafe: this.#isConnectedToSafe
     })
   }
@@ -138,21 +139,12 @@ class CPK {
   }
 
   /**
-   * Checks if the CPK is running as a Safe App or as a standalone app.
-   *
-   * @returns TRUE if the CPK is running as a Safe App
-   */
-  isSafeApp(): boolean {
-    return this.#safeAppsSdkConnector.isSafeApp
-  }
-
-  /**
    * Returns the address of the account connected to the CPK (Proxy contract owner). However, if the CPK is running as a Safe App or connected to a Safe, the Safe address will be returned.
    *
    * @returns The address of the account connected to the CPK
    */
   async getOwnerAccount(): Promise<Address | undefined> {
-    if (this.isSafeApp()) {
+    if (this.#safeAppsSdkConnector.isSafeApp) {
       return (await this.#safeAppsSdkConnector.getSafeInfo()).safeAddress
     }
     if (this.#ownerAccount) {
@@ -186,7 +178,7 @@ class CPK {
    * @returns The ID of the connected network
    */
   async getNetworkId(): Promise<number | undefined> {
-    if (this.isSafeApp()) {
+    if (this.#safeAppsSdkConnector.isSafeApp) {
       const networkName = (await this.#safeAppsSdkConnector.getSafeInfo()).network
       return getNetworkIdFromName(networkName)
     }
@@ -197,28 +189,21 @@ class CPK {
   }
 
   /**
-   * Returns the information of the connected Safe App.
+   * Returns the safeAppsSdkConnector used by the CPK.
    *
-   * @returns The information of the connected Safe App
+   * @returns The safeAppsSdkConnector used by the CPK
    */
-  async getSafeAppInfo(): Promise<SafeInfo | undefined> {
-    if (!this.isSafeApp()) {
-      throw new Error('Method only available when running as a Safe App')
-    }
-    return this.#safeAppsSdkConnector.getSafeInfo()
+  get safeAppsSdkConnector(): SafeAppsSdkConnector {
+    return this.#safeAppsSdkConnector
   }
 
   /**
-   * Returns the transaction response for the given Safe transaction hash.
+   * Returns the contractManager used by the CPK.
    *
-   * @param safeTxHash - The desired Safe transaction hash
-   * @returns The transaction response for the Safe transaction hash
+   * @returns The contractManager used by the CPK
    */
-  async getBySafeTxHash(safeTxHash: string): Promise<TxServiceModel> {
-    if (!this.isSafeApp()) {
-      throw new Error('Method only available when running as a Safe App')
-    }
-    return this.#safeAppsSdkConnector.getBySafeTxHash(safeTxHash)
+  get contractManager(): ContractManager | undefined {
+    return this.#contractManager
   }
 
   /**
@@ -249,51 +234,6 @@ class CPK {
   }
 
   /**
-   * Returns the instance of the Safe contract in use.
-   *
-   * @returns The instance of the Safe contract in use
-   */
-  get contract(): Contract | undefined {
-    return this.#contractManager?.contract
-  }
-
-  /**
-   * Returns the instance of the MultiSend contract in use.
-   *
-   * @returns The instance of the MultiSend contract in use
-   */
-  get multiSend(): Contract | undefined {
-    return this.#contractManager?.multiSend
-  }
-
-  /**
-   * Returns the instance of the Proxy Factory contract in use.
-   *
-   * @returns The instance of the Proxy Factory contract in use
-   */
-  get proxyFactory(): Contract | undefined {
-    return this.#contractManager?.proxyFactory
-  }
-
-  /**
-   * Returns the Master Copy contract address in use.
-   *
-   * @returns The Master Copy contract address in use
-   */
-  get masterCopyAddress(): Address | undefined {
-    return this.#contractManager?.masterCopyAddress
-  }
-
-  /**
-   * Returns the FallbackHandler contract address in use.
-   *
-   * @returns The FallbackHandler contract address in use
-   */
-  get fallbackHandlerAddress(): Address | undefined {
-    return this.#contractManager?.fallbackHandlerAddress
-  }
-
-  /**
    * Returns the salt nonce used to deploy the Proxy Contract.
    *
    * @returns The salt nonce used to deploy the Proxy Contract
@@ -308,7 +248,7 @@ class CPK {
    * @returns The address of the Proxy contract
    */
   get address(): Promise<Address | undefined> {
-    if (this.isSafeApp()) {
+    if (this.#safeAppsSdkConnector.isSafeApp) {
       return (async () => (await this.#safeAppsSdkConnector.getSafeInfo()).safeAddress)()
     }
     return new Promise((resolve, reject) => resolve(this.#contractManager?.contract?.address))
@@ -325,7 +265,7 @@ class CPK {
    * Sets the transactionManager used by the CPK.
    */
   setTransactionManager(transactionManager: TransactionManager): void {
-    if (this.isSafeApp()) {
+    if (this.#safeAppsSdkConnector.isSafeApp) {
       throw new Error('TransactionManagers are not allowed when the app is running as a Safe App')
     }
     this.#transactionManager = transactionManager
@@ -380,7 +320,7 @@ class CPK {
     transactions: Transaction[],
     options?: ExecOptions
   ): Promise<TransactionResult> {
-    if (this.isSafeApp() && transactions.length >= 1) {
+    if (this.#safeAppsSdkConnector.isSafeApp && transactions.length >= 1) {
       const standardizedTxs = transactions.map(standardizeSafeAppsTransaction)
       return this.#safeAppsSdkConnector.sendTransactions(standardizedTxs, {
         safeTxGas: options?.safeTxGas
