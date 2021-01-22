@@ -146,7 +146,7 @@ const ownerAccount = await cpk.getOwnerAccount()
 Once created, the `address` property on a *CPK* instance will provide the proxy's checksummed Ethereum address:
 
 ```js
-> cpk.address
+> await cpk.address
 '0xdb6F36fC4e07eAfCAba1D0056609A76C91c5A1bC'
 ```
 
@@ -158,7 +158,7 @@ If the provider underlying the *CPK* instance is connected to a Gnosis Safe via 
 
 ```js
 const ownerAccount = await cpk.getOwnerAccount()
-cpk.address === ownerAccount // this will be true in that case
+(await cpk.address) === ownerAccount // this will be true in that case
 ```
 
 *CPK* will use the Safe's native support for batching transactions, and will not create an additional proxy contract account.

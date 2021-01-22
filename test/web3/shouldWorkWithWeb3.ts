@@ -196,7 +196,7 @@ export function shouldWorkWithWeb3({
           if (transactionManager) {
             await ueb3TestHelpers.sendTransaction({
               from: defaultAccountBox[0],
-              to: cpk.address,
+              to: await cpk.address,
               value: `${3e18}`
             })
           }
@@ -266,7 +266,7 @@ export function shouldWorkWithWeb3({
           if (transactionManager) {
             await ueb3TestHelpers.sendTransaction({
               from: defaultAccountBox[0],
-              to: cpk.address,
+              to: await cpk.address,
               value: `${3e18}`
             })
           }

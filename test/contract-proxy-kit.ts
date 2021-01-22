@@ -87,12 +87,12 @@ describe('CPK', () => {
     const cpk = await CPK.create(undefined as any)
     should.exist(cpk)
     should.not.exist(cpk.ethLibAdapter)
-    should.not.exist(cpk.contract)
-    should.not.exist(cpk.multiSend)
-    should.not.exist(cpk.proxyFactory)
-    should.not.exist(cpk.masterCopyAddress)
-    should.not.exist(cpk.fallbackHandlerAddress)
-    cpk.isSafeApp().should.equal(false)
+    should.not.exist(cpk.contractManager?.contract)
+    should.not.exist(cpk.contractManager?.multiSend)
+    should.not.exist(cpk.contractManager?.proxyFactory)
+    should.not.exist(cpk.contractManager?.masterCopyAddress)
+    should.not.exist(cpk.contractManager?.fallbackHandlerAddress)
+    cpk.safeAppsSdkConnector.isSafeApp.should.equal(false)
   })
 
   it.skip('should produce CPK instances when running as a Safe App and options are missing', async () => {
@@ -101,20 +101,21 @@ describe('CPK', () => {
 
     const message: SafeInfo = {
       safeAddress: '0x0000000000000000000000000000000000000001',
-      network: 'rinkeby'
+      network: 'RINKEBY'
     }
     window.postMessage({ messageId: 'ON_SAFE_INFO', message }, '*')
 
     should.exist(cpk)
     should.exist(cpk.ethLibAdapter)
-    should.exist(cpk.address)
-    cpk.address?.should.equal(message.safeAddress)
-    should.not.exist(cpk.contract)
-    should.not.exist(cpk.multiSend)
-    should.not.exist(cpk.proxyFactory)
-    should.not.exist(cpk.masterCopyAddress)
-    should.not.exist(cpk.fallbackHandlerAddress)
-    cpk.isSafeApp().should.equal(true)
+    const safeAddress = await cpk.address
+    should.exist(safeAddress)
+    safeAddress?.should.equal(message.safeAddress)
+    should.not.exist(cpk.contractManager?.contract)
+    should.not.exist(cpk.contractManager?.multiSend)
+    should.not.exist(cpk.contractManager?.proxyFactory)
+    should.not.exist(cpk.contractManager?.masterCopyAddress)
+    should.not.exist(cpk.contractManager?.fallbackHandlerAddress)
+    cpk.safeAppsSdkConnector.isSafeApp.should.equal(true)
   })
 
   it.skip('should produce CPK instances when running as a Safe App', async () => {
@@ -126,20 +127,21 @@ describe('CPK', () => {
 
     const message: SafeInfo = {
       safeAddress: '0x0000000000000000000000000000000000000001',
-      network: 'rinkeby'
+      network: 'RINKEBY'
     }
     window.postMessage({ messageId: 'ON_SAFE_INFO', message }, '*')
 
     should.exist(cpk)
     should.exist(cpk.ethLibAdapter)
-    should.exist(cpk.address)
-    cpk.address?.should.equal(message.safeAddress)
-    should.not.exist(cpk.contract)
-    should.not.exist(cpk.multiSend)
-    should.not.exist(cpk.proxyFactory)
-    should.not.exist(cpk.masterCopyAddress)
-    should.not.exist(cpk.fallbackHandlerAddress)
-    cpk.isSafeApp().should.equal(true)
+    const safeAddress = await cpk.address
+    should.exist(safeAddress)
+    safeAddress?.should.equal(message.safeAddress)
+    should.not.exist(cpk.contractManager?.contract)
+    should.not.exist(cpk.contractManager?.multiSend)
+    should.not.exist(cpk.contractManager?.proxyFactory)
+    should.not.exist(cpk.contractManager?.masterCopyAddress)
+    should.not.exist(cpk.contractManager?.fallbackHandlerAddress)
+    cpk.safeAppsSdkConnector.isSafeApp.should.equal(true)
   })
 
   it('should not produce CPK instances when ethLibAdapter not provided', async () => {
