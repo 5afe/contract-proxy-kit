@@ -5,9 +5,9 @@ import safeAbiV120 from '../abis/SafeAbiV1-2-0.json'
 import { NormalizedNetworkConfigEntry } from '../config/networks'
 import EthLibAdapter, { Contract } from '../ethLibAdapters/EthLibAdapter'
 import { Address } from '../utils/basicTypes'
-import ContractVersionUtils from './ContractVersionUtils'
 import ContractV111Utils from './ContractV111Utils'
 import ContractV120Utils from './ContractV120Utils'
+import ContractVersionUtils from './ContractVersionUtils'
 
 export interface ContractManagerProps {
   ethLibAdapter: EthLibAdapter
@@ -122,22 +122,47 @@ class ContractManager {
     return this.#versionUtils
   }
 
+  /**
+   * Returns the instance of the Safe contract in use.
+   *
+   * @returns The instance of the Safe contract in use
+   */
   get contract(): Contract | undefined {
     return this.#contract
   }
 
+  /**
+   * Returns the instance of the Proxy Factory contract in use.
+   *
+   * @returns The instance of the Proxy Factory contract in use
+   */
   get proxyFactory(): Contract {
     return this.#proxyFactory
   }
 
+  /**
+   * Returns the Master Copy contract address in use.
+   *
+   * @returns The Master Copy contract address in use
+   */
   get masterCopyAddress(): Address {
     return this.#masterCopyAddress
   }
 
+  /**
+   * Returns the instance of the MultiSend contract in use.
+   *
+   * @returns The instance of the MultiSend contract in use
+   */
   get multiSend(): Contract {
     return this.#multiSend
   }
 
+  /**
+   * Returns the FallbackHandler contract address in use.
+   *
+   * @returns The FallbackHandler contract address in use
+   */
   get fallbackHandlerAddress(): Address {
     return this.#fallbackHandlerAddress
   }

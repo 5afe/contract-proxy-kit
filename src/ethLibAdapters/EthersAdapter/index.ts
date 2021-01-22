@@ -23,7 +23,7 @@ class EthersAdapter extends EthLibAdapter {
 
   /**
    * Creates an instance of EthersAdapter
-   * 
+   *
    * @param options - EthersAdapter configuration
    * @returns The EthersAdapter instance
    */
@@ -42,7 +42,7 @@ class EthersAdapter extends EthLibAdapter {
 
   /**
    * Returns the current provider
-   * 
+   *
    * @returns The current provider
    */
   getProvider(): any {
@@ -52,7 +52,7 @@ class EthersAdapter extends EthLibAdapter {
 
   /**
    * Sends a network request via JSON-RPC.
-   * 
+   *
    * @param method - JSON-RPC method
    * @param params - Params
    * @returns The request response
@@ -63,7 +63,7 @@ class EthersAdapter extends EthLibAdapter {
 
   /**
    * Signs data using a specific account.
-   * 
+   *
    * @param message - Data to sign
    * @param ownerAccount - Address to sign the data with
    * @returns The signature
@@ -75,7 +75,7 @@ class EthersAdapter extends EthLibAdapter {
 
   /**
    * Returns the current network ID.
-   * 
+   *
    * @returns The network ID
    */
   async getNetworkId(): Promise<number> {
@@ -84,7 +84,7 @@ class EthersAdapter extends EthLibAdapter {
 
   /**
    * Returns the default account used as the default "from" property.
-   * 
+   *
    * @returns The default account address
    */
   async getAccount(): Promise<Address> {
@@ -93,7 +93,7 @@ class EthersAdapter extends EthLibAdapter {
 
   /**
    * Returns the balance of an address.
-   * 
+   *
    * @param address - The desired address
    * @returns The balance of the address
    */
@@ -103,7 +103,7 @@ class EthersAdapter extends EthLibAdapter {
 
   /**
    * Returns the keccak256 hash of the data.
-   * 
+   *
    * @param data - Desired data
    * @returns The keccak256 of the data
    */
@@ -113,7 +113,7 @@ class EthersAdapter extends EthLibAdapter {
 
   /**
    * Encodes a function parameters based on its JSON interface object.
-   * 
+   *
    * @param types - An array with the types or a JSON interface of a function
    * @param values - The parameters to encode
    * @returns The ABI encoded parameters
@@ -124,7 +124,7 @@ class EthersAdapter extends EthLibAdapter {
 
   /**
    * Decodes ABI encoded parameters to is JavaScript types.
-   * 
+   *
    * @param types - An array with the types or a JSON interface outputs array
    * @param data - The ABI byte code to decode
    * @returns The ABI encoded parameters
@@ -135,7 +135,7 @@ class EthersAdapter extends EthLibAdapter {
 
   /**
    * Returns an instance of a contract.
-   * 
+   *
    * @param abi - ABI of the desired contract
    * @param address - Contract address
    * @returns The contract instance
@@ -156,7 +156,7 @@ class EthersAdapter extends EthLibAdapter {
 
   /**
    * Deterministically returns the address where a contract will be deployed.
-   * 
+   *
    * @param deployer - Account that deploys the contract
    * @param salt - Salt
    * @param initCode - Code to be deployed
@@ -175,7 +175,7 @@ class EthersAdapter extends EthLibAdapter {
 
   /**
    * Returns the code at a specific address.
-   * 
+   *
    * @param address - The desired address
    * @returns The code of the contract
    */
@@ -185,7 +185,7 @@ class EthersAdapter extends EthLibAdapter {
 
   /**
    * Returns a block matching the block number or block hash.
-   * 
+   *
    * @param blockHashOrBlockNumber - The block number or block hash
    * @returns The block object
    */
@@ -195,7 +195,7 @@ class EthersAdapter extends EthLibAdapter {
 
   /**
    * Returns the revert reason when a call fails.
-   * 
+   *
    * @param tx - Transaction to execute
    * @param block - Block number
    * @returns The revert data when the call fails
@@ -236,7 +236,7 @@ class EthersAdapter extends EthLibAdapter {
 
   /**
    * Sends a transaction to the network.
-   * 
+   *
    * @param tx - Transaction to send
    * @returns The transaction response
    */
@@ -249,7 +249,7 @@ class EthersAdapter extends EthLibAdapter {
 
   /**
    * Formats transaction result depending on the current provider.
-   * 
+   *
    * @param txHash - Transaction hash
    * @param tx - Transaction response
    * @returns The formatted transaction response
