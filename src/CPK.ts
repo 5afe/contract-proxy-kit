@@ -12,10 +12,11 @@ import { predeterminedSaltNonce, sentinelModules } from './utils/constants'
 import { getHexDataLength, joinHexData } from './utils/hexData'
 import {
   ExecOptions,
-
-
-  normalizeGasLimit, OperationType, standardizeSafeAppsTransaction, standardizeTransaction,
-  StandardTransaction, Transaction,
+  normalizeGasLimit,
+  OperationType,
+  standardizeTransaction,
+  StandardTransaction,
+  Transaction,
   TransactionResult
 } from './utils/transactions'
 
@@ -248,9 +249,10 @@ class CPK {
     transactions: Transaction[],
     options?: ExecOptions
   ): Promise<TransactionResult> {
+    const standardizedTxs = transactions.map(standardizeTransaction)
+
     if (this.isSafeApp() && transactions.length >= 1) {
-      const standardizedSafeTxs = transactions.map(standardizeSafeAppsTransaction)
-      return this.#safeAppsSdkConnector.sendTransactions(standardizedSafeTxs)
+      return this.#safeAppsSdkConnector.sendTransactions(standardizedTxs)
     }
 
     if (!this.address) {
@@ -271,8 +273,6 @@ class CPK {
     if (!this.#transactionManager) {
       throw new Error('CPK transactionManager uninitialized')
     }
-
-    const standardizedTxs = transactions.map(standardizeTransaction)
 
     const ownerAccount = await this.getOwnerAccount()
     if (!ownerAccount) {

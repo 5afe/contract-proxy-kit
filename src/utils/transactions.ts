@@ -1,4 +1,3 @@
-import BigNumber from 'bignumber.js'
 import { Address, NumberLike } from './basicTypes'
 import { defaultTxData, defaultTxOperation, defaultTxValue } from './constants'
 import { toHex } from './hexData'
@@ -85,23 +84,7 @@ export function standardizeTransaction(tx: Transaction): StandardTransaction {
   return {
     operation: tx.operation ? tx.operation : defaultTxOperation,
     to: tx.to,
-    value: tx.value ? tx.value.toString() : defaultTxValue,
-    data: tx.data ? tx.data : defaultTxData
-  }
-}
-
-export interface StandardSafeAppsTransaction {
-  operation: OperationType
-  to: Address
-  value: string
-  data: string
-}
-
-export function standardizeSafeAppsTransaction(tx: Transaction): StandardSafeAppsTransaction {
-  return {
-    operation: tx.operation ? tx.operation : defaultTxOperation,
-    to: tx.to,
-    value: tx.value ? tx.value.toString() : defaultTxValue,
+    value: tx.value ? tx.value.toString() : defaultTxValue.toString(),
     data: tx.data ? tx.data : defaultTxData
   }
 }
