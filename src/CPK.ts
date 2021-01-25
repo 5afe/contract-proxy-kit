@@ -1,24 +1,23 @@
-import SafeAppsSdkConnector from './safeAppsSdkConnector'
-import EthLibAdapter, { Contract } from './ethLibAdapters/EthLibAdapter'
-import TransactionManager, { CPKContracts } from './transactionManagers/TransactionManager'
-import CpkTransactionManager from './transactionManagers/CpkTransactionManager'
-import { defaultNetworks, NetworksConfig } from './config/networks'
 import cpkFactoryAbi from './abis/CpkFactoryAbi.json'
-import safeAbi from './abis/SafeAbi.json'
 import multiSendAbi from './abis/MultiSendAbi.json'
+import safeAbi from './abis/SafeAbi.json'
+import { defaultNetworks, NetworksConfig } from './config/networks'
+import EthLibAdapter, { Contract } from './ethLibAdapters/EthLibAdapter'
+import SafeAppsSdkConnector from './safeAppsSdkConnector'
+import CpkTransactionManager from './transactionManagers/CpkTransactionManager'
+import TransactionManager, { CPKContracts } from './transactionManagers/TransactionManager'
 import { Address } from './utils/basicTypes'
-import { predeterminedSaltNonce, sentinelModules } from './utils/constants'
-import { joinHexData, getHexDataLength } from './utils/hexData'
-import { OperationType, standardizeSafeAppsTransaction } from './utils/transactions'
-import {
-  Transaction,
-  TransactionResult,
-  ExecOptions,
-  standardizeTransaction,
-  StandardTransaction,
-  normalizeGasLimit
-} from './utils/transactions'
 import { checkConnectedToSafe } from './utils/checkConnectedToSafe'
+import { predeterminedSaltNonce, sentinelModules } from './utils/constants'
+import { getHexDataLength, joinHexData } from './utils/hexData'
+import {
+  ExecOptions,
+
+
+  normalizeGasLimit, OperationType, standardizeSafeAppsTransaction, standardizeTransaction,
+  StandardTransaction, Transaction,
+  TransactionResult
+} from './utils/transactions'
 
 export interface CPKConfig {
   ethLibAdapter: EthLibAdapter
@@ -93,11 +92,12 @@ class CPK {
 
     const ownerAccount = await this.getOwnerAccount()
 
-    this.#isConnectedToSafe = await checkConnectedToSafe(this.#ethLibAdapter.getProvider())
+    this.#isConnectedToSafe =
+      this.isSafeApp() || (await checkConnectedToSafe(this.#ethLibAdapter.getProvider()))
 
     this.#multiSend = this.#ethLibAdapter.getContract(multiSendAbi, network.multiSendAddress)
 
-    if (this.isSafeApp() || this.#isConnectedToSafe) {
+    if (this.#isConnectedToSafe) {
       this.#contract = this.#ethLibAdapter.getContract(safeAbi, ownerAccount)
     } else {
       this.#proxyFactory = this.#ethLibAdapter.getContract(
