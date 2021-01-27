@@ -1,23 +1,23 @@
-import should from 'should'
-import { ethers as ethersMaj4 } from 'ethers-4'
-import { ethers as ethersMaj5 } from 'ethers-5'
-import Web3Maj1Min3 from 'web3-1-3'
-import Web3Maj2Alpha from 'web3-2-alpha'
 import { SafeInfo } from '@gnosis.pm/safe-apps-sdk'
-import CPK, { SafeRelayTransactionManager, Web3Adapter, TransactionManagerNames } from '../src'
-import { zeroAddress } from '../src/utils/constants'
-import { Address } from '../src/utils/basicTypes'
-import makeEmulatedSafeProvider from './utils/makeEmulatedSafeProvider'
-import { shouldWorkWithWeb3 } from './web3/shouldWorkWithWeb3'
-import { shouldWorkWithEthers } from './ethers/shouldWorkWithEthers'
-import {
-  initializeContracts,
-  getContracts,
-  getContractInstances,
-  TestContractInstances
-} from './utils/contracts'
 import chai from 'chai'
 import chaiAsPromised from 'chai-as-promised'
+import { ethers as ethersMaj4 } from 'ethers-4'
+import { ethers as ethersMaj5 } from 'ethers-5'
+import should from 'should'
+import Web3Maj1Min3 from 'web3-1-3'
+import Web3Maj2Alpha from 'web3-2-alpha'
+import CPK, { SafeRelayTransactionManager, Web3Adapter } from '../src'
+import { Address } from '../src/utils/basicTypes'
+import { zeroAddress } from '../src/utils/constants'
+import { shouldWorkWithEthers } from './ethers/shouldWorkWithEthers'
+import {
+  getContractInstances,
+  getContracts,
+  initializeContracts,
+  TestContractInstances
+} from './utils/contracts'
+import makeEmulatedSafeProvider from './utils/makeEmulatedSafeProvider'
+import { shouldWorkWithWeb3 } from './web3/shouldWorkWithWeb3'
 chai.use(chaiAsPromised)
 
 const web3Versions = [Web3Maj1Min3, Web3Maj2Alpha]

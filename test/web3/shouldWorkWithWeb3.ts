@@ -2,17 +2,17 @@ import should from 'should'
 import Web3Maj1Min3 from 'web3-1-3'
 import Web3Maj2Alpha from 'web3-2-alpha'
 import CPK, {
-  Web3Adapter,
+  NetworksConfig,
   Transaction,
-  TransactionResult,
   TransactionManager,
-  NetworksConfig
+  TransactionResult,
+  Web3Adapter
 } from '../../src'
-import { testSafeTransactions } from '../transactions/testSafeTransactions'
-import { testConnectedSafeTransactionsWithRelay } from '../transactions/testConnectedSafeTransactionsWithRelay'
-import { toTxHashPromise, AccountType } from '../utils'
-import { getContractInstances, TestContractInstances } from '../utils/contracts'
 import { Address } from '../../src/utils/basicTypes'
+import { testConnectedSafeTransactionsWithRelay } from '../transactions/testConnectedSafeTransactionsWithRelay'
+import { testSafeTransactions } from '../transactions/testSafeTransactions'
+import { AccountType, toTxHashPromise } from '../utils'
+import { getContractInstances, TestContractInstances } from '../utils/contracts'
 
 interface ShouldWorkWithWeb3Props {
   Web3: typeof Web3Maj1Min3 | typeof Web3Maj2Alpha
@@ -206,6 +206,7 @@ export function shouldWorkWithWeb3({
           async getCPK() {
             return cpk
           },
+          defaultAccount: defaultAccountBox,
           isCpkTransactionManager,
           accountType: AccountType.Warm
         })
@@ -241,6 +242,7 @@ export function shouldWorkWithWeb3({
 
             return cpk
           },
+          defaultAccount: defaultAccountBox,
           isCpkTransactionManager,
           accountType: AccountType.Fresh
         })
@@ -275,7 +277,8 @@ export function shouldWorkWithWeb3({
               return cpk
             },
             ownerIsRecognizedContract: true,
-            executor: safeOwnerBox
+            executor: safeOwnerBox,
+            defaultAccount: defaultAccountBox
           })
           return
         }
@@ -288,6 +291,7 @@ export function shouldWorkWithWeb3({
           },
           ownerIsRecognizedContract: true,
           executor: safeOwnerBox,
+          defaultAccount: defaultAccountBox,
           isCpkTransactionManager,
           accountType: AccountType.Connected
         })

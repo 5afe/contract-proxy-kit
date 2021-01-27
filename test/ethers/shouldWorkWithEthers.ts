@@ -220,6 +220,7 @@ export function shouldWorkWithEthers({
           async getCPK() {
             return cpk
           },
+          defaultAccount: defaultAccountBox,
           isCpkTransactionManager,
           accountType: AccountType.Warm
         })
@@ -257,6 +258,7 @@ export function shouldWorkWithEthers({
 
             return cpk
           },
+          defaultAccount: defaultAccountBox,
           isCpkTransactionManager,
           accountType: AccountType.Fresh
         })
@@ -294,6 +296,7 @@ export function shouldWorkWithEthers({
             },
             ownerIsRecognizedContract: true,
             executor: safeOwnerBox,
+            defaultAccount: defaultAccountBox,
             isCpkTransactionManager,
             accountType: AccountType.Connected
           })
@@ -308,6 +311,7 @@ export function shouldWorkWithEthers({
           },
           ownerIsRecognizedContract: true,
           executor: safeOwnerBox,
+          defaultAccount: defaultAccountBox,
           isCpkTransactionManager,
           accountType: AccountType.Connected
         })
