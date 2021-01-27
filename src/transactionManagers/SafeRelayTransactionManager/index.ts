@@ -1,14 +1,14 @@
-import fetch from 'node-fetch'
 import BigNumber from 'bignumber.js'
+import fetch from 'node-fetch'
+import EthLibAdapter from '../../ethLibAdapters/EthLibAdapter'
+import { Address } from '../../utils/basicTypes'
+import { zeroAddress } from '../../utils/constants'
+import { OperationType, TransactionResult } from '../../utils/transactions'
 import TransactionManager, {
   ExecTransactionProps,
   TransactionManagerConfig,
   TransactionManagerNames
 } from '../TransactionManager'
-import { TransactionResult, OperationType } from '../../utils/transactions'
-import { zeroAddress } from '../../utils/constants'
-import { Address } from '../../utils/basicTypes'
-import EthLibAdapter from '../../ethLibAdapters/EthLibAdapter'
 
 BigNumber.set({ EXPONENTIAL_AT: [-7, 255] })
 
@@ -78,7 +78,7 @@ class SafeRelayTransactionManager implements TransactionManager {
     const relayEstimations = await this.getTransactionEstimations({
       safe: safeContract.address,
       to: safeExecTxParams.to,
-      value: safeExecTxParams.value,
+      value: new BigNumber(safeExecTxParams.value).toString(10),
       data: safeExecTxParams.data,
       operation: safeExecTxParams.operation
     })
@@ -86,7 +86,7 @@ class SafeRelayTransactionManager implements TransactionManager {
     // TO-DO: dataGas will be obsolete. Check again when this endpoint is updated to v2
     const tx = {
       to: safeExecTxParams.to,
-      value: safeExecTxParams.value,
+      value: new BigNumber(safeExecTxParams.value).toString(10),
       data: safeExecTxParams.data,
       operation: safeExecTxParams.operation,
       safeTxGas: relayEstimations.safeTxGas,

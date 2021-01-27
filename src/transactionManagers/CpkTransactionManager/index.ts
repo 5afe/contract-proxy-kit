@@ -1,21 +1,20 @@
+import EthLibAdapter, { Contract } from '../../ethLibAdapters/EthLibAdapter'
+import { Address, NumberLike } from '../../utils/basicTypes'
 import { zeroAddress } from '../../utils/constants'
+import {
+  NormalizeGas,
+  OperationType,
+  SendOptions,
+  SimpleTransactionResult,
+  StandardTransaction,
+  TransactionError,
+  TransactionResult
+} from '../../utils/transactions'
 import TransactionManager, {
   ExecTransactionProps,
   TransactionManagerConfig,
   TransactionManagerNames
 } from '../TransactionManager'
-import EthLibAdapter, { Contract } from '../../ethLibAdapters/EthLibAdapter'
-import {
-  OperationType,
-  SimpleTransactionResult,
-  SendOptions,
-  StandardTransaction,
-  TransactionError,
-  NormalizeGas,
-  Transaction,
-  TransactionResult
-} from '../../utils/transactions'
-import { NumberLike, Address } from '../../utils/basicTypes'
 
 interface ContractTxObj {
   contract: Contract
