@@ -1,4 +1,4 @@
-import BigNumber from 'bignumber.js'
+import { BigNumber } from 'bignumber.js'
 import should from 'should'
 import CPK, { TransactionResult } from '../../src'
 import { Address } from '../../src/utils/basicTypes'
@@ -26,6 +26,7 @@ interface TestSafeTransactionsProps {
   ownerIsRecognizedContract?: boolean
   isCpkTransactionManager: boolean
   executor?: Address[]
+  defaultAccount: Address[]
   accountType: AccountType
 }
 
@@ -45,6 +46,7 @@ export function testSafeTransactions({
   ownerIsRecognizedContract,
   isCpkTransactionManager,
   executor,
+  defaultAccount,
   accountType
 }: TestSafeTransactionsProps): void {
   it('can get checksummed address of instance', async () => {
@@ -98,103 +100,75 @@ export function testSafeTransactions({
       })
       await waitTxReceipt({ hash })
     })
+    ;(ownerIsRecognizedContract ? it.skip : it)(
+      'can execute a single transaction with string value',
+      async () => {
+        if (!cpk.address) return
+        const startingBalance = await getBalance(`0x${'0'.repeat(39)}4`)
 
-    it('can execute a single transaction with string value', async () => {
-      if (!cpk.address) return
-      const startingBalance = await getBalance(cpk.address)
-      startingBalance.should.be.greaterThan(0)
+        const value = `${1e18}`
+        const txs = [
+          {
+            to: `0x${'0'.repeat(39)}4`,
+            value
+          }
+        ]
+        const txResult = await cpk.execTransactions(txs)
+        checkTxObj(txs.length, accountType, txResult, isCpkTransactionManager)
 
-      const value = `${11e17}`
-      const txs = [
-        {
-          to: proxyOwner,
-          value
-        }
-      ]
-      const txResult = await cpk.execTransactions(txs)
-      checkTxObj(txs.length, accountType, txResult, isCpkTransactionManager)
-
-      const receipt = await waitTxReceipt(txResult)
-      const { gasUsed } = receipt
-      const tx = await web3.eth.getTransaction(txResult.hash)
-      const { gasPrice } = tx
-      const gasCost = gasUsed * gasPrice
-
-      const endingBalance = await getBalance(cpk.address)
-
-      let endingBalanceAndValue = new BigNumber(endingBalance.toString()).plus(new BigNumber(value))
-      if (ownerIsRecognizedContract && isCpkTransactionManager) {
-        endingBalanceAndValue = endingBalanceAndValue.plus(new BigNumber(gasCost))
+        const endingBalance = await getBalance(`0x${'0'.repeat(39)}4`)
+        const startingBalanceAndValue = new BigNumber(startingBalance.toString()).plus(
+          new BigNumber(value)
+        )
+        endingBalance.toString().should.be.equal(startingBalanceAndValue.toString())
       }
-      startingBalance.toString().should.be.equal(endingBalanceAndValue.toString())
-    })
+    )
+    ;(ownerIsRecognizedContract ? it.skip : it)(
+      'can execute a single transaction with hex string value',
+      async () => {
+        if (!cpk.address) return
+        const startingBalance = await getBalance(`0x${'0'.repeat(39)}4`)
 
-    it('can execute a single transaction with BigNumber value', async () => {
-      if (!cpk.address) return
-      const startingBalance = await getBalance(cpk.address)
-      startingBalance.should.be.greaterThan(0)
+        const value = '0xde0b6b3a7640000' //1e18
+        const txs = [
+          {
+            to: `0x${'0'.repeat(39)}4`,
+            value
+          }
+        ]
+        const txResult = await cpk.execTransactions(txs)
+        checkTxObj(txs.length, accountType, txResult, isCpkTransactionManager)
 
-      const value = new BigNumber(11e17)
-      const txs = [
-        {
-          to: proxyOwner,
-          value
-        }
-      ]
-      const txResult = await cpk.execTransactions(txs)
-      checkTxObj(txs.length, accountType, txResult, isCpkTransactionManager)
-
-      const receipt = await waitTxReceipt(txResult)
-      const { gasUsed } = receipt
-      const tx = await web3.eth.getTransaction(txResult.hash)
-      const { gasPrice } = tx
-      const gasCost = gasUsed * gasPrice
-
-      const endingBalance = await getBalance(cpk.address)
-
-      let endingBalanceAndValue = new BigNumber(endingBalance.toString()).plus(new BigNumber(value))
-      if (ownerIsRecognizedContract && isCpkTransactionManager) {
-        endingBalanceAndValue = endingBalanceAndValue.plus(new BigNumber(gasCost))
+        const endingBalance = await getBalance(`0x${'0'.repeat(39)}4`)
+        const startingBalanceAndValue = new BigNumber(startingBalance.toString()).plus(
+          new BigNumber(value)
+        )
+        endingBalance.toString().should.be.equal(startingBalanceAndValue.toString())
       }
-      startingBalance.toString().should.be.equal(endingBalanceAndValue.toString())
-    })
+    )
+    ;(ownerIsRecognizedContract ? it.skip : it)(
+      'can execute a single transaction with BigNumber value',
+      async () => {
+        if (!cpk.address) return
+        const startingBalance = await getBalance(`0x${'0'.repeat(39)}4`)
 
-    it('can execute a batch transaction with values', async () => {
-      if (!cpk.address) return
-      const startingBalance = await getBalance(cpk.address)
-      startingBalance.should.be.greaterThan(0)
+        const value = new BigNumber(1e18)
+        const txs = [
+          {
+            to: `0x${'0'.repeat(39)}4`,
+            value
+          }
+        ]
+        const txResult = await cpk.execTransactions(txs)
+        checkTxObj(txs.length, accountType, txResult, isCpkTransactionManager)
 
-      const value1 = `${11e17}`
-      const value2 = new BigNumber(11e17)
-      const txs = [
-        {
-          to: proxyOwner,
-          value: value1
-        },
-        {
-          to: proxyOwner,
-          value: value2
-        }
-      ]
-      const txResult = await cpk.execTransactions(txs)
-      checkTxObj(txs.length, accountType, txResult, isCpkTransactionManager)
-
-      const receipt = await waitTxReceipt(txResult)
-      const { gasUsed } = receipt
-      const tx = await web3.eth.getTransaction(txResult.hash)
-      const { gasPrice } = tx
-      const gasCost = gasUsed * gasPrice
-
-      const endingBalance = await getBalance(cpk.address)
-
-      let endingBalanceAndValue = new BigNumber(endingBalance.toString())
-        .plus(new BigNumber(value1))
-        .plus(new BigNumber(value2))
-      if (ownerIsRecognizedContract && isCpkTransactionManager) {
-        endingBalanceAndValue = endingBalanceAndValue.plus(new BigNumber(gasCost))
+        const endingBalance = await getBalance(`0x${'0'.repeat(39)}4`)
+        const startingBalanceAndValue = new BigNumber(startingBalance.toString()).plus(
+          new BigNumber(value)
+        )
+        endingBalance.toString().should.be.equal(startingBalanceAndValue.toString())
       }
-      startingBalance.toString().should.be.equal(endingBalanceAndValue.toString())
-    })
+    )
 
     it('can execute a single transaction with data', async () => {
       ;(await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0)
