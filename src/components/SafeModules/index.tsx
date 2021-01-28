@@ -1,6 +1,3 @@
-import React, { useCallback, useEffect, useState } from 'react'
-import CPK from 'contract-proxy-kit'
-import styled from 'styled-components'
 import {
   Button,
   Card,
@@ -14,6 +11,9 @@ import {
   Title
 } from '@gnosis.pm/safe-react-components'
 import { WalletState } from 'components/App'
+import CPK from 'contract-proxy-kit'
+import React, { useCallback, useEffect, useState } from 'react'
+import styled from 'styled-components'
 
 const Line = styled.div`
   display: flex;
@@ -56,8 +56,8 @@ const SafeModules = ({ cpk, walletState }: SafeModulesProps) => {
         cells: [{ content: module }]
       }))
       setRows(newRows)
-    } catch (e) {
-      console.error(e)
+    } catch (error) {
+      console.error(error)
     }
   }, [cpk])
 

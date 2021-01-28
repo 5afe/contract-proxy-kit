@@ -100,7 +100,6 @@ const App = () => {
       }
 
       const newCpk = await CPK.create({ ethLibAdapter, networks, saltNonce: formatedSaltNonce })
-      console.log({newCpk})
       setCpk(newCpk)
     }
     initializeCpk()
@@ -141,8 +140,8 @@ const App = () => {
           {selectedTab === '1' && (
             <CpkInfo
               walletState={walletState}
-              //saltNonce={saltNonce}
-              //setSaltNonce={setSaltNonce}
+              saltNonce={saltNonce}
+              setSaltNonce={setSaltNonce}
             />
           )}
           {selectedTab === '2' && (
