@@ -40,7 +40,8 @@ const CpkInfo = ({ walletState , saltNonce, setSaltNonce }: CpkInfoProps) => {
           </Text>
         </TitleLine>
         <Text size="xl">
-          {walletState?.networkId && getNetworkNameFromId(walletState?.networkId)}
+          {walletState?.networkId &&
+            getNetworkNameFromId(walletState?.networkId)}
         </Text>
       </Line>
       <Line>
@@ -61,7 +62,8 @@ const CpkInfo = ({ walletState , saltNonce, setSaltNonce }: CpkInfoProps) => {
         </TitleLine>
         <Text size="xl">
           {walletState?.isProxyDeployed ? 'Deployed' : 'Not deployed'}
-          {walletState?.contractVersion && ` (v${walletState?.contractVersion})`}
+          {walletState?.contractVersion &&
+            ` (v${walletState?.contractVersion})`}
         </Text>
       </Line>
       <Line>

@@ -2,7 +2,9 @@ type Networks = {
   [key: number]: string
 }
 
-export const getNetworkNameFromId = (networkId?: number): string | undefined => {
+export const getNetworkNameFromId = (
+  networkId?: number
+): string | undefined => {
   if (!networkId) return
   const networks: Networks = {
     1: 'Mainnet',

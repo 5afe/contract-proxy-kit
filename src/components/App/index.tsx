@@ -109,11 +109,14 @@ const App = () => {
     const updateCpk = async () => {
       if (!cpk) return
       const isProxyDeployed = await cpk.isProxyDeployed()
+      const contractVersion = isProxyDeployed
+        ? await cpk.getContractVersion()
+        : undefined
       updateWalletState({
         isSafeApp: cpk.safeAppsSdkConnector?.isSafeApp,
         isProxyDeployed,
         saltNonce: await cpk.saltNonce,
-        contractVersion: isProxyDeployed ? (await cpk.getContractVersion()) : undefined,
+        contractVersion,
         cpkAddress: await cpk.address,
         cpkBalance: await cpk.getBalance(),
         networkId: await cpk.getNetworkId(),
