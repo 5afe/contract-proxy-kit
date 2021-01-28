@@ -14,7 +14,7 @@
     "@types/styled-components": "^5.1.4",
     "@walletconnect/web3-provider": "^1.3.1",
     "bignumber.js": "^9.0.1",
-    "contract-proxy-kit": "file:../contract-proxy-kit",
+    "contract-proxy-kit": "../contract-proxy-kit",
     "ethers": "^5.0.21",
     "gh-pages": "^3.1.0",
     "keccak256": "^1.0.2",

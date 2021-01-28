@@ -3,10 +3,9 @@ import BigNumber from 'bignumber.js'
 import CpkInfo from 'components/CpkInfo'
 import SafeModules from 'components/SafeModules'
 import Transactions from 'components/Transactions'
-import CPK, { /*RocksideTxRelayManager, SafeTxRelayManager,*/ TransactionManagerConfig, Web3Adapter } from 'contract-proxy-kit'
-import { RocksideSpeed } from 'contract-proxy-kit/lib/cjs/transactionManagers/RocksideTxRelayManager'
+import CPK, { RocksideSpeed, RocksideTxRelayManager, TransactionManagerConfig, Web3Adapter } from 'contract-proxy-kit'
 import keccak256 from 'keccak256'
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import styled from 'styled-components'
 import Web3 from 'web3'
 import ConnectButton from '../ConnectButton'
@@ -24,8 +23,10 @@ export interface WalletState {
   isSafeApp?: boolean
   isProxyDeployed?: boolean
   saltNonce?: string
+  contractVersion?: string,
   cpkAddress?: string
-  cpkBalance?: string
+  cpkBalance?: BigNumber
+  networkId?: number
   ownerAddress?: string
   txManager?: TransactionManagerConfig
 }
@@ -34,8 +35,10 @@ const initialWalletState: WalletState = {
   isSafeApp: undefined,
   isProxyDeployed: undefined,
   saltNonce: undefined,
+  contractVersion: undefined,
   cpkAddress: undefined,
   cpkBalance: undefined,
+  networkId: undefined,
   ownerAddress: undefined,
   txManager: undefined
 }
@@ -62,7 +65,7 @@ const App = () => {
   const [selectedTab, setSelectedTab] = useState('1')
   const [enabledRocksideTxRelay, setEnabledRocksideTxRelay] = useState(false)
   const [web3, setWeb3] = React.useState<Web3 | undefined>(undefined)
-  //const [saltNonce, setSaltNonce] = React.useState<string>('Contract Proxy Kit')
+  const [saltNonce, setSaltNonce] = React.useState<string>('Contract Proxy Kit')
   const [cpk, setCpk] = useState<CPK | undefined>(undefined)
   const [walletState, updateWalletState] = useState<WalletState>(
     initialWalletState
@@ -74,24 +77,16 @@ const App = () => {
     }
   }
 
-  const getEthBalance = useCallback(
-    async (address?: string): Promise<string | undefined> => {
-      if (!web3 || !address) return
-      const ethBalance = new BigNumber(await web3.eth.getBalance(address))
-      const ethDecimals = new BigNumber(10).pow(18)
-      return (
-        web3 && ethBalance.div(ethDecimals).decimalPlaces(7).toString() + ' ETH'
-      )
-    },
-    [web3]
-  )
-
   useEffect(() => {
     const initializeCpk = async () => {
       if (!web3) return
       let transactionManager
+      let formatedSaltNonce = saltNonce
+      if (saltNonce) {
+        formatedSaltNonce = '0x' + keccak256(saltNonce).toString('hex')
+      }
       const ethLibAdapter = new Web3Adapter({ web3 })
-      //let formatedSaltNonce = saltNonce
+
       const networks = {
         3: {
           masterCopyAddress: '0x798960252148C0215F593c14b7c5B07183826212',
@@ -101,42 +96,33 @@ const App = () => {
         }
       }
       if (enabledRocksideTxRelay) {
-        //transactionManager = new RocksideTxRelayManager({ speed: RocksideSpeed.Fastest })
-        //transactionManager = new SafeTxRelayManager({ url: "http://localhost:8000" })
+        transactionManager = new RocksideTxRelayManager({ speed: RocksideSpeed.Fastest })
       }
-      //if (saltNonce) {
-      //  formatedSaltNonce = '0x' + keccak256(saltNonce).toString('hex')
-      //}
 
-      try {
-        const newCpk = await CPK.create({
-          networks,
-          ethLibAdapter,
-          transactionManager
-          //saltNonce: formatedSaltNonce
-        })
-        setCpk(newCpk)
-      } catch (e) {
-        console.log(e)
-      }
+      const newCpk = await CPK.create({ ethLibAdapter, networks, saltNonce: formatedSaltNonce })
+      console.log({newCpk})
+      setCpk(newCpk)
     }
     initializeCpk()
-  }, [web3, /* saltNonce,*/ enabledRocksideTxRelay])
+  }, [web3, saltNonce, enabledRocksideTxRelay])
 
   useEffect(() => {
     const updateCpk = async () => {
       if (!cpk) return
+      const isProxyDeployed = await cpk.isProxyDeployed()
       updateWalletState({
-        isSafeApp: cpk.isSafeApp(),
-        isProxyDeployed: await cpk.isProxyDeployed(),
-        //saltNonce: await cpk.saltNonce,
-        cpkAddress: cpk.address,
-        cpkBalance: await getEthBalance(cpk.address),
-        ownerAddress: await cpk.getOwnerAccount(),
+        isSafeApp: cpk.safeAppsSdkConnector?.isSafeApp,
+        isProxyDeployed,
+        saltNonce: await cpk.saltNonce,
+        contractVersion: isProxyDeployed ? (await cpk.getContractVersion()) : undefined,
+        cpkAddress: await cpk.address,
+        cpkBalance: await cpk.getBalance(),
+        networkId: await cpk.getNetworkId(),
+        ownerAddress: await cpk.getOwnerAccount()
       })
     }
     updateCpk()
-  }, [cpk, getEthBalance])
+  }, [cpk])
 
   return (
     <Container>
