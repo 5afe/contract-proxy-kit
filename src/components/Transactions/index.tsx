@@ -9,6 +9,7 @@ import { WalletState } from 'components/App'
 import CPK from 'contract-proxy-kit'
 import React, { useState } from 'react'
 import styled from 'styled-components'
+import { getNetworkNameFromId } from 'utils/networks'
 
 const Line = styled.div`
   display: flex;
@@ -29,13 +30,16 @@ interface TransactionsProps {
 }
 
 const Transactions = ({ cpk, walletState, enabledRocksideTxRelay, setEnabledRocksideTxRelay }: TransactionsProps) => {
-  const [txHash, setTxHash] = useState<string>('')
+  const [txHash, setTxHash] = useState<string | null | undefined>()
+  const [safeTxHash, setSafeTxHash] = useState<string | undefined>()
   const [showTxError, setShowTxError] = useState<boolean>(false)
 
   const makeTransaction = async (): Promise<void> => {
     if (!walletState.ownerAddress) return
+    let txResult
     setShowTxError(false)
     setTxHash('')
+
     const txs = [
       {
         to: walletState.ownerAddress,
@@ -43,17 +47,26 @@ const Transactions = ({ cpk, walletState, enabledRocksideTxRelay, setEnabledRock
       }
     ]
     try {
-      const txResult = await cpk.execTransactions(txs)
-      console.log({txResult})
-      console.log(await txResult.promiEvent)
-      const hash = walletState.isSafeApp ? txResult.safeTxHash : txResult.hash
-      if (hash) {
-        setTxHash(hash)
-      }
+      txResult = await cpk.execTransactions(txs)
     } catch (e) {
       console.log(e)
       setShowTxError(true)
     }
+
+    if (txResult?.safeTxHash) {
+      setSafeTxHash(txResult.safeTxHash)
+    }
+    if (txResult?.hash) {
+      setTxHash(txResult.hash)
+    }
+  }
+
+  const getTransactionHashIfSafeApp = async () => {
+    if (!safeTxHash) return
+    const safeTransaction = await cpk.safeAppsSdkConnector?.getBySafeTxHash(
+      safeTxHash
+    )
+    setTxHash(safeTransaction?.transactionHash)
   }
 
   return (
@@ -85,7 +98,7 @@ const Transactions = ({ cpk, walletState, enabledRocksideTxRelay, setEnabledRock
           color="primary"
           variant="contained"
         >
-          Send transaction
+          Send 1.1 ETH to the CPK owner
         </Button>
       </Line>
       {showTxError && (
@@ -95,22 +108,48 @@ const Transactions = ({ cpk, walletState, enabledRocksideTxRelay, setEnabledRock
           </Text>
         </Line>
       )}
+      {safeTxHash && (
+        <Line>
+          <TitleLine>
+            <Text size="xl" as="span" strong>
+              Safe transaction hash:
+            </Text>
+          </TitleLine>
+          <EthHashInfo
+            hash={safeTxHash}
+            textSize="xl"
+            shortenHash={8}
+            showCopyBtn
+            network={getNetworkNameFromId(walletState?.networkId)}
+          />
+        </Line>
+      )}
+      {walletState.isSafeApp && safeTxHash && (
+        <Line>
+          <Button
+            onClick={getTransactionHashIfSafeApp}
+            size="md"
+            color="primary"
+            variant="contained"
+          >
+            Get transaction hash
+          </Button>
+        </Line>
+      )}
       {txHash && (
         <Line>
           <TitleLine>
             <Text size="xl" as="span" strong>
-              {walletState.isSafeApp
-                ? 'Safe transaction hash:'
-                : 'Transaction hash:'}
+              Transaction hash:
             </Text>
           </TitleLine>
           <EthHashInfo
             hash={txHash}
             textSize="xl"
             shortenHash={8}
-            showCopyBtn
             showEtherscanBtn
-            network="ropsten"
+            showCopyBtn
+            network={getNetworkNameFromId(walletState?.networkId)}
           />
         </Line>
       )}

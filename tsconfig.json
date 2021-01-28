@@ -11,7 +11,7 @@
     "module": "esnext",
     "moduleResolution": "node",
     "noEmit": true,
-    "noImplicitAny": true,
+    "noImplicitAny": false,
     "noImplicitThis": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,

@@ -57,13 +57,26 @@ const CpkInfo = ({ walletState , saltNonce, setSaltNonce }: CpkInfoProps) => {
       <Line>
         <TitleLine>
           <Text size="xl" strong>
+            Connected to:
+          </Text>
+        </TitleLine>
+        <Text size="xl">
+          {walletState?.isConnectedToSafe ? 'Safe account' : 'EOA'}
+        </Text>
+      </Line>
+      <Line>
+        <TitleLine>
+          <Text size="xl" strong>
             State of the Proxy:
           </Text>
         </TitleLine>
         <Text size="xl">
-          {walletState?.isProxyDeployed ? 'Deployed' : 'Not deployed'}
-          {walletState?.contractVersion &&
-            ` (v${walletState?.contractVersion})`}
+          {walletState?.isProxyDeployed
+            ? `Deployed ${
+                walletState?.contractVersion &&
+                `(v${walletState?.contractVersion})`
+              }`
+            : 'Not deployed'}
         </Text>
       </Line>
       <Line>

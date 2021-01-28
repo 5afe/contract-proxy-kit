@@ -21,6 +21,7 @@ const Line = styled.div`
 
 export interface WalletState {
   isSafeApp?: boolean
+  isConnectedToSafe?: boolean
   isProxyDeployed?: boolean
   saltNonce?: string
   contractVersion?: string,
@@ -33,6 +34,7 @@ export interface WalletState {
 
 const initialWalletState: WalletState = {
   isSafeApp: undefined,
+  isConnectedToSafe: undefined,
   isProxyDeployed: undefined,
   saltNonce: undefined,
   contractVersion: undefined,
@@ -99,7 +101,14 @@ const App = () => {
         transactionManager = new RocksideTxRelayManager({ speed: RocksideSpeed.Fastest })
       }
 
-      const newCpk = await CPK.create({ ethLibAdapter, networks, saltNonce: formatedSaltNonce })
+      let newCpk
+      try {
+        newCpk = await CPK.create({ ethLibAdapter, networks, saltNonce: formatedSaltNonce })
+      } catch (error: any) {
+        alert('Try with a different network')
+        console.error(error)
+        return
+      }
       setCpk(newCpk)
     }
     initializeCpk()
@@ -112,8 +121,10 @@ const App = () => {
       const contractVersion = isProxyDeployed
         ? await cpk.getContractVersion()
         : undefined
+
       updateWalletState({
         isSafeApp: cpk.safeAppsSdkConnector?.isSafeApp,
+        isConnectedToSafe: cpk.isConnectedToSafe,
         isProxyDeployed,
         saltNonce: await cpk.saltNonce,
         contractVersion,

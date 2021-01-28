@@ -1,9 +1,9 @@
+import { theme } from '@gnosis.pm/safe-react-components'
 import React from 'react'
 import ReactDOM from 'react-dom'
 import { ThemeProvider } from 'styled-components'
-import { theme } from '@gnosis.pm/safe-react-components'
-import App from './components/App'
 import GlobalStyle from 'styles/globalStyles'
+import App from './components/App'
 import * as serviceWorker from './serviceWorker'
 
 ReactDOM.render(

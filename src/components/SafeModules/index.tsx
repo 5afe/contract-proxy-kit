@@ -11,9 +11,10 @@ import {
   Title
 } from '@gnosis.pm/safe-react-components'
 import { WalletState } from 'components/App'
-import CPK from 'contract-proxy-kit'
+import CPK, { TransactionResult } from 'contract-proxy-kit'
 import React, { useCallback, useEffect, useState } from 'react'
 import styled from 'styled-components'
+import { getNetworkNameFromId } from 'utils/networks'
 
 const Line = styled.div`
   display: flex;
@@ -43,7 +44,8 @@ const headers: TableHeader[] = [
 
 const SafeModules = ({ cpk, walletState }: SafeModulesProps) => {
   const [module, setModule] = useState<string>('')
-  const [txHash, setTxHash] = useState<string>('')
+  const [txHash, setTxHash] = useState<string | null | undefined>()
+  const [safeTxHash, setSafeTxHash] = useState<string | undefined>()
   const [showTxError, setShowTxError] = useState<boolean>(false)
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [rows, setRows] = useState<TableRow[]>([])
@@ -67,51 +69,57 @@ const SafeModules = ({ cpk, walletState }: SafeModulesProps) => {
 
   const enableModule = async (): Promise<void> => {
     if (!module) return
+    let txResult
     setShowTxError(false)
     setTxHash('')
+    
     try {
-      // Remove any type when TransactionResult type is updated
-      const txResult: any = await cpk.enableModule(module)
-      const hash = walletState.isSafeApp ? txResult.safeTxHash : txResult.hash
-      if (hash) {
-        setTxHash(hash)
-      }
-      setIsLoading(true)
-      await new Promise((resolve, reject) =>
-        txResult.promiEvent
-          ?.then((receipt: any) => resolve(receipt))
-          .catch(reject)
-      )
-      await getModules()
+      txResult = await cpk.enableModule(module)
     } catch (e) {
       console.error(e)
       setShowTxError(true)
     }
-    setIsLoading(false)
+
+    await handleTxResult(txResult)
   }
 
   const disableModule = async (): Promise<void> => {
     if (!module) return
+    let txResult
+    
     setShowTxError(false)
     setTxHash('')
+
     try {
-      // Remove any type when TransactionResult type is updated
-      const txResult: any = await cpk.disableModule(module)
-      const hash = walletState.isSafeApp ? txResult.safeTxHash : txResult.hash
-      if (hash) {
-        setTxHash(hash)
-      }
-      setIsLoading(true)
-      await new Promise((resolve, reject) =>
-        txResult.promiEvent
-          ?.then((receipt: any) => resolve(receipt))
-          .catch(reject)
-      )
-      await getModules()
+      txResult = await cpk.disableModule(module)
     } catch (e) {
       console.error(e)
       setShowTxError(true)
     }
+
+    await handleTxResult(txResult)
+  }
+
+  const handleTxResult = async (txResult: TransactionResult) => {
+    let txServiceModel
+
+    if (txResult.safeTxHash) {
+      setSafeTxHash(txResult.safeTxHash)
+      txServiceModel = await cpk.safeAppsSdkConnector?.getBySafeTxHash(
+        txResult.safeTxHash
+      )
+    }
+    if (txResult.hash || txServiceModel) {
+      setTxHash(txResult.hash || txServiceModel?.transactionHash)
+    }
+
+    setIsLoading(true)
+    await new Promise((resolve, reject) =>
+      txResult.promiEvent
+        ?.then((receipt: any) => resolve(receipt))
+        .catch(reject)
+    )
+    await getModules()
     setIsLoading(false)
   }
 
@@ -125,7 +133,9 @@ const SafeModules = ({ cpk, walletState }: SafeModulesProps) => {
         <EthHashInfo
           hash="0x33A458E072b182152Bb30243f29585a82c45A22b"
           textSize="xl"
+          showEtherscanBtn
           showCopyBtn
+          network={getNetworkNameFromId(walletState?.networkId)}
         />
       </Line>
       <BigLine>
@@ -167,16 +177,32 @@ const SafeModules = ({ cpk, walletState }: SafeModulesProps) => {
         <Line>
           <TitleLine>
             <Text size="xl" as="span" strong>
-              {walletState.isSafeApp
-                ? 'Safe transaction hash:'
-                : 'Transaction hash:'}
+              Transaction hash:
             </Text>
           </TitleLine>
           <EthHashInfo
             hash={txHash}
             textSize="xl"
             shortenHash={8}
+            showEtherscanBtn
             showCopyBtn
+            network={getNetworkNameFromId(walletState?.networkId)}
+          />
+        </Line>
+      )}
+      {safeTxHash && (
+        <Line>
+          <TitleLine>
+            <Text size="xl" as="span" strong>
+              Safe transaction hash:
+            </Text>
+          </TitleLine>
+          <EthHashInfo
+            hash={safeTxHash}
+            textSize="xl"
+            shortenHash={8}
+            showCopyBtn
+            network={getNetworkNameFromId(walletState?.networkId)}
           />
         </Line>
       )}
