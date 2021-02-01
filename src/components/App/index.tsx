@@ -87,7 +87,6 @@ const App = () => {
   useEffect(() => {
     const initializeCpk = async () => {
       if (!web3) return
-      let transactionManager
       let formatedSaltNonce = saltNonce
       if (saltNonce) {
         formatedSaltNonce = '0x' + keccak256(saltNonce).toString('hex')
@@ -102,6 +101,7 @@ const App = () => {
           fallbackHandlerAddress: '0x83B1CB4017acf298b9Ff47FC4e380282738406B2'
         }
       }
+      let transactionManager
       if (enabledRocksideTxRelay) {
         transactionManager = new RocksideTxRelayManager({
           speed: RocksideSpeed.Fastest
@@ -113,7 +113,8 @@ const App = () => {
         newCpk = await CPK.create({
           ethLibAdapter,
           networks,
-          saltNonce: formatedSaltNonce
+          saltNonce: formatedSaltNonce,
+          transactionManager
         })
       } catch (error: any) {
         alert('Try with a different network')
