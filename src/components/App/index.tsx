@@ -3,7 +3,12 @@ import BigNumber from 'bignumber.js'
 import CpkInfo from 'components/CpkInfo'
 import SafeModules from 'components/SafeModules'
 import Transactions from 'components/Transactions'
-import CPK, { RocksideSpeed, RocksideTxRelayManager, TransactionManagerConfig, Web3Adapter } from 'contract-proxy-kit'
+import CPK, {
+  RocksideSpeed,
+  RocksideTxRelayManager,
+  TransactionManagerConfig,
+  Web3Adapter
+} from 'contract-proxy-kit'
 import keccak256 from 'keccak256'
 import React, { useEffect, useState } from 'react'
 import styled from 'styled-components'
@@ -24,7 +29,7 @@ export interface WalletState {
   isConnectedToSafe?: boolean
   isProxyDeployed?: boolean
   saltNonce?: string
-  contractVersion?: string,
+  contractVersion?: string
   cpkAddress?: string
   cpkBalance?: BigNumber
   networkId?: number
@@ -98,12 +103,18 @@ const App = () => {
         }
       }
       if (enabledRocksideTxRelay) {
-        transactionManager = new RocksideTxRelayManager({ speed: RocksideSpeed.Fastest })
+        transactionManager = new RocksideTxRelayManager({
+          speed: RocksideSpeed.Fastest
+        })
       }
 
       let newCpk
       try {
-        newCpk = await CPK.create({ ethLibAdapter, networks, saltNonce: formatedSaltNonce })
+        newCpk = await CPK.create({
+          ethLibAdapter,
+          networks,
+          saltNonce: formatedSaltNonce
+        })
       } catch (error: any) {
         alert('Try with a different network')
         console.error(error)

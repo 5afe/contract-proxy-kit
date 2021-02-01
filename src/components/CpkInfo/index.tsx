@@ -1,4 +1,9 @@
-import { EthHashInfo, Text, TextField, Title } from '@gnosis.pm/safe-react-components'
+import {
+  EthHashInfo,
+  Text,
+  TextField,
+  Title
+} from '@gnosis.pm/safe-react-components'
 import BigNumber from 'bignumber.js'
 import { WalletState } from 'components/App'
 import React from 'react'
@@ -29,7 +34,7 @@ interface CpkInfoProps {
   setSaltNonce: Function
 }
 
-const CpkInfo = ({ walletState , saltNonce, setSaltNonce }: CpkInfoProps) => {
+const CpkInfo = ({ walletState, saltNonce, setSaltNonce }: CpkInfoProps) => {
   return (
     <>
       <Title size="sm">Information</Title>

@@ -72,7 +72,7 @@ const SafeModules = ({ cpk, walletState }: SafeModulesProps) => {
     let txResult
     setShowTxError(false)
     setTxHash('')
-    
+
     try {
       txResult = await cpk.enableModule(module)
     } catch (e) {
@@ -86,7 +86,7 @@ const SafeModules = ({ cpk, walletState }: SafeModulesProps) => {
   const disableModule = async (): Promise<void> => {
     if (!module) return
     let txResult
-    
+
     setShowTxError(false)
     setTxHash('')
 

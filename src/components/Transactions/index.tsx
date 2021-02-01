@@ -29,7 +29,12 @@ interface TransactionsProps {
   setEnabledRocksideTxRelay: Function
 }
 
-const Transactions = ({ cpk, walletState, enabledRocksideTxRelay, setEnabledRocksideTxRelay }: TransactionsProps) => {
+const Transactions = ({
+  cpk,
+  walletState,
+  enabledRocksideTxRelay,
+  setEnabledRocksideTxRelay
+}: TransactionsProps) => {
   const [txHash, setTxHash] = useState<string | null | undefined>()
   const [safeTxHash, setSafeTxHash] = useState<string | undefined>()
   const [showTxError, setShowTxError] = useState<boolean>(false)
