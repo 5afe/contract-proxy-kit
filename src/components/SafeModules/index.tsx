@@ -27,7 +27,18 @@ const TitleLine = styled.div`
 `
 
 const BigLine = styled.div`
-  margin: 10px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 20px;
+`
+
+const SButton = styled(Button)`
+  width: 233px;
+`
+
+const STextField = styled(TextField)`
+  width: 600px !important;
 `
 
 interface SafeModulesProps {
@@ -128,44 +139,43 @@ const SafeModules = ({ cpk, walletState }: SafeModulesProps) => {
       <Title size="sm">Safe modules</Title>
       <Line>
         <TitleLine>
-          <Text size="xl">Test with this module on Rinkeby:</Text>
+          <Text size="xl">Test module available on Rinkeby:</Text>
         </TitleLine>
         <EthHashInfo
           hash="0x33A458E072b182152Bb30243f29585a82c45A22b"
           textSize="xl"
           showEtherscanBtn
           showCopyBtn
+          shortenHash={4}
           network={getNetworkNameFromId(walletState?.networkId)}
         />
       </Line>
       <BigLine>
-        <TextField
+        <STextField
           id="standard-name"
           label="Module Address"
           value={module}
           onChange={(e) => setModule(e.target.value)}
         />
       </BigLine>
-      <Line>
-        <Button
+      <BigLine>
+        <SButton
           onClick={enableModule}
-          size="md"
+          size="lg"
           color="primary"
           variant="contained"
         >
           Enable module
-        </Button>
-      </Line>
-      <Line>
-        <Button
+        </SButton>
+        <SButton
           onClick={disableModule}
-          size="md"
+          size="lg"
           color="primary"
           variant="contained"
         >
           Disable module
-        </Button>
-      </Line>
+        </SButton>
+      </BigLine>
       {showTxError && (
         <Line>
           <Text size="xl" color="error">

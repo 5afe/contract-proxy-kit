@@ -5,15 +5,13 @@ import Web3Connect from 'web3connect'
 const Web3ConnectButton = styled.div`
   display: flex;
   justify-content: center;
-  width: 100%;
-  margin-bottom: 10px;
+  width: 180px;
   & > div {
     padding: 0;
   }
   .web3connect-connect-button {
     outline: none;
     background: #008c73;
-    border: 1px solid #008c73;
     border-radius: 4px;
     color: #fff;
     cursor: pointer;

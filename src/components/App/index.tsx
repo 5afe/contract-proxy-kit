@@ -16,12 +16,24 @@ import Web3 from 'web3'
 import ConnectButton from '../ConnectButton'
 
 const Container = styled.div`
-  padding: 10px;
+  width: 550px;
+  padding: 20px;
+  margin: 0 auto;
+  border: 1px solid #ccc;
+  border-radius: 5px;
 `
 
-const Line = styled.div`
+const TitleLine = styled.div`
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
+  align-items: center;
+  h4 {
+    margin: 0 !important;
+  }
+`
+
+const Content = styled.div`
+  margin-top: 30px;
 `
 
 export interface WalletState {
@@ -151,12 +163,12 @@ const App = () => {
 
   return (
     <Container>
-      <Line>
-        <Title size="sm">Contract Proxy Kit Configuration</Title>
-      </Line>
-      <ConnectButton onConnect={onWeb3Connect} />
+      <TitleLine>
+        <Title size="sm">CPK Configuration App</Title>
+        <ConnectButton onConnect={onWeb3Connect} />
+      </TitleLine>
       {cpk && (
-        <>
+        <Content>
           <Tab
             onChange={setSelectedTab}
             selectedTab={selectedTab}
@@ -181,7 +193,7 @@ const App = () => {
           {selectedTab === '3' && (
             <SafeModules cpk={cpk} walletState={walletState} />
           )}
-        </>
+        </Content>
       )}
     </Container>
   )
