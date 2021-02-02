@@ -105,6 +105,14 @@ const App = () => {
       }
       const ethLibAdapter = new Web3Adapter({ web3 })
 
+      /*
+      Safe contracts are not officially deployed on Ropsten. This means that in
+      order to test Rockside's transaction relay (only available on Mainnet and
+      Ropsten networks) we have to pass the contract addresses as a parameter
+      when using the CPK.
+      These are an exmaple of the Safe contracts deployed on Ropsten and there is
+      no need to provide the contract addresses for Mainnet.
+      */
       const networks = {
         3: {
           masterCopyAddress: '0x798960252148C0215F593c14b7c5B07183826212',
@@ -113,12 +121,13 @@ const App = () => {
           fallbackHandlerAddress: '0x83B1CB4017acf298b9Ff47FC4e380282738406B2'
         }
       }
-      let transactionManager
+      let transactionManager: RocksideTxRelayManager | undefined
       if (enabledRocksideTxRelay) {
         transactionManager = new RocksideTxRelayManager({
           speed: RocksideSpeed.Fastest
         })
       }
+      console.log(transactionManager?.config)
 
       let newCpk
       try {

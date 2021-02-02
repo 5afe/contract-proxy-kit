@@ -1,4 +1,4 @@
-import BigNumber from "bignumber.js"
+import BigNumber from 'bignumber.js'
 
 export const formatBalance = (balance: BigNumber | undefined): string => {
   if (!balance) {

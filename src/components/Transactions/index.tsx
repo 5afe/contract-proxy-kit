@@ -15,7 +15,6 @@ import { getNetworkNameFromId } from 'utils/networks'
 const Line = styled.div`
   display: flex;
   align-items: center;
-  --height: 40px;
   padding: 10px 0;
 `
 
@@ -29,7 +28,6 @@ const SButton = styled(Button)`
 
 const TitleLine = styled.div`
   margin-right: 10px;
-  
 `
 
 interface TransactionsProps {

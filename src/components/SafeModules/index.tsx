@@ -34,11 +34,17 @@ const BigLine = styled.div`
 `
 
 const SButton = styled(Button)`
-  width: 233px;
+  width: 242px;
 `
 
 const STextField = styled(TextField)`
   width: 600px !important;
+`
+
+const SCard = styled(Card)`
+  width: 100%;
+  display: flex;
+  justify-content: center;
 `
 
 interface SafeModulesProps {
@@ -218,18 +224,18 @@ const SafeModules = ({ cpk, walletState }: SafeModulesProps) => {
       )}
       {isLoading ? (
         <BigLine>
-          <Card>
+          <SCard>
             <Loader size="sm" />
-          </Card>
+          </SCard>
         </BigLine>
       ) : (
         <BigLine>
           {rows.length > 0 ? (
             <Table headers={headers} rows={rows} />
           ) : (
-            <Card>
+            <SCard>
               <Text size="xl">No modules enabled</Text>
-            </Card>
+            </SCard>
           )}
         </BigLine>
       )}
