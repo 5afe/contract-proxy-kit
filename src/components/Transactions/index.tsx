@@ -9,6 +9,7 @@ import { WalletState } from 'components/App'
 import CPK from 'contract-proxy-kit'
 import React, { useState } from 'react'
 import styled from 'styled-components'
+import { formatBalance } from 'utils/balances'
 import { getNetworkNameFromId } from 'utils/networks'
 
 const Line = styled.div`
@@ -18,8 +19,17 @@ const Line = styled.div`
   padding: 10px 0;
 `
 
+const SLine = styled(Line)`
+  padding: 0;
+`
+
+const SButton = styled(Button)`
+  width: 100%;
+`
+
 const TitleLine = styled.div`
   margin-right: 10px;
+  
 `
 
 interface TransactionsProps {
@@ -77,34 +87,33 @@ const Transactions = ({
   return (
     <>
       <Title size="sm">Information</Title>
-      <Title size="sm">Configuration</Title>
-      <Line>
-        <Checkbox
-          name="checkboxTxRelay"
-          checked={enabledRocksideTxRelay}
-          onChange={(_, checked) => setEnabledRocksideTxRelay(checked)}
-          label="Rockside transaction relay"
-        />
-      </Line>
-      <br />
-      <Title size="sm">Transactions</Title>
       <Line>
         <TitleLine>
           <Text size="xl" strong>
             CPK Balance:
           </Text>
         </TitleLine>
-        <Text size="xl">{walletState?.cpkBalance}</Text>
+        <Text size="xl">{formatBalance(walletState?.cpkBalance)}</Text>
       </Line>
+      <Title size="sm">Configuration</Title>
+      <SLine>
+        <Checkbox
+          name="checkboxTxRelay"
+          checked={enabledRocksideTxRelay}
+          onChange={(_, checked) => setEnabledRocksideTxRelay(checked)}
+          label="Use Rockside transaction relay"
+        />
+      </SLine>
+      <Title size="sm">Transactions</Title>
       <Line>
-        <Button
+        <SButton
           onClick={makeTransaction}
-          size="md"
+          size="lg"
           color="primary"
           variant="contained"
         >
           Send 1.1 ETH to the CPK owner
-        </Button>
+        </SButton>
       </Line>
       {showTxError && (
         <Line>
@@ -131,14 +140,14 @@ const Transactions = ({
       )}
       {walletState.isSafeApp && safeTxHash && (
         <Line>
-          <Button
+          <SButton
             onClick={getTransactionHashIfSafeApp}
-            size="md"
+            size="lg"
             color="primary"
             variant="contained"
           >
             Get transaction hash
-          </Button>
+          </SButton>
         </Line>
       )}
       {txHash && (

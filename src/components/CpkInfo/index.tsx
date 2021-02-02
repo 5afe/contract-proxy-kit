@@ -4,10 +4,10 @@ import {
   TextField,
   Title
 } from '@gnosis.pm/safe-react-components'
-import BigNumber from 'bignumber.js'
 import { WalletState } from 'components/App'
 import React from 'react'
 import styled from 'styled-components'
+import { formatBalance } from 'utils/balances'
 import { getNetworkNameFromId } from 'utils/networks'
 
 const Line = styled.div`
@@ -20,13 +20,9 @@ const TitleLine = styled.div`
   margin-right: 10px;
 `
 
-const formatBalance = (balance: BigNumber | undefined): string => {
-  if (!balance) {
-    return '0 ETH'
-  }
-  const ethDecimals = new BigNumber(10).pow(18)
-  return balance.div(ethDecimals).decimalPlaces(7).toString() + ' ETH'
-}
+const STextField = styled(TextField)`
+  width: 600px !important;
+`
 
 interface CpkInfoProps {
   walletState: WalletState
@@ -96,6 +92,7 @@ const CpkInfo = ({ walletState, saltNonce, setSaltNonce }: CpkInfoProps) => {
             showIdenticon
             showCopyBtn
             showEtherscanBtn
+            textSize="xl"
             shortenHash={4}
           />
         )}
@@ -112,6 +109,7 @@ const CpkInfo = ({ walletState, saltNonce, setSaltNonce }: CpkInfoProps) => {
             showIdenticon
             showCopyBtn
             showEtherscanBtn
+            textSize="xl"
             shortenHash={4}
           />
         )}
@@ -134,13 +132,14 @@ const CpkInfo = ({ walletState, saltNonce, setSaltNonce }: CpkInfoProps) => {
           <EthHashInfo
             hash={walletState?.saltNonce}
             showCopyBtn
+            textSize="xl"
             shortenHash={4}
           />
         )}
       </Line>
       <Title size="sm">Configuration</Title>
       <Line>
-        <TextField
+        <STextField
           id="saltnonce"
           label="Custom CPK salt nonce"
           value={saltNonce}
