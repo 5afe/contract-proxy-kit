@@ -193,13 +193,11 @@ export function shouldWorkWithWeb3({
             ownerAccount: defaultAccountBox[0]
           })
 
-          if (transactionManager) {
-            await ueb3TestHelpers.sendTransaction({
-              from: defaultAccountBox[0],
-              to: cpk.address,
-              value: `${3e18}`
-            })
-          }
+          await ueb3TestHelpers.sendTransaction({
+            from: defaultAccountBox[0],
+            to: cpk.address,
+            value: `${5e18}`
+          })
         })
 
         before('warm instance', async () => {
@@ -217,6 +215,7 @@ export function shouldWorkWithWeb3({
           async getCPK() {
             return cpk
           },
+          defaultAccount: defaultAccountBox,
           isCpkTransactionManager,
           accountType: AccountType.Warm
         })
@@ -237,13 +236,22 @@ export function shouldWorkWithWeb3({
             })
 
             const ethLibAdapter = new Web3Adapter({ web3: ueb3 })
-            return CPK.create({
+            const cpk = await CPK.create({
               ethLibAdapter,
               transactionManager,
               networks,
               ownerAccount: newAccount.address
             })
+
+            await ueb3TestHelpers.sendTransaction({
+              from: defaultAccountBox[0],
+              to: cpk.address,
+              value: `${5e18}`
+            })
+
+            return cpk
           },
+          defaultAccount: defaultAccountBox,
           isCpkTransactionManager,
           accountType: AccountType.Fresh
         })
@@ -263,13 +271,11 @@ export function shouldWorkWithWeb3({
 
           cpk = await CPK.create({ ethLibAdapter, transactionManager, networks })
 
-          if (transactionManager) {
-            await ueb3TestHelpers.sendTransaction({
-              from: defaultAccountBox[0],
-              to: cpk.address,
-              value: `${3e18}`
-            })
-          }
+          await ueb3TestHelpers.sendTransaction({
+            from: defaultAccountBox[0],
+            to: cpk.address,
+            value: `${5e18}`
+          })
         })
 
         if (!isCpkTransactionManager) {
@@ -280,7 +286,8 @@ export function shouldWorkWithWeb3({
               return cpk
             },
             ownerIsRecognizedContract: true,
-            executor: safeOwnerBox
+            executor: safeOwnerBox,
+            defaultAccount: defaultAccountBox
           })
           return
         }
@@ -293,6 +300,7 @@ export function shouldWorkWithWeb3({
           },
           ownerIsRecognizedContract: true,
           executor: safeOwnerBox,
+          defaultAccount: defaultAccountBox,
           isCpkTransactionManager,
           accountType: AccountType.Connected
         })

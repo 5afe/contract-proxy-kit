@@ -11,19 +11,18 @@ import SafeAppsSdkConnector from './safeAppsSdkConnector'
 import CpkTransactionManager from './transactionManagers/CpkTransactionManager'
 import TransactionManager from './transactionManagers/TransactionManager'
 import { Address } from './utils/basicTypes'
+import { checkConnectedToSafe } from './utils/checkConnectedToSafe'
 import { predeterminedSaltNonce } from './utils/constants'
 import { getHexDataLength, joinHexData } from './utils/hexData'
 import {
   ExecOptions,
   normalizeGasLimit,
   OperationType,
-  standardizeSafeAppsTransaction,
   standardizeTransaction,
   StandardTransaction,
   Transaction,
   TransactionResult
 } from './utils/transactions'
-import { checkConnectedToSafe } from './utils/checkConnectedToSafe'
 
 export interface CPKConfig {
   ethLibAdapter: EthLibAdapter
@@ -89,7 +88,8 @@ class CPK {
 
     const ownerAccount = await this.getOwnerAccount()
 
-    this.#isConnectedToSafe = await checkConnectedToSafe(this.#ethLibAdapter.getProvider())
+    this.#isConnectedToSafe =
+      this.isSafeApp() || (await checkConnectedToSafe(this.#ethLibAdapter.getProvider()))
 
     this.#contractManager = await ContractManager.create({
       ethLibAdapter: this.#ethLibAdapter,
@@ -217,8 +217,9 @@ class CPK {
     transactions: Transaction[],
     options?: ExecOptions
   ): Promise<TransactionResult> {
+    const standardizedTxs = transactions.map(standardizeTransaction)
+
     if (this.isSafeApp() && transactions.length >= 1) {
-      const standardizedTxs = transactions.map(standardizeSafeAppsTransaction)
       return this.#safeAppsSdkConnector.sendTransactions(standardizedTxs)
     }
 
@@ -250,7 +251,7 @@ class CPK {
     return txManager.execTransactions({
       ownerAccount,
       safeExecTxParams,
-      transactions,
+      transactions: standardizedTxs,
       ethLibAdapter: this.#ethLibAdapter,
       contractManager: this.#contractManager,
       saltNonce: this.#saltNonce,
@@ -329,7 +330,7 @@ class CPK {
 
     return {
       to: this.#contractManager?.multiSend.address,
-      value: 0,
+      value: '0',
       data: this.encodeMultiSendCallData(transactions),
       operation: CPK.DelegateCall
     }
