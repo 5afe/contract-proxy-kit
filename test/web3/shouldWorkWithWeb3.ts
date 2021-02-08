@@ -245,7 +245,7 @@ export function shouldWorkWithWeb3({
 
             await ueb3TestHelpers.sendTransaction({
               from: defaultAccountBox[0],
-              to: cpk.address,
+              to: await cpk.address,
               value: `${5e18}`
             })
 
