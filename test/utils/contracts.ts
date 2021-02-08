@@ -1,19 +1,21 @@
 const TruffleContract = require('@truffle/contract')
 import Web3Maj1Min3 from 'web3-1-3'
-import CPKFactoryJson from '../../build/contracts/CPKFactory.json'
-import GnosisSafeJson from '../../build/contracts/GnosisSafe.json'
-import MultiSendJson from '../../build/contracts/MultiSend.json'
-import DefaultCallbackHandlerJson from '../../build/contracts/DefaultCallbackHandler.json'
-import ProxyFactoryJson from '../../build/contracts/ProxyFactory.json'
-import MultistepJson from '../../build/contracts/Multistep.json'
-import ERC20MintableJson from '../../build/contracts/ERC20Mintable.json'
 import ConditionalTokensJson from '../../build/contracts/ConditionalTokens.json'
+import CPKFactoryJson from '../../build/contracts/CPKFactory.json'
 import DailyLimitModuleJson from '../../build/contracts/DailyLimitModule.json'
+import DefaultCallbackHandlerJson from '../../build/contracts/DefaultCallbackHandler.json'
+import ERC20MintableJson from '../../build/contracts/ERC20Mintable.json'
+import GnosisSafeJson from '../../build/contracts/GnosisSafe.json'
+import GnosisSafe2Json from '../../build/contracts/GnosisSafe2.json'
+import GnosisSafeProxyFactoryJson from '../../build/contracts/GnosisSafeProxyFactory.json'
+import MultiSendJson from '../../build/contracts/MultiSend.json'
+import MultistepJson from '../../build/contracts/Multistep.json'
 import { Address } from '../../src/utils/basicTypes'
 
 let CPKFactory: any
 let GnosisSafe: any
-let ProxyFactory: any
+let GnosisSafe2: any
+let GnosisSafeProxyFactory: any
 let MultiSend: any
 let DefaultCallbackHandler: any
 let MultiStep: any
@@ -23,7 +25,8 @@ let DailyLimitModule: any
 
 let cpkFactory: any
 let gnosisSafe: any
-let proxyFactory: any
+let gnosisSafe2: any
+let gnosisSafeProxyFactory: any
 let multiSend: any
 let defaultCallbackHandler: any
 let multiStep: any
@@ -34,7 +37,8 @@ let dailyLimitModule: any
 export interface TestContractInstances {
   cpkFactory: any
   gnosisSafe: any
-  proxyFactory: any
+  gnosisSafe2: any
+  gnosisSafeProxyFactory: any
   multiSend: any
   defaultCallbackHandler: any
   multiStep: any
@@ -46,7 +50,8 @@ export interface TestContractInstances {
 export interface TestContracts {
   CPKFactory: any
   GnosisSafe: any
-  ProxyFactory: any
+  GnosisSafe2: any
+  GnosisSafeProxyFactory: any
   MultiSend: any
   DefaultCallbackHandler: any
   MultiStep: any
@@ -68,10 +73,15 @@ export const initializeContracts = async (safeOwner: Address): Promise<void> => 
   GnosisSafe.defaults({ from: safeOwner })
   gnosisSafe = await GnosisSafe.deployed()
 
-  ProxyFactory = TruffleContract(ProxyFactoryJson)
-  ProxyFactory.setProvider(provider)
-  ProxyFactory.defaults({ from: safeOwner })
-  proxyFactory = await ProxyFactory.deployed()
+  GnosisSafe2 = TruffleContract(GnosisSafe2Json)
+  GnosisSafe2.setProvider(provider)
+  GnosisSafe2.defaults({ from: safeOwner })
+  gnosisSafe2 = await GnosisSafe2.deployed()
+
+  GnosisSafeProxyFactory = TruffleContract(GnosisSafeProxyFactoryJson)
+  GnosisSafeProxyFactory.setProvider(provider)
+  GnosisSafeProxyFactory.defaults({ from: safeOwner })
+  gnosisSafeProxyFactory = await GnosisSafeProxyFactory.deployed()
 
   MultiSend = TruffleContract(MultiSendJson)
   MultiSend.setProvider(provider)
@@ -107,7 +117,8 @@ export const initializeContracts = async (safeOwner: Address): Promise<void> => 
 export const getContracts = (): TestContracts => ({
   CPKFactory,
   GnosisSafe,
-  ProxyFactory,
+  GnosisSafe2,
+  GnosisSafeProxyFactory,
   MultiSend,
   DefaultCallbackHandler,
   MultiStep,
@@ -119,7 +130,8 @@ export const getContracts = (): TestContracts => ({
 export const getContractInstances = (): TestContractInstances => ({
   cpkFactory,
   gnosisSafe,
-  proxyFactory,
+  gnosisSafe2,
+  gnosisSafeProxyFactory,
   multiSend,
   defaultCallbackHandler,
   multiStep,
