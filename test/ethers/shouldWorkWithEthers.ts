@@ -1,16 +1,16 @@
 import should from 'should'
 import Web3Maj1Min3 from 'web3-1-3'
 import CPK, {
-  NetworksConfig,
   EthersAdapter,
-  TransactionManager,
+  NetworksConfig,
   Transaction,
+  TransactionManager,
   TransactionResult
 } from '../../src'
 import { Address } from '../../src/utils/basicTypes'
-import { testSafeTransactions } from '../transactions/testSafeTransactions'
 import { testConnectedSafeTransactionsWithRelay } from '../transactions/testConnectedSafeTransactionsWithRelay'
-import { toTxHashPromise, AccountType } from '../utils'
+import { testSafeTransactions } from '../transactions/testSafeTransactions'
+import { AccountType, toTxHashPromise } from '../utils'
 import { getContractInstances, TestContractInstances } from '../utils/contracts'
 
 interface ShouldWorkWithEthersProps {
@@ -124,18 +124,27 @@ export function shouldWorkWithEthers({
 
     it('should not produce CPK instances when ethers not connected to a recognized network', async () => {
       const ethLibAdapter = new EthersAdapter({ ethers, signer })
-      await CPK.create({ ethLibAdapter }).should.be.rejectedWith(/unrecognized network ID \d+/)
+      await CPK.create({ ethLibAdapter }).should.be.rejectedWith(/Unrecognized network ID \d+/)
     })
 
     describe('with valid networks configuration', () => {
       let networks: NetworksConfig
 
       before('obtain addresses from artifacts', async () => {
-        const { gnosisSafe, cpkFactory, multiSend, defaultCallbackHandler } = contracts
+        const { gnosisSafe, gnosisSafe2, cpkFactory, multiSend, defaultCallbackHandler } = contracts
 
         networks = {
           [(await signer.provider.getNetwork()).chainId]: {
-            masterCopyAddress: gnosisSafe.address,
+            masterCopyAddressVersions: [
+              {
+                address: gnosisSafe.address,
+                version: '1.2.0'
+              },
+              {
+                address: gnosisSafe2.address,
+                version: '1.1.1'
+              }
+            ],
             proxyFactoryAddress: cpkFactory.address,
             multiSendAddress: multiSend.address,
             fallbackHandlerAddress: defaultCallbackHandler.address
@@ -196,15 +205,13 @@ export function shouldWorkWithEthers({
             networks
           })
 
-          if (transactionManager) {
-            await toTxHashPromise(
-              web3.eth.sendTransaction({
-                from: defaultAccountBox[0],
-                to: cpk.address,
-                value: `${3e18}`
-              })
-            )
-          }
+          await toTxHashPromise(
+            web3.eth.sendTransaction({
+              from: defaultAccountBox[0],
+              to: cpk.address,
+              value: `${5e18}`
+            })
+          )
         })
 
         before('warm instance', async () => {
@@ -222,6 +229,7 @@ export function shouldWorkWithEthers({
           async getCPK() {
             return cpk
           },
+          defaultAccount: defaultAccountBox,
           isCpkTransactionManager,
           accountType: AccountType.Warm
         })
@@ -247,8 +255,19 @@ export function shouldWorkWithEthers({
             )
 
             const ethLibAdapter = new EthersAdapter({ ethers, signer: freshSignerBox[0] })
-            return CPK.create({ ethLibAdapter, transactionManager, networks })
+            const cpk = await CPK.create({ ethLibAdapter, transactionManager, networks })
+
+            await toTxHashPromise(
+              web3.eth.sendTransaction({
+                from: defaultAccountBox[0],
+                to: cpk.address,
+                value: `${5e18}`
+              })
+            )
+
+            return cpk
           },
+          defaultAccount: defaultAccountBox,
           isCpkTransactionManager,
           accountType: AccountType.Fresh
         })
@@ -268,15 +287,13 @@ export function shouldWorkWithEthers({
           const ethLibAdapter = new EthersAdapter({ ethers, signer: safeSignerBox[0] })
           cpk = await CPK.create({ ethLibAdapter, transactionManager, networks })
 
-          if (transactionManager) {
-            await toTxHashPromise(
-              web3.eth.sendTransaction({
-                from: defaultAccountBox[0],
-                to: cpk.address,
-                value: `${3e18}`
-              })
-            )
-          }
+          await toTxHashPromise(
+            web3.eth.sendTransaction({
+              from: defaultAccountBox[0],
+              to: cpk.address,
+              value: `${5e18}`
+            })
+          )
         })
 
         if (!isCpkTransactionManager) {
@@ -288,6 +305,7 @@ export function shouldWorkWithEthers({
             },
             ownerIsRecognizedContract: true,
             executor: safeOwnerBox,
+            defaultAccount: defaultAccountBox,
             isCpkTransactionManager,
             accountType: AccountType.Connected
           })
@@ -302,6 +320,7 @@ export function shouldWorkWithEthers({
           },
           ownerIsRecognizedContract: true,
           executor: safeOwnerBox,
+          defaultAccount: defaultAccountBox,
           isCpkTransactionManager,
           accountType: AccountType.Connected
         })

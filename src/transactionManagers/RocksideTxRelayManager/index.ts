@@ -1,5 +1,6 @@
+import BigNumber from 'bignumber.js'
 import fetch from 'node-fetch'
-import { rocksideTxRelayUrl, safeTxRelayUrl } from '../../config/transactionManagers'
+import { rocksideTxRelayUrl } from '../../config/transactionManagers'
 import EthLibAdapter from '../../ethLibAdapters/EthLibAdapter'
 import { Address } from '../../utils/basicTypes'
 import { zeroAddress } from '../../utils/constants'
@@ -9,7 +10,7 @@ import TransactionManager, {
   TransactionManagerConfig,
   TransactionManagerNames
 } from '../TransactionManager'
-import { getTransactionEstimations, getTransactionHashSignature } from '../utils'
+import { getTransactionHashSignature } from '../utils'
 
 export enum RocksideSpeed {
   Fast = 'fast',
@@ -44,10 +45,13 @@ class RocksideRelayTransactionManager implements TransactionManager {
   async execTransactions({
     ownerAccount,
     safeExecTxParams,
-    contracts,
+    contractManager,
     ethLibAdapter
   }: ExecTransactionProps): Promise<TransactionResult> {
-    const { safeContract } = contracts
+    const { contract } = contractManager
+    if (!contract) {
+      throw new Error('CPK Proxy contract uninitialized')
+    }
 
     let network
     const networkId = await ethLibAdapter.getNetworkId()
@@ -62,9 +66,9 @@ class RocksideRelayTransactionManager implements TransactionManager {
         throw new Error('Network not supported when using Rockside transaction relay')
     }
 
-    const nonce = await safeContract.call('nonce', [])
+    const nonce = await contract.call('nonce', [])
 
-    const txRelayParams = await this.getTxRelayParams(safeContract.address, network)
+    const txRelayParams = await this.getTxRelayParams(contract.address, network)
 
     const safeTransaction = {
       to: safeExecTxParams.to,
@@ -79,9 +83,9 @@ class RocksideRelayTransactionManager implements TransactionManager {
       nonce
     }
 
-    const transactionHash = await safeContract.call('getTransactionHash', [
+    const transactionHash = await contract.call('getTransactionHash', [
       safeTransaction.to,
-      safeTransaction.value,
+      new BigNumber(safeExecTxParams.value).toString(10),
       safeTransaction.data,
       safeTransaction.operation,
       safeTransaction.safeTxGas,
@@ -98,9 +102,9 @@ class RocksideRelayTransactionManager implements TransactionManager {
       transactionHash
     )
 
-    const data = safeContract.encode('execTransaction', [
+    const data = contract.encode('execTransaction', [
       safeTransaction.to,
-      safeTransaction.value,
+      new BigNumber(safeExecTxParams.value).toString(10),
       safeTransaction.data,
       safeTransaction.operation,
       safeTransaction.safeTxGas,
@@ -111,7 +115,7 @@ class RocksideRelayTransactionManager implements TransactionManager {
       signatures
     ])
 
-    const trackingId = await this.sendTxToRelay(safeContract.address, data, network)
+    const trackingId = await this.sendTxToRelay(contract.address, data, network)
     return this.followTransaction(network, trackingId, ethLibAdapter)
   }
 

@@ -3,36 +3,50 @@ import fetch from 'node-fetch'
 import EthLibAdapter from '../../ethLibAdapters/EthLibAdapter'
 import { Address } from '../../utils/basicTypes'
 import { zeroAddress } from '../../utils/constants'
-import { TransactionResult } from '../../utils/transactions'
+import { OperationType, TransactionResult } from '../../utils/transactions'
 import TransactionManager, {
   ExecTransactionProps,
   TransactionManagerConfig,
   TransactionManagerNames
 } from '../TransactionManager'
-import {
-  getTransactionEstimations,
-  getTransactionHashSignatureRSV,
-  SafeTransaction
-} from '../utils'
 
 BigNumber.set({ EXPONENTIAL_AT: [-7, 255] })
 
-interface SafeTxRelayManagerConfig {
+interface SafeRelayTransactionManagerConfig {
   url: string
+}
+
+interface TransactionEstimationsProps {
+  safe: Address
+  to: Address
+  value: string
+  data: string
+  operation: OperationType
+  gasToken?: Address
+}
+
+interface RelayEstimation {
+  safeTxGas: number
+  baseGas: number
+  dataGas: number
+  operationalGas: number
+  gasPrice: number
+  lastUsedNonce: number
+  gasToken: Address
 }
 
 interface TransactionToRelayProps {
   url: string
-  safeTransaction: SafeTransaction
+  tx: any
   safe: Address
   signatures: any
   ethLibAdapter: EthLibAdapter
 }
 
-class SafeTxRelayManager implements TransactionManager {
+class SafeRelayTransactionManager implements TransactionManager {
   url: string
 
-  constructor({ url }: SafeTxRelayManagerConfig) {
+  constructor({ url }: SafeRelayTransactionManagerConfig) {
     if (!url) {
       throw new Error('url property missing from options')
     }
@@ -49,11 +63,14 @@ class SafeTxRelayManager implements TransactionManager {
   async execTransactions({
     ownerAccount,
     safeExecTxParams,
-    contracts,
+    contractManager,
     ethLibAdapter,
     isConnectedToSafe
   }: ExecTransactionProps): Promise<TransactionResult> {
-    const { safeContract } = contracts
+    const { contract } = contractManager
+    if (!contract) {
+      throw new Error('CPK Proxy contract uninitialized')
+    }
 
     if (isConnectedToSafe) {
       throw new Error(
@@ -61,19 +78,18 @@ class SafeTxRelayManager implements TransactionManager {
       )
     }
 
-    const relayEstimations = await getTransactionEstimations({
-      safeTxRelayUrl: this.url,
-      safe: safeContract.address,
+    const relayEstimations = await this.getTransactionEstimations({
+      safe: contract.address,
       to: safeExecTxParams.to,
-      value: safeExecTxParams.value,
+      value: new BigNumber(safeExecTxParams.value).toString(10),
       data: safeExecTxParams.data,
       operation: safeExecTxParams.operation
     })
 
     // TO-DO: dataGas will be obsolete. Check again when this endpoint is updated to v2
-    const safeTransaction: SafeTransaction = {
+    const tx = {
       to: safeExecTxParams.to,
-      value: safeExecTxParams.value,
+      value: new BigNumber(safeExecTxParams.value).toString(10),
       data: safeExecTxParams.data,
       operation: safeExecTxParams.operation,
       safeTxGas: relayEstimations.safeTxGas,
@@ -84,48 +100,79 @@ class SafeTxRelayManager implements TransactionManager {
       nonce: relayEstimations.lastUsedNonce + 1
     }
 
-    const transactionHash = await contracts.safeContract.call('getTransactionHash', [
-      safeTransaction.to,
-      safeTransaction.value,
-      safeTransaction.data,
-      safeTransaction.operation,
-      safeTransaction.safeTxGas,
-      safeTransaction.dataGas,
-      safeTransaction.gasPrice,
-      safeTransaction.gasToken,
-      safeTransaction.refundReceiver,
-      safeTransaction.nonce
+    const txHash = await contract.call('getTransactionHash', [
+      tx.to,
+      tx.value,
+      tx.data,
+      tx.operation,
+      tx.safeTxGas,
+      tx.dataGas,
+      tx.gasPrice,
+      tx.gasToken,
+      tx.refundReceiver,
+      tx.nonce
     ])
 
-    const rsvSignature = await getTransactionHashSignatureRSV(
-      ethLibAdapter,
-      ownerAccount,
-      transactionHash
-    )
+    const rsvSignature = await this.signTransactionHash(ethLibAdapter, ownerAccount, txHash)
 
     return this.sendTransactionToRelay({
       url: this.url,
-      safe: safeContract.address,
-      safeTransaction,
+      safe: contract.address,
+      tx,
       signatures: [rsvSignature],
       ethLibAdapter
     })
   }
 
+  private async getTransactionEstimations({
+    safe,
+    to,
+    value,
+    data,
+    operation,
+    gasToken
+  }: TransactionEstimationsProps): Promise<RelayEstimation> {
+    const url = this.url + '/api/v1/safes/' + safe + '/transactions/estimate/'
+    const headers = { Accept: 'application/json', 'Content-Type': 'application/json' }
+    const body: { [key: string]: any } = {
+      safe,
+      to,
+      value,
+      data,
+      operation
+    }
+    if (gasToken) {
+      body.gasToken = gasToken
+    }
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body)
+    })
+
+    const jsonResponse = await response.json()
+
+    if (response.status !== 200) {
+      throw new Error(jsonResponse.exception)
+    }
+    return jsonResponse
+  }
+
   private async sendTransactionToRelay({
-    safeTransaction,
+    tx,
     safe,
     signatures,
     ethLibAdapter
   }: TransactionToRelayProps): Promise<any> {
-    const url = `${this.url}/api/v1/safes/${safe}/transactions/`
+    const url = this.url + '/api/v1/safes/' + safe + '/transactions/'
     const headers = {
       Accept: 'application/json',
       'Content-Type': 'application/json'
     }
     const body = {
       safe,
-      ...safeTransaction,
+      ...tx,
       signatures
     }
 
@@ -142,6 +189,36 @@ class SafeTxRelayManager implements TransactionManager {
     }
     return ethLibAdapter.toSafeRelayTxResult(jsonResponse.txHash, jsonResponse.ethereumTx)
   }
+
+  private async signTransactionHash(
+    ethLibAdapter: EthLibAdapter,
+    ownerAccount: Address,
+    txHash: string
+  ) {
+    let sig = await ethLibAdapter.signMessage(txHash, ownerAccount)
+    let sigV = parseInt(sig.slice(-2), 16)
+
+    switch (sigV) {
+      case 0:
+      case 1:
+        sigV += 31
+        break
+      case 27:
+      case 28:
+        sigV += 4
+        break
+      default:
+        throw new Error('Invalid signature')
+    }
+
+    sig = sig.slice(0, -2) + sigV.toString(16)
+
+    return {
+      r: new BigNumber('0x' + sig.slice(2, 66)).toString(10),
+      s: new BigNumber('0x' + sig.slice(66, 130)).toString(10),
+      v: new BigNumber('0x' + sig.slice(130, 132)).toString(10)
+    }
+  }
 }
 
-export default SafeTxRelayManager
+export default SafeRelayTransactionManager

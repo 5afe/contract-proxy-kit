@@ -1,12 +1,12 @@
+import { Abi, Address } from '../utils/basicTypes'
+import { joinHexData } from '../utils/hexData'
 import {
-  TransactionResult,
-  SendOptions,
   CallOptions,
   EthCallTx,
-  EthSendTx
+  EthSendTx,
+  SendOptions,
+  TransactionResult
 } from '../utils/transactions'
-import { joinHexData } from '../utils/hexData'
-import { Address, Abi } from '../utils/basicTypes'
 
 export interface Contract {
   address: Address
@@ -88,7 +88,7 @@ abstract class EthLibAdapter {
   }
 
   decodeError(revertData: string): string {
-    if (!revertData.startsWith('0x08c379a0')) throw new Error('unrecognized error format')
+    if (!revertData.startsWith('0x08c379a0')) throw new Error('Unrecognized error format')
 
     return this.abiDecode(['string'], `0x${revertData.slice(10)}`)[0]
   }

@@ -1,14 +1,14 @@
-import EthLibAdapter, { Contract } from '../EthLibAdapter'
-import Web3ContractAdapter from './Web3ContractAdapter'
+import { Abi, Address } from '../../utils/basicTypes'
 import {
-  SendOptions,
   EthCallTx,
-  formatCallTx,
   EthSendTx,
+  formatCallTx,
   normalizeGasLimit,
+  SendOptions,
   Web3TransactionResult
 } from '../../utils/transactions'
-import { Address, Abi } from '../../utils/basicTypes'
+import EthLibAdapter, { Contract } from '../EthLibAdapter'
+import Web3ContractAdapter from './Web3ContractAdapter'
 
 export function toTxResult(
   promiEvent: any,

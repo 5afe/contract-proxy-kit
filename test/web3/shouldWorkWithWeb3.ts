@@ -2,17 +2,17 @@ import should from 'should'
 import Web3Maj1Min3 from 'web3-1-3'
 import Web3Maj2Alpha from 'web3-2-alpha'
 import CPK, {
-  Web3Adapter,
+  NetworksConfig,
   Transaction,
-  TransactionResult,
   TransactionManager,
-  NetworksConfig
+  TransactionResult,
+  Web3Adapter
 } from '../../src'
-import { testSafeTransactions } from '../transactions/testSafeTransactions'
-import { testConnectedSafeTransactionsWithRelay } from '../transactions/testConnectedSafeTransactionsWithRelay'
-import { toTxHashPromise, AccountType } from '../utils'
-import { getContractInstances, TestContractInstances } from '../utils/contracts'
 import { Address } from '../../src/utils/basicTypes'
+import { testConnectedSafeTransactionsWithRelay } from '../transactions/testConnectedSafeTransactionsWithRelay'
+import { testSafeTransactions } from '../transactions/testSafeTransactions'
+import { AccountType, toTxHashPromise } from '../utils'
+import { getContractInstances, TestContractInstances } from '../utils/contracts'
 
 interface ShouldWorkWithWeb3Props {
   Web3: typeof Web3Maj1Min3 | typeof Web3Maj2Alpha
@@ -107,18 +107,27 @@ export function shouldWorkWithWeb3({
 
     it('should not produce CPK instances when web3 not connected to a recognized network', async () => {
       const ethLibAdapter = new Web3Adapter({ web3: ueb3 })
-      await CPK.create({ ethLibAdapter }).should.be.rejectedWith(/unrecognized network ID \d+/)
+      await CPK.create({ ethLibAdapter }).should.be.rejectedWith(/Unrecognized network ID \d+/)
     })
 
     describe('with valid networks configuration', () => {
       let networks: NetworksConfig
 
       before('obtain addresses from artifacts', async () => {
-        const { gnosisSafe, cpkFactory, multiSend, defaultCallbackHandler } = contracts
+        const { gnosisSafe, gnosisSafe2, cpkFactory, multiSend, defaultCallbackHandler } = contracts
 
         networks = {
           [await ueb3.eth.net.getId()]: {
-            masterCopyAddress: gnosisSafe.address,
+            masterCopyAddressVersions: [
+              {
+                address: gnosisSafe.address,
+                version: '1.2.0'
+              },
+              {
+                address: gnosisSafe2.address,
+                version: '1.1.1'
+              }
+            ],
             proxyFactoryAddress: cpkFactory.address,
             multiSendAddress: multiSend.address,
             fallbackHandlerAddress: defaultCallbackHandler.address
@@ -184,13 +193,11 @@ export function shouldWorkWithWeb3({
             ownerAccount: defaultAccountBox[0]
           })
 
-          if (transactionManager) {
-            await ueb3TestHelpers.sendTransaction({
-              from: defaultAccountBox[0],
-              to: cpk.address,
-              value: `${3e18}`
-            })
-          }
+          await ueb3TestHelpers.sendTransaction({
+            from: defaultAccountBox[0],
+            to: cpk.address,
+            value: `${5e18}`
+          })
         })
 
         before('warm instance', async () => {
@@ -208,6 +215,7 @@ export function shouldWorkWithWeb3({
           async getCPK() {
             return cpk
           },
+          defaultAccount: defaultAccountBox,
           isCpkTransactionManager,
           accountType: AccountType.Warm
         })
@@ -228,13 +236,22 @@ export function shouldWorkWithWeb3({
             })
 
             const ethLibAdapter = new Web3Adapter({ web3: ueb3 })
-            return CPK.create({
+            const cpk = await CPK.create({
               ethLibAdapter,
               transactionManager,
               networks,
               ownerAccount: newAccount.address
             })
+
+            await ueb3TestHelpers.sendTransaction({
+              from: defaultAccountBox[0],
+              to: cpk.address,
+              value: `${5e18}`
+            })
+
+            return cpk
           },
+          defaultAccount: defaultAccountBox,
           isCpkTransactionManager,
           accountType: AccountType.Fresh
         })
@@ -254,13 +271,11 @@ export function shouldWorkWithWeb3({
 
           cpk = await CPK.create({ ethLibAdapter, transactionManager, networks })
 
-          if (transactionManager) {
-            await ueb3TestHelpers.sendTransaction({
-              from: defaultAccountBox[0],
-              to: cpk.address,
-              value: `${3e18}`
-            })
-          }
+          await ueb3TestHelpers.sendTransaction({
+            from: defaultAccountBox[0],
+            to: cpk.address,
+            value: `${5e18}`
+          })
         })
 
         if (!isCpkTransactionManager) {
@@ -271,7 +286,8 @@ export function shouldWorkWithWeb3({
               return cpk
             },
             ownerIsRecognizedContract: true,
-            executor: safeOwnerBox
+            executor: safeOwnerBox,
+            defaultAccount: defaultAccountBox
           })
           return
         }
@@ -284,6 +300,7 @@ export function shouldWorkWithWeb3({
           },
           ownerIsRecognizedContract: true,
           executor: safeOwnerBox,
+          defaultAccount: defaultAccountBox,
           isCpkTransactionManager,
           accountType: AccountType.Connected
         })

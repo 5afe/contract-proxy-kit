@@ -1,12 +1,12 @@
-import { Contract } from '../EthLibAdapter'
-import { toTxResult } from './'
+import { Address } from '../../utils/basicTypes'
 import {
-  SendOptions,
   CallOptions,
   normalizeGasLimit,
+  SendOptions,
   Web3TransactionResult
 } from '../../utils/transactions'
-import { Address } from '../../utils/basicTypes'
+import { Contract } from '../EthLibAdapter'
+import { toTxResult } from './'
 
 class Web3ContractAdapter implements Contract {
   constructor(public contract: any) {}

@@ -45,7 +45,7 @@ describe('CPK', () => {
   })
 
   before('emulate Gnosis Safe WalletConnect provider', async () => {
-    const { gnosisSafe, defaultCallbackHandler, proxyFactory, multiSend } = contracts
+    const { gnosisSafe, defaultCallbackHandler, gnosisSafeProxyFactory, multiSend } = contracts
     const safeSetupData = gnosisSafe.contract.methods
       .setup(
         [safeOwnerBox[0]],
@@ -54,11 +54,11 @@ describe('CPK', () => {
         '0x',
         defaultCallbackHandler.address,
         zeroAddress,
-        '0x',
+        0,
         zeroAddress
       )
       .encodeABI()
-    const { logs } = await proxyFactory.createProxy(gnosisSafe.address, safeSetupData, {
+    const { logs } = await gnosisSafeProxyFactory.createProxy(gnosisSafe.address, safeSetupData, {
       from: safeOwnerBox[0]
     })
     const proxyCreationEvents = logs.find(({ event }: { event: any }) => event === 'ProxyCreation')
