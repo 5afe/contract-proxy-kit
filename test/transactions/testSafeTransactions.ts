@@ -1,3 +1,4 @@
+import { BigNumber } from 'bignumber.js'
 import should from 'should'
 import CPK, { TransactionResult } from '../../src'
 import { Address } from '../../src/utils/basicTypes'
@@ -25,6 +26,7 @@ interface TestSafeTransactionsProps {
   ownerIsRecognizedContract?: boolean
   isCpkTransactionManager: boolean
   executor?: Address[]
+  defaultAccount: Address[]
   accountType: AccountType
 }
 
@@ -44,6 +46,7 @@ export function testSafeTransactions({
   ownerIsRecognizedContract,
   isCpkTransactionManager,
   executor,
+  defaultAccount,
   accountType
 }: TestSafeTransactionsProps): void {
   it('can get checksummed address of instance', async () => {
@@ -98,9 +101,78 @@ export function testSafeTransactions({
       })
       await waitTxReceipt({ hash })
     })
+    ;(ownerIsRecognizedContract ? it.skip : it)(
+      'can execute a single transaction with string value',
+      async () => {
+        if (!cpk.address) return
+        const startingBalance = await getBalance(`0x${'0'.repeat(39)}4`)
 
-    it('can execute a single transaction', async () => {
-      ;(await multiStep.lastStepFinished(await cpk.address)).toNumber().should.equal(0)
+        const value = `${1e18}`
+        const txs = [
+          {
+            to: `0x${'0'.repeat(39)}4`,
+            value
+          }
+        ]
+        const txResult = await cpk.execTransactions(txs)
+        checkTxObj(txs.length, accountType, txResult, isCpkTransactionManager)
+
+        const endingBalance = await getBalance(`0x${'0'.repeat(39)}4`)
+        const startingBalanceAndValue = new BigNumber(startingBalance.toString()).plus(
+          new BigNumber(value)
+        )
+        endingBalance.toString().should.be.equal(startingBalanceAndValue.toString())
+      }
+    )
+    ;(ownerIsRecognizedContract ? it.skip : it)(
+      'can execute a single transaction with hex string value',
+      async () => {
+        if (!cpk.address) return
+        const startingBalance = await getBalance(`0x${'0'.repeat(39)}4`)
+
+        const value = '0xde0b6b3a7640000' //1e18
+        const txs = [
+          {
+            to: `0x${'0'.repeat(39)}4`,
+            value
+          }
+        ]
+        const txResult = await cpk.execTransactions(txs)
+        checkTxObj(txs.length, accountType, txResult, isCpkTransactionManager)
+
+        const endingBalance = await getBalance(`0x${'0'.repeat(39)}4`)
+        const startingBalanceAndValue = new BigNumber(startingBalance.toString()).plus(
+          new BigNumber(value)
+        )
+        endingBalance.toString().should.be.equal(startingBalanceAndValue.toString())
+      }
+    )
+    ;(ownerIsRecognizedContract ? it.skip : it)(
+      'can execute a single transaction with BigNumber value',
+      async () => {
+        if (!cpk.address) return
+        const startingBalance = await getBalance(`0x${'0'.repeat(39)}4`)
+
+        const value = new BigNumber(1e18)
+        const txs = [
+          {
+            to: `0x${'0'.repeat(39)}4`,
+            value
+          }
+        ]
+        const txResult = await cpk.execTransactions(txs)
+        checkTxObj(txs.length, accountType, txResult, isCpkTransactionManager)
+
+        const endingBalance = await getBalance(`0x${'0'.repeat(39)}4`)
+        const startingBalanceAndValue = new BigNumber(startingBalance.toString()).plus(
+          new BigNumber(value)
+        )
+        endingBalance.toString().should.be.equal(startingBalanceAndValue.toString())
+      }
+    )
+
+    it('can execute a single transaction with data', async () => {
+      ;(await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0)
 
       const txs = [
         {
@@ -320,9 +392,9 @@ export function testSafeTransactions({
         const { gasUsed } = receipt
 
         const endingBalance = await getBalance((executor && executor[0]) || proxyOwner)
-        const gasCosts = startingBalance.sub(endingBalance).toNumber()
+        const gasCosts = startingBalance.sub(endingBalance)
 
-        gasCosts.should.be.equal(gasPrice * gasUsed)
+        gasCosts.toString().should.be.equal((gasPrice * gasUsed).toString())
       }
     )
     ;(!isCpkTransactionManager || ownerIsRecognizedContract ? it.skip : it)(

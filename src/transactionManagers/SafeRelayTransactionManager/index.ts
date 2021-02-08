@@ -19,7 +19,7 @@ interface SafeRelayTransactionManagerConfig {
 interface TransactionEstimationsProps {
   safe: Address
   to: Address
-  value: number
+  value: string
   data: string
   operation: OperationType
   gasToken?: Address
@@ -99,7 +99,7 @@ class SafeRelayTransactionManager implements TransactionManager {
     const relayEstimations = await this.getTransactionEstimations({
       safe: contract.address,
       to: safeExecTxParams.to,
-      value: safeExecTxParams.value,
+      value: new BigNumber(safeExecTxParams.value).toString(10),
       data: safeExecTxParams.data,
       operation: safeExecTxParams.operation
     })
@@ -107,7 +107,7 @@ class SafeRelayTransactionManager implements TransactionManager {
     // TO-DO: dataGas will be obsolete. Check again when this endpoint is updated to v2
     const tx = {
       to: safeExecTxParams.to,
-      value: safeExecTxParams.value,
+      value: new BigNumber(safeExecTxParams.value).toString(10),
       data: safeExecTxParams.data,
       operation: safeExecTxParams.operation,
       safeTxGas: relayEstimations.safeTxGas,

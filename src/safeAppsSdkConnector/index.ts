@@ -1,5 +1,5 @@
 import SafeAppsSDK, { SafeInfo, TxServiceModel } from '@gnosis.pm/safe-apps-sdk'
-import { SimpleTransactionResult, StandardSafeAppsTransaction } from '../utils/transactions'
+import { SimpleTransactionResult, StandardTransaction } from '../utils/transactions'
 
 interface SafeTransactionParams {
   safeTxGas?: number
@@ -11,7 +11,7 @@ class SafeAppsSdkConnector {
 
   constructor() {
     this.#appsSdk = new SafeAppsSDK()
-    this.#appsSdk.getSafeInfo().then((appInfo) => {
+    this.#appsSdk.getSafeInfo().then((appInfo: SafeInfo) => {
       this.#isSafeApp = !!appInfo.safeAddress
     })
   }
@@ -54,7 +54,7 @@ class SafeAppsSdkConnector {
   }
 
   sendTransactions(
-    transactions: StandardSafeAppsTransaction[],
+    transactions: StandardTransaction[],
     params: SafeTransactionParams
   ): Promise<SimpleTransactionResult> {
     return this.#appsSdk.txs.send({ txs: transactions, params })

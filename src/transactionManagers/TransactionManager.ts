@@ -1,7 +1,7 @@
 import ContractManager from '../contractManager'
 import EthLibAdapter, { Contract } from '../ethLibAdapters/EthLibAdapter'
 import { Address } from '../utils/basicTypes'
-import { StandardTransaction, Transaction, TransactionResult } from '../utils/transactions'
+import { StandardTransaction, TransactionResult } from '../utils/transactions'
 
 export enum TransactionManagerNames {
   CpkTransactionManager = 'CpkTransactionManager',
@@ -23,7 +23,7 @@ export interface CPKContracts {
 export interface ExecTransactionProps {
   ownerAccount: Address
   safeExecTxParams: StandardTransaction
-  transactions: Transaction[]
+  transactions: StandardTransaction[]
   contractManager: ContractManager
   ethLibAdapter: EthLibAdapter
   saltNonce: string

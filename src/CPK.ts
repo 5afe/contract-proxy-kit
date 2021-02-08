@@ -20,7 +20,6 @@ import {
   ExecOptions,
   normalizeGasLimit,
   OperationType,
-  standardizeSafeAppsTransaction,
   standardizeTransaction,
   StandardTransaction,
   Transaction,
@@ -320,8 +319,9 @@ class CPK {
     transactions: Transaction[],
     options?: ExecOptions
   ): Promise<TransactionResult> {
+    const standardizedTxs = transactions.map(standardizeTransaction)
+
     if (this.#safeAppsSdkConnector.isSafeApp && transactions.length >= 1) {
-      const standardizedTxs = transactions.map(standardizeSafeAppsTransaction)
       return this.#safeAppsSdkConnector.sendTransactions(standardizedTxs, {
         safeTxGas: options?.safeTxGas
       })
@@ -356,7 +356,7 @@ class CPK {
     return txManager.execTransactions({
       ownerAccount,
       safeExecTxParams,
-      transactions,
+      transactions: standardizedTxs,
       ethLibAdapter: this.#ethLibAdapter,
       contractManager: this.#contractManager,
       saltNonce: this.#saltNonce,
@@ -476,7 +476,7 @@ class CPK {
 
     return {
       to: this.#contractManager?.multiSend.address,
-      value: 0,
+      value: '0',
       data: this.encodeMultiSendCallData(transactions),
       operation: CPK.DelegateCall
     }

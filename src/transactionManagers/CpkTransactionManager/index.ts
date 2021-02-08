@@ -7,7 +7,6 @@ import {
   SendOptions,
   SimpleTransactionResult,
   StandardTransaction,
-  Transaction,
   TransactionError,
   TransactionResult
 } from '../../utils/transactions'
@@ -107,7 +106,7 @@ class CpkTransactionManager implements TransactionManager {
 
   private async execTxsWhileConnectedToSafe(
     ethLibAdapter: EthLibAdapter,
-    transactions: Transaction[],
+    transactions: StandardTransaction[],
     sendOptions: SendOptions
   ): Promise<SimpleTransactionResult> {
     if (transactions.some(({ operation }) => operation === OperationType.DelegateCall)) {
