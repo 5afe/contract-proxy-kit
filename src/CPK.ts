@@ -32,13 +32,14 @@ export interface CPKConfig {
   ownerAccount?: string
   networks?: NetworksConfig
   saltNonce?: string
+  isSafeApp?: boolean
 }
 
 class CPK {
   static Call = OperationType.Call
   static DelegateCall = OperationType.DelegateCall
 
-  #safeAppsSdkConnector: SafeAppsSdkConnector
+  #safeAppsSdkConnector?: SafeAppsSdkConnector
   #ethLibAdapter?: EthLibAdapter
   #transactionManager?: TransactionManager
   #contractManager?: ContractManager
@@ -69,14 +70,17 @@ class CPK {
    * @returns The CPK instance
    */
   constructor(opts?: CPKConfig) {
-    this.#safeAppsSdkConnector = new SafeAppsSdkConnector()
+
     this.#networks = {
       ...defaultNetworks
     }
     if (!opts) {
       return
     }
-    const { ethLibAdapter, transactionManager, ownerAccount, networks, saltNonce } = opts
+    const { ethLibAdapter, transactionManager, ownerAccount, networks, saltNonce, isSafeApp = true } = opts
+    if (isSafeApp) {
+      this.#safeAppsSdkConnector = new SafeAppsSdkConnector()
+    }
     if (!ethLibAdapter) {
       throw new Error('ethLibAdapter property missing from options')
     }
@@ -107,14 +111,14 @@ class CPK {
 
     this.#isConnectedToSafe =
       (await checkConnectedToSafe(this.#ethLibAdapter.getProvider())) ||
-      this.#safeAppsSdkConnector.isSafeApp
+      (this.#safeAppsSdkConnector?.isSafeApp === true)
 
     this.#contractManager = await ContractManager.create({
       ethLibAdapter: this.#ethLibAdapter,
       network,
       ownerAccount,
       saltNonce: this.#saltNonce,
-      isSafeApp: this.#safeAppsSdkConnector.isSafeApp,
+      isSafeApp: this.#safeAppsSdkConnector?.isSafeApp === true,
       isConnectedToSafe: this.#isConnectedToSafe
     })
   }
@@ -143,7 +147,7 @@ class CPK {
    * @returns The address of the account connected to the CPK
    */
   async getOwnerAccount(): Promise<Address | undefined> {
-    if (this.#safeAppsSdkConnector.isSafeApp) {
+    if (this.#safeAppsSdkConnector?.isSafeApp) {
       return (await this.#safeAppsSdkConnector.getSafeInfo()).safeAddress
     }
     if (this.#ownerAccount) {
@@ -177,7 +181,7 @@ class CPK {
    * @returns The ID of the connected network
    */
   async getNetworkId(): Promise<number | undefined> {
-    if (this.#safeAppsSdkConnector.isSafeApp) {
+    if (this.#safeAppsSdkConnector?.isSafeApp) {
       const networkName = (await this.#safeAppsSdkConnector.getSafeInfo()).network
       return getNetworkIdFromName(networkName)
     }
@@ -192,7 +196,7 @@ class CPK {
    *
    * @returns The safeAppsSdkConnector used by the CPK
    */
-  get safeAppsSdkConnector(): SafeAppsSdkConnector {
+  get safeAppsSdkConnector(): SafeAppsSdkConnector | undefined {
     return this.#safeAppsSdkConnector
   }
 
@@ -247,8 +251,8 @@ class CPK {
    * @returns The address of the Proxy contract
    */
   get address(): Promise<Address | undefined> {
-    if (this.#safeAppsSdkConnector.isSafeApp) {
-      return (async () => (await this.#safeAppsSdkConnector.getSafeInfo()).safeAddress)()
+    if (this.#safeAppsSdkConnector?.isSafeApp) {
+      return (async () => this.#safeAppsSdkConnector && (await this.#safeAppsSdkConnector.getSafeInfo()).safeAddress)()
     }
     return new Promise((resolve, reject) => resolve(this.#contractManager?.contract?.address))
   }
@@ -264,7 +268,7 @@ class CPK {
    * Sets the transactionManager used by the CPK.
    */
   setTransactionManager(transactionManager: TransactionManager): void {
-    if (this.#safeAppsSdkConnector.isSafeApp) {
+    if (this.#safeAppsSdkConnector?.isSafeApp) {
       throw new Error('TransactionManagers are not allowed when the app is running as a Safe App')
     }
     this.#transactionManager = transactionManager
@@ -321,7 +325,7 @@ class CPK {
   ): Promise<TransactionResult> {
     const standardizedTxs = transactions.map(standardizeTransaction)
 
-    if (this.#safeAppsSdkConnector.isSafeApp && transactions.length >= 1) {
+    if (this.#safeAppsSdkConnector?.isSafeApp && transactions.length >= 1) {
       return this.#safeAppsSdkConnector.sendTransactions(standardizedTxs, {
         safeTxGas: options?.safeTxGas
       })

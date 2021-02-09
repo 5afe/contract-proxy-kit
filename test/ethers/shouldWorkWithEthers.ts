@@ -159,6 +159,18 @@ export function shouldWorkWithEthers({
         should.exist(await CPK.create({ ethLibAdapter, transactionManager, networks }))
       })
 
+      it('should instantiate SafeAppsSdkConnector when isSafeApp is not set', async () => {
+        const ethLibAdapter = new EthersAdapter({ ethers, signer })
+        const cpk = await CPK.create({ ethLibAdapter, networks })
+        should.exist(cpk.safeAppsSdkConnector)
+      })
+
+      it('should not instantiate SafeAppsSdkConnector when isSafeApp configuration param is set to false', async () => {
+        const ethLibAdapter = new EthersAdapter({ ethers, signer })
+        const cpk = await CPK.create({ ethLibAdapter, networks, isSafeApp: false })
+        should.not.exist(cpk.safeAppsSdkConnector)
+      })
+
       it('can encode multiSend call data', async () => {
         const { multiStep } = contracts
         const transactions: Transaction[] = [
@@ -205,15 +217,13 @@ export function shouldWorkWithEthers({
             networks
           })
 
-          if (transactionManager) {
-            await toTxHashPromise(
-              web3.eth.sendTransaction({
-                from: defaultAccountBox[0],
-                to: await cpk.address,
-                value: `${3e18}`
-              })
-            )
-          }
+          await toTxHashPromise(
+            web3.eth.sendTransaction({
+              from: defaultAccountBox[0],
+              to: await cpk.address,
+              value: `${5e18}`
+            })
+          )
         })
 
         before('warm instance', async () => {
@@ -289,15 +299,13 @@ export function shouldWorkWithEthers({
           const ethLibAdapter = new EthersAdapter({ ethers, signer: safeSignerBox[0] })
           cpk = await CPK.create({ ethLibAdapter, transactionManager, networks })
 
-          if (transactionManager) {
-            await toTxHashPromise(
-              web3.eth.sendTransaction({
-                from: defaultAccountBox[0],
-                to: await cpk.address,
-                value: `${3e18}`
-              })
-            )
-          }
+          await toTxHashPromise(
+            web3.eth.sendTransaction({
+              from: defaultAccountBox[0],
+              to: await cpk.address,
+              value: `${5e18}`
+            })
+          )
         })
 
         if (!isCpkTransactionManager) {
