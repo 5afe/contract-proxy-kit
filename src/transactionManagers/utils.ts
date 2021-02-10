@@ -1,9 +1,8 @@
-import fetch from 'node-fetch'
 import BigNumber from 'bignumber.js'
+import { bufferToHex, ecrecover, pubToAddress } from 'ethereumjs-util'
 import EthLibAdapter from '../ethLibAdapters/EthLibAdapter'
 import { Address } from '../utils/basicTypes'
 import { OperationType } from '../utils/transactions'
-import { bufferToHex, ecrecover, pubToAddress } from 'ethereumjs-util'
 
 export interface SafeTransaction {
   to: Address
@@ -16,26 +15,6 @@ export interface SafeTransaction {
   gasToken: Address
   refundReceiver: Address
   nonce: number
-}
-
-interface TransactionEstimationsProps {
-  safeTxRelayUrl: string
-  safe: Address
-  to: Address
-  value: number
-  data: string
-  operation: OperationType
-  gasToken?: Address
-}
-
-interface RelayEstimation {
-  safeTxGas: number
-  baseGas: number
-  dataGas: number
-  operationalGas: number
-  gasPrice: number
-  lastUsedNonce: number
-  gasToken: Address
 }
 
 export const getTransactionHashSignature = async (
@@ -104,40 +83,4 @@ const isTxHashSignedWithPrefix = (
     hasPrefix = true
   }
   return hasPrefix
-}
-
-export const getTransactionEstimations = async ({
-  safeTxRelayUrl,
-  safe,
-  to,
-  value,
-  data,
-  operation,
-  gasToken
-}: TransactionEstimationsProps): Promise<RelayEstimation> => {
-  const url = `${safeTxRelayUrl}/api/v1/safes/${safe}/transactions/estimate/`
-  const headers = { Accept: 'application/json', 'Content-Type': 'application/json' }
-  const body: { [key: string]: any } = {
-    safe,
-    to,
-    value,
-    data,
-    operation
-  }
-  if (gasToken) {
-    body.gasToken = gasToken
-  }
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(body)
-  })
-
-  const jsonResponse = await response.json()
-
-  if (response.status !== 200) {
-    throw new Error(jsonResponse.exception)
-  }
-  return jsonResponse
 }
