@@ -48,6 +48,7 @@
     "@truffle/contract": "^4.3.6",
     "@types/uuid": "^8.3.0",
     "bignumber.js": "^9.0.1",
+    "ethereumjs-util": "^7.0.7",
     "node-fetch": "^2.6.1",
     "uuid": "^8.3.2"
   },

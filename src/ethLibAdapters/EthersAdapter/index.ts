@@ -264,6 +264,17 @@ class EthersAdapter extends EthLibAdapter {
       })
     )
   }
+
+  toRocksideRelayTxResult(tx: Record<string, any>): Promise<EthersTransactionResult> {
+    tx['hash'] = tx['transaction_hash']
+    delete tx['transaction_hash']
+    return new Promise((resolve, reject) =>
+      resolve({
+        transactionResponse: new Promise((resolve, reject) => resolve(tx)),
+        hash: tx['hash']
+      })
+    )
+  }
 }
 
 export default EthersAdapter

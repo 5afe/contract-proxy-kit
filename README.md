@@ -118,13 +118,13 @@ const cpk = await CPK.create({ ethLibAdapter, saltNonce });
 <!---
 #### Transaction relayer configuration
 
-By default, the CPK will not use any transaction relayer. However, the [Safe Relay Service](https://github.com/gnosis/safe-relay-service) can be used to submit all the transactions when the optional property `transactionManager` is passed to the CPK constructor with an instance of the class `SafeRelayTransactionManager`.
+By default, the CPK will not use any transaction relayer. However, the [Safe Relay Service](https://github.com/gnosis/safe-relay-service) can be used to submit all the transactions when the optional property `transactionManager` is passed to the CPK constructor with an instance of the class `SafeTxRelayManager`.
 
 ```js
-const safeRelayTransactionManager = new SafeRelayTransactionManager({ url: 'https://safe-relay.gnosis.io/'})
+const SafeTxRelayManager = new SafeTxRelayManager({ url: 'https://safe-relay.gnosis.io/'})
 const cpk = await CPK.create({
   // ...otherOptions,
-  transactionManager: safeRelayTransactionManager,
+  transactionManager: SafeTxRelayManager,
 });
 ```
 

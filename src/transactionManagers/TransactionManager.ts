@@ -4,13 +4,15 @@ import { Address } from '../utils/basicTypes'
 import { StandardTransaction, TransactionResult } from '../utils/transactions'
 
 export enum TransactionManagerNames {
-  CpkTransactionManager = 'CpkTransactionManager',
-  SafeRelayTransactionManager = 'SafeRelayTransactionManager'
+  CpkTxManager = 'CpkTransactionManager',
+  SafeTxRelayManager = 'SafeTransactionRelayManager',
+  RocksideTxRelayManager = 'RocksideTransactionRelayManager'
 }
 
 export interface TransactionManagerConfig {
   name: string
   url?: string
+  speed?: string
 }
 
 export interface CPKContracts {
