@@ -1,8 +1,8 @@
 import BigNumber from 'bignumber.js'
-import fetch from 'node-fetch'
 import EthLibAdapter from '../../ethLibAdapters/EthLibAdapter'
 import { Address } from '../../utils/basicTypes'
 import { zeroAddress } from '../../utils/constants'
+import { HttpMethod, sendRequest } from '../../utils/httpRequests'
 import { OperationType, TransactionResult } from '../../utils/transactions'
 import TransactionManager, {
   ExecTransactionProps,
@@ -132,8 +132,6 @@ class SafeRelayTransactionManager implements TransactionManager {
     operation,
     gasToken
   }: TransactionEstimationsProps): Promise<RelayEstimation> {
-    const url = this.url + '/api/v1/safes/' + safe + '/transactions/estimate/'
-    const headers = { Accept: 'application/json', 'Content-Type': 'application/json' }
     const body: { [key: string]: any } = {
       safe,
       to,
@@ -145,17 +143,13 @@ class SafeRelayTransactionManager implements TransactionManager {
       body.gasToken = gasToken
     }
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(body)
+    const jsonResponse = await sendRequest({
+      url: `${this.url}/api/v1/safes/${safe}/transactions/estimate/`,
+      method: HttpMethod.POST,
+      body: JSON.stringify(body),
+      expectedHttpCodeResponse: 200
     })
 
-    const jsonResponse = await response.json()
-
-    if (response.status !== 200) {
-      throw new Error(jsonResponse.exception)
-    }
     return jsonResponse
   }
 
@@ -165,28 +159,13 @@ class SafeRelayTransactionManager implements TransactionManager {
     signatures,
     ethLibAdapter
   }: TransactionToRelayProps): Promise<any> {
-    const url = this.url + '/api/v1/safes/' + safe + '/transactions/'
-    const headers = {
-      Accept: 'application/json',
-      'Content-Type': 'application/json'
-    }
-    const body = {
-      safe,
-      ...tx,
-      signatures
-    }
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(body)
+    const jsonResponse = await sendRequest({
+      url: `${this.url}/api/v1/safes/${safe}/transactions/`,
+      method: HttpMethod.POST,
+      body: JSON.stringify({ safe, ...tx, signatures }),
+      expectedHttpCodeResponse: 201
     })
 
-    const jsonResponse = await response.json()
-
-    if (response.status !== 201) {
-      throw new Error(jsonResponse.exception)
-    }
     return ethLibAdapter.toSafeRelayTxResult(jsonResponse.txHash, jsonResponse.ethereumTx)
   }
 

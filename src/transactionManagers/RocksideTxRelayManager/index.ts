@@ -1,9 +1,9 @@
 import BigNumber from 'bignumber.js'
-import fetch from 'node-fetch'
 import { rocksideTxRelayUrl } from '../../config/transactionManagers'
 import EthLibAdapter from '../../ethLibAdapters/EthLibAdapter'
 import { Address } from '../../utils/basicTypes'
 import { zeroAddress } from '../../utils/constants'
+import { HttpMethod, sendRequest } from '../../utils/httpRequests'
 import { TransactionResult } from '../../utils/transactions'
 import TransactionManager, {
   ExecTransactionProps,
@@ -123,21 +123,12 @@ class RocksideRelayTransactionManager implements TransactionManager {
     safeAccount: string,
     network: string
   ): Promise<TxRelayParamsResult> {
-    const url = `${rocksideTxRelayUrl}/ethereum/${network}/relay/${safeAccount}/params`
-    const headers = {
-      'Content-Type': 'application/json'
-    }
-
-    const response = await fetch(url, {
-      method: 'GET',
-      headers
+    const jsonResponse = await sendRequest({
+      url: `${rocksideTxRelayUrl}/ethereum/${network}/relay/${safeAccount}/params`,
+      method: HttpMethod.GET,
+      expectedHttpCodeResponse: 200
     })
 
-    const jsonResponse = await response.json()
-
-    if (response.status !== 200) {
-      throw new Error(jsonResponse.exception)
-    }
     return jsonResponse.speeds[this.#speed]
   }
 
@@ -146,51 +137,27 @@ class RocksideRelayTransactionManager implements TransactionManager {
     data: string,
     network: string
   ): Promise<string> {
-    const url = `${rocksideTxRelayUrl}/ethereum/${network}/relay/${safeAccount}`
-    const headers = {
-      Accept: 'application/json',
-      'Content-Type': 'application/json'
-    }
-    const body = {
-      data,
-      speed: this.#speed
-    }
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(body)
+    const jsonResponse = await sendRequest({
+      url: `${rocksideTxRelayUrl}/ethereum/${network}/relay/${safeAccount}`,
+      method: HttpMethod.POST,
+      body: JSON.stringify({ data, speed: this.#speed }),
+      expectedHttpCodeResponse: 200
     })
 
-    const jsonResponse = await response.json()
-
-    if (response.status !== 200) {
-      throw new Error(jsonResponse.exception)
-    }
     return jsonResponse.tracking_id
   }
 
   private async followTransaction(
     network: string,
     trackingId: string,
-    ethLibAdapter: EthLibAdapter,
+    ethLibAdapter: EthLibAdapter
   ): Promise<any> {
-    const url = `${rocksideTxRelayUrl}/ethereum/${network}/transactions/${trackingId}`
-    const headers = {
-      Accept: 'application/json',
-      'Content-Type': 'application/json'
-    }
-
-    const response = await fetch(url, {
-      method: 'GET',
-      headers,
+    const jsonResponse = await sendRequest({
+      url: `${rocksideTxRelayUrl}/ethereum/${network}/transactions/${trackingId}`,
+      method: HttpMethod.GET,
+      expectedHttpCodeResponse: 200
     })
 
-    const jsonResponse = await response.json()
-
-    if (response.status !== 200) {
-      throw new Error(jsonResponse.exception)
-    }
     return ethLibAdapter.toRocksideRelayTxResult(jsonResponse)
   }
 }
