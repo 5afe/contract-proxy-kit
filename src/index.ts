@@ -4,7 +4,8 @@ import EthersAdapter, { EthersAdapterConfig } from './ethLibAdapters/EthersAdapt
 import EthLibAdapter from './ethLibAdapters/EthLibAdapter'
 import Web3Adapter, { Web3AdapterConfig } from './ethLibAdapters/Web3Adapter'
 import CpkTransactionManager from './transactionManagers/CpkTransactionManager'
-import SafeRelayTransactionManager from './transactionManagers/SafeRelayTransactionManager'
+import RocksideTxRelayManager, { RocksideSpeed } from './transactionManagers/RocksideTxRelayManager'
+import SafeTxRelayManager from './transactionManagers/SafeTxRelayManager'
 import TransactionManager, {
   TransactionManagerConfig,
   TransactionManagerNames
@@ -19,7 +20,9 @@ export {
   Web3Adapter,
   // TransactionManagers
   CpkTransactionManager,
-  SafeRelayTransactionManager,
+  SafeTxRelayManager,
+  RocksideTxRelayManager,
+  RocksideSpeed,
   TransactionManagerNames,
   // Transactions
   OperationType,

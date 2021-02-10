@@ -25,7 +25,7 @@ interface ContractTxObj {
 class CpkTransactionManager implements TransactionManager {
   get config(): TransactionManagerConfig {
     return {
-      name: TransactionManagerNames.CpkTransactionManager,
+      name: TransactionManagerNames.CpkTxManager,
       url: undefined
     }
   }
