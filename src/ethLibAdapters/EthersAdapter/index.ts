@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js'
 import { Abi, Address } from '../../utils/basicTypes'
 import { zeroAddress } from '../../utils/constants'
 import {
@@ -20,6 +21,12 @@ class EthersAdapter extends EthLibAdapter {
   ethers: any
   signer: any
 
+  /**
+   * Creates an instance of EthersAdapter
+   *
+   * @param options - EthersAdapter configuration
+   * @returns The EthersAdapter instance
+   */
   constructor({ ethers, signer }: EthersAdapterConfig) {
     super()
 
@@ -33,40 +40,106 @@ class EthersAdapter extends EthLibAdapter {
     this.signer = signer
   }
 
+  /**
+   * Returns the current provider
+   *
+   * @returns The current provider
+   */
   getProvider(): any {
     // eslint-disable-next-line no-underscore-dangle
     return this.signer.provider.provider || this.signer.provider._web3Provider
   }
 
+  /**
+   * Sends a network request via JSON-RPC.
+   *
+   * @param method - JSON-RPC method
+   * @param params - Params
+   * @returns The request response
+   */
   providerSend(method: string, params: any[]): Promise<any> {
     return this.signer.provider.send(method, params)
   }
 
+  /**
+   * Signs data using a specific account.
+   *
+   * @param message - Data to sign
+   * @param ownerAccount - Address to sign the data with
+   * @returns The signature
+   */
   signMessage(message: string): Promise<string> {
     const messageArray = this.ethers.utils.arrayify(message)
     return this.signer.signMessage(messageArray)
   }
 
+  /**
+   * Returns the current network ID.
+   *
+   * @returns The network ID
+   */
   async getNetworkId(): Promise<number> {
     return (await this.signer.provider.getNetwork()).chainId
   }
 
+  /**
+   * Returns the default account used as the default "from" property.
+   *
+   * @returns The default account address
+   */
   async getAccount(): Promise<Address> {
     return this.signer.getAddress()
   }
 
+  /**
+   * Returns the balance of an address.
+   *
+   * @param address - The desired address
+   * @returns The balance of the address
+   */
+  async getBalance(address: Address): Promise<BigNumber> {
+    return new BigNumber(await this.signer.provider.getBalance(address))
+  }
+
+  /**
+   * Returns the keccak256 hash of the data.
+   *
+   * @param data - Desired data
+   * @returns The keccak256 of the data
+   */
   keccak256(data: string): string {
     return this.ethers.utils.keccak256(data)
   }
 
+  /**
+   * Encodes a function parameters based on its JSON interface object.
+   *
+   * @param types - An array with the types or a JSON interface of a function
+   * @param values - The parameters to encode
+   * @returns The ABI encoded parameters
+   */
   abiEncode(types: string[], values: any[]): string {
     return this.ethers.utils.defaultAbiCoder.encode(types, values)
   }
 
+  /**
+   * Decodes ABI encoded parameters to is JavaScript types.
+   *
+   * @param types - An array with the types or a JSON interface outputs array
+   * @param data - The ABI byte code to decode
+   * @returns The ABI encoded parameters
+   */
   abiDecode(types: string[], data: string): any[] {
     return this.ethers.utils.defaultAbiCoder.decode(types, data)
   }
 
+  /**
+   * Returns an instance of a contract.
+   *
+   * @param abi - ABI of the desired contract
+   * @param address - Contract address
+   * @returns The contract instance
+   */
   getContract(abi: Abi, address?: Address): Contract {
     const contract = new this.ethers.Contract(address || zeroAddress, abi, this.signer)
     const ethersVersion = this.ethers.version
@@ -81,6 +154,14 @@ class EthersAdapter extends EthLibAdapter {
     throw new Error(`ethers version ${ethersVersion} not supported`)
   }
 
+  /**
+   * Deterministically returns the address where a contract will be deployed.
+   *
+   * @param deployer - Account that deploys the contract
+   * @param salt - Salt
+   * @param initCode - Code to be deployed
+   * @returns The address where the contract will be deployed
+   */
   calcCreate2Address(deployer: Address, salt: string, initCode: string): string {
     return this.ethers.utils.getAddress(
       this.ethers.utils
@@ -92,14 +173,33 @@ class EthersAdapter extends EthLibAdapter {
     )
   }
 
+  /**
+   * Returns the code at a specific address.
+   *
+   * @param address - The desired address
+   * @returns The code of the contract
+   */
   getCode(address: Address): Promise<string> {
     return this.signer.provider.getCode(address)
   }
 
+  /**
+   * Returns a block matching the block number or block hash.
+   *
+   * @param blockHashOrBlockNumber - The block number or block hash
+   * @returns The block object
+   */
   getBlock(blockHashOrBlockNumber: string | number): Promise<{ [property: string]: any }> {
     return this.signer.provider.getBlock(blockHashOrBlockNumber)
   }
 
+  /**
+   * Returns the revert reason when a call fails.
+   *
+   * @param tx - Transaction to execute
+   * @param block - Block number
+   * @returns The revert data when the call fails
+   */
   async getCallRevertData(tx: EthCallTx, block: string | number): Promise<string> {
     try {
       // Handle old Geth/Ganache --noVMErrorsOnRPCResponse revert data
@@ -134,6 +234,12 @@ class EthersAdapter extends EthLibAdapter {
     }
   }
 
+  /**
+   * Sends a transaction to the network.
+   *
+   * @param tx - Transaction to send
+   * @returns The transaction response
+   */
   async ethSendTransaction(tx: EthSendTx): Promise<EthersTransactionResult> {
     const { from, gas, ...sendTx } = normalizeGasLimit(tx)
     await this.checkFromAddress(from)
@@ -141,6 +247,13 @@ class EthersAdapter extends EthLibAdapter {
     return { transactionResponse, hash: transactionResponse.hash }
   }
 
+  /**
+   * Formats transaction result depending on the current provider.
+   *
+   * @param txHash - Transaction hash
+   * @param tx - Transaction response
+   * @returns The formatted transaction response
+   */
   toSafeRelayTxResult(txHash: string, tx: Record<string, any>): Promise<EthersTransactionResult> {
     tx['hash'] = tx['txHash']
     delete tx['txHash']

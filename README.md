@@ -15,9 +15,7 @@ Enable batched transactions and contract account interactions using a unique det
 
 [CPK basic tutorial](https://docs.gnosis.io/safe/docs/cpktutorial1/)
 
-[CPK API Documentation](https://github.com/gnosis/contract-proxy-kit/tree/master/docs/cpk.md)
-
-[CPK architecture diagram](https://github.com/gnosis/contract-proxy-kit/tree/master/docs/CPKdiagram.png)
+[CPK architecture diagram](https://github.com/gnosis/contract-proxy-kit/tree/master/assets/CPKdiagram.png)
 
 ## Usage
 
@@ -355,7 +353,7 @@ Once your app is ready to be deployed, make sure to follow these [steps to run y
 
 When running your app inside the *Safe Web UI*, the configuration used to instantiate the *CPK* will be ignored because the responsibility to send transactions is now transferred to the *Safe Web UI* and the wallet connected to it.
 
-If needed, the method `CPK.isSafeApp()` is available to check if the app using the *CPK* is running as a Safe App or not.
+If needed, the method `CPK.safeAppsSdkConnector.isSafeApp` is available to check if the app using the *CPK* is running as a Safe App or not.
 
 ## In-depth Guide
 

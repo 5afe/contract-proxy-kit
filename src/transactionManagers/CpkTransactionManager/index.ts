@@ -23,6 +23,11 @@ interface ContractTxObj {
 }
 
 class CpkTransactionManager implements TransactionManager {
+  /**
+   * Returns the configuration of the CpkTransactionManager.
+   *
+   * @returns The name of the TransactionManager in use and the URL of the service
+   */
   get config(): TransactionManagerConfig {
     return {
       name: TransactionManagerNames.CpkTxManager,
@@ -30,6 +35,12 @@ class CpkTransactionManager implements TransactionManager {
     }
   }
 
+  /**
+   * Executes a list of transactions.
+   *
+   * @param options
+   * @returns The transaction response
+   */
   async execTransactions({
     ownerAccount,
     safeExecTxParams,

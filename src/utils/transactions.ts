@@ -10,6 +10,7 @@ export enum OperationType {
 interface GasLimitOptions {
   gas?: NumberLike
   gasLimit?: NumberLike
+  safeTxGas?: number
 }
 
 interface BaseTxOptions extends GasLimitOptions {

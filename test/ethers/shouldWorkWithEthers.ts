@@ -159,6 +159,18 @@ export function shouldWorkWithEthers({
         should.exist(await CPK.create({ ethLibAdapter, transactionManager, networks }))
       })
 
+      it('should instantiate SafeAppsSdkConnector when isSafeApp is not set', async () => {
+        const ethLibAdapter = new EthersAdapter({ ethers, signer })
+        const cpk = await CPK.create({ ethLibAdapter, networks })
+        should.exist(cpk.safeAppsSdkConnector)
+      })
+
+      it('should not instantiate SafeAppsSdkConnector when isSafeApp configuration param is set to false', async () => {
+        const ethLibAdapter = new EthersAdapter({ ethers, signer })
+        const cpk = await CPK.create({ ethLibAdapter, networks, isSafeApp: false })
+        should.not.exist(cpk.safeAppsSdkConnector)
+      })
+
       it('can encode multiSend call data', async () => {
         const { multiStep } = contracts
         const transactions: Transaction[] = [

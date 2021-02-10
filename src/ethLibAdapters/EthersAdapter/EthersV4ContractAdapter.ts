@@ -8,7 +8,7 @@ import {
 import { Contract } from '../EthLibAdapter'
 import EthersAdapter from './'
 
-class EthersContractAdapter implements Contract {
+class EthersV4ContractAdapter implements Contract {
   constructor(public contract: any, public ethersAdapter: EthersAdapter) {}
 
   get address(): Address {
@@ -69,4 +69,4 @@ class EthersContractAdapter implements Contract {
   }
 }
 
-export default EthersContractAdapter
+export default EthersV4ContractAdapter

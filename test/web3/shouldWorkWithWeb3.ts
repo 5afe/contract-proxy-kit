@@ -157,6 +157,18 @@ export function shouldWorkWithWeb3({
         )
       })
 
+      it('should instantiate SafeAppsSdkConnector when isSafeApp is not set', async () => {
+        const ethLibAdapter = new Web3Adapter({ web3: ueb3 })
+        const cpk = await CPK.create({ ethLibAdapter, networks })
+        should.exist(cpk.safeAppsSdkConnector)
+      })
+
+      it('should not instantiate SafeAppsSdkConnector when isSafeApp configuration param is set to false', async () => {
+        const ethLibAdapter = new Web3Adapter({ web3: ueb3 })
+        const cpk = await CPK.create({ ethLibAdapter, networks, isSafeApp: false })
+        should.not.exist(cpk.safeAppsSdkConnector)
+      })
+
       it('can encode multiSend call data', async () => {
         const { multiStep } = contracts
         const transactions: Transaction[] = [

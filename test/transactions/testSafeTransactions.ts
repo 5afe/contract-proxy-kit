@@ -103,7 +103,6 @@ export function testSafeTransactions({
     ;(ownerIsRecognizedContract ? it.skip : it)(
       'can execute a single transaction with string value',
       async () => {
-        if (!cpk.address) return
         const startingBalance = await getBalance(`0x${'0'.repeat(39)}4`)
 
         const value = `${1e18}`
@@ -126,7 +125,6 @@ export function testSafeTransactions({
     ;(ownerIsRecognizedContract ? it.skip : it)(
       'can execute a single transaction with hex string value',
       async () => {
-        if (!cpk.address) return
         const startingBalance = await getBalance(`0x${'0'.repeat(39)}4`)
 
         const value = '0xde0b6b3a7640000' //1e18
@@ -149,7 +147,6 @@ export function testSafeTransactions({
     ;(ownerIsRecognizedContract ? it.skip : it)(
       'can execute a single transaction with BigNumber value',
       async () => {
-        if (!cpk.address) return
         const startingBalance = await getBalance(`0x${'0'.repeat(39)}4`)
 
         const value = new BigNumber(1e18)
