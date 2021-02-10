@@ -51,9 +51,8 @@ export function testSafeTransactions({
 }: TestSafeTransactionsProps): void {
   it('can get checksummed address of instance', async () => {
     const cpk = await getCPK()
-    const safeAddress = await cpk.address
-    should.exist(safeAddress)
-    checkAddressChecksum(safeAddress).should.be.true()
+    should.exist(cpk.address)
+    checkAddressChecksum(cpk.address).should.be.true()
   })
 
   if (ownerIsRecognizedContract) {
@@ -61,7 +60,7 @@ export function testSafeTransactions({
       const cpk = await getCPK()
       const proxyOwner = await cpk.getOwnerAccount()
       should.exist(proxyOwner)
-      proxyOwner?.should.be.equal(await cpk.address)
+      proxyOwner?.should.be.equal(cpk.address)
     })
   }
 
@@ -97,7 +96,7 @@ export function testSafeTransactions({
         to: erc20.address,
         value: 0,
         gas: '0x5b8d80',
-        data: erc20.contract.methods.approve(await cpk.address, `${1e20}`).encodeABI()
+        data: erc20.contract.methods.approve(cpk.address, `${1e20}`).encodeABI()
       })
       await waitTxReceipt({ hash })
     })
@@ -169,7 +168,7 @@ export function testSafeTransactions({
     )
 
     it('can execute a single transaction with data', async () => {
-      ;(await multiStep.lastStepFinished(await cpk.address)).toNumber().should.equal(0)
+      ;(await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0)
 
       const txs = [
         {
@@ -181,30 +180,28 @@ export function testSafeTransactions({
 
       checkTxObj(txs.length, accountType, txResult, isCpkTransactionManager)
       await waitSafeTxReceipt(txResult)
-      ;(await multiStep.lastStepFinished(await cpk.address)).toNumber().should.equal(1)
+      ;(await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(1)
     })
 
     it('can execute deep transactions', async () => {
-      ;(await multiStep.lastStepFinished(await cpk.address)).toNumber().should.equal(0)
+      ;(await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0)
       const numSteps = 10
 
       const txs = [
         {
           to: multiStep.address,
-          data: multiStep.contract.methods
-            .doDeepStep(numSteps, numSteps, await cpk.address)
-            .encodeABI()
+          data: multiStep.contract.methods.doDeepStep(numSteps, numSteps, cpk.address).encodeABI()
         }
       ]
       const txResult = await cpk.execTransactions(txs)
 
       checkTxObj(txs.length, accountType, txResult, isCpkTransactionManager)
       await waitSafeTxReceipt(txResult)
-      ;(await multiStep.lastStepFinished(await cpk.address)).toNumber().should.equal(numSteps)
+      ;(await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(numSteps)
     })
 
     it('can batch transactions together', async () => {
-      ;(await multiStep.lastStepFinished(await cpk.address)).toNumber().should.equal(0)
+      ;(await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0)
 
       const txs = [
         {
@@ -220,18 +217,16 @@ export function testSafeTransactions({
 
       checkTxObj(txs.length, accountType, txResult, isCpkTransactionManager)
       await waitSafeTxReceipt(txResult)
-      ;(await multiStep.lastStepFinished(await cpk.address)).toNumber().should.equal(2)
+      ;(await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(2)
     })
 
     it('can batch ERC20 transactions', async () => {
-      ;(await multiStep.lastStepFinished(await cpk.address)).toNumber().should.equal(0)
+      ;(await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0)
 
       const txs = [
         {
           to: erc20.address,
-          data: erc20.contract.methods
-            .transferFrom(proxyOwner, await cpk.address, `${3e18}`)
-            .encodeABI()
+          data: erc20.contract.methods.transferFrom(proxyOwner, cpk.address, `${3e18}`).encodeABI()
         },
         {
           to: erc20.address,
@@ -250,12 +245,12 @@ export function testSafeTransactions({
 
       checkTxObj(txs.length, accountType, txResult, isCpkTransactionManager)
       await waitSafeTxReceipt(txResult)
-      ;(await multiStep.lastStepFinished(await cpk.address)).toNumber().should.equal(2)
+      ;(await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(2)
 
-      if ((await cpk.address) === proxyOwner) {
-        fromWei(await erc20.balanceOf(await cpk.address)).should.equal(98)
+      if (cpk.address === proxyOwner) {
+        fromWei(await erc20.balanceOf(cpk.address)).should.equal(98)
       } else {
-        fromWei(await erc20.balanceOf(await cpk.address)).should.equal(1)
+        fromWei(await erc20.balanceOf(cpk.address)).should.equal(1)
         fromWei(await erc20.balanceOf(proxyOwner)).should.equal(97)
       }
       fromWei(await erc20.balanceOf(multiStep.address)).should.equal(2)
@@ -264,7 +259,7 @@ export function testSafeTransactions({
     it('can batch ERC-1155 token interactions', async () => {
       const questionId = randomHexWord()
       const conditionId: string = web3.utils.soliditySha3(
-        { t: 'address', v: await cpk.address },
+        { t: 'address', v: cpk.address },
         { t: 'bytes32', v: questionId },
         { t: 'uint', v: 2 }
       )
@@ -272,9 +267,7 @@ export function testSafeTransactions({
       const txs = [
         {
           to: erc20.address,
-          data: erc20.contract.methods
-            .transferFrom(proxyOwner, await cpk.address, `${3e18}`)
-            .encodeABI()
+          data: erc20.contract.methods.transferFrom(proxyOwner, cpk.address, `${3e18}`).encodeABI()
         },
         {
           to: erc20.address,
@@ -283,7 +276,7 @@ export function testSafeTransactions({
         {
           to: conditionalTokens.address,
           data: conditionalTokens.contract.methods
-            .prepareCondition(await cpk.address, questionId, 2)
+            .prepareCondition(cpk.address, questionId, 2)
             .encodeABI()
         },
         {
@@ -298,10 +291,10 @@ export function testSafeTransactions({
       checkTxObj(txs.length, accountType, txResult, isCpkTransactionManager)
       await waitSafeTxReceipt(txResult)
 
-      if ((await cpk.address) === proxyOwner) {
-        fromWei(await erc20.balanceOf(await cpk.address)).should.equal(99)
+      if (cpk.address === proxyOwner) {
+        fromWei(await erc20.balanceOf(cpk.address)).should.equal(99)
       } else {
-        fromWei(await erc20.balanceOf(await cpk.address)).should.equal(2)
+        fromWei(await erc20.balanceOf(cpk.address)).should.equal(2)
         fromWei(await erc20.balanceOf(proxyOwner)).should.equal(97)
       }
       fromWei(await erc20.balanceOf(conditionalTokens.address)).should.equal(1)
@@ -309,7 +302,7 @@ export function testSafeTransactions({
     ;(ownerIsRecognizedContract ? it.skip : it)(
       'by default errors without transacting when single transaction would fail',
       async () => {
-        ;(await multiStep.lastStepFinished(await cpk.address)).toNumber().should.equal(0)
+        ;(await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0)
         const startingTransactionCount = await getTransactionCount(proxyOwner)
 
         const errorMessage =
@@ -325,14 +318,14 @@ export function testSafeTransactions({
             }
           ])
           .should.be.rejectedWith(errorMessage)
-        ;(await multiStep.lastStepFinished(await cpk.address)).toNumber().should.equal(0)
+        ;(await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0)
         await getTransactionCount(proxyOwner).should.eventually.equal(startingTransactionCount)
       }
     )
     ;(ownerIsRecognizedContract ? it.skip : it)(
       'by default errors without transacting when any transaction in batch would fail',
       async () => {
-        ;(await multiStep.lastStepFinished(await cpk.address)).toNumber().should.equal(0)
+        ;(await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0)
         const startingTransactionCount = await getTransactionCount(proxyOwner)
 
         const errorMessage =
@@ -352,7 +345,7 @@ export function testSafeTransactions({
             }
           ])
           .should.be.rejectedWith(errorMessage)
-        ;(await multiStep.lastStepFinished(await cpk.address)).toNumber().should.equal(0)
+        ;(await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0)
         await getTransactionCount(proxyOwner).should.eventually.equal(startingTransactionCount)
       }
     )
@@ -374,7 +367,7 @@ export function testSafeTransactions({
       async () => {
         const startingBalance = await getBalance((executor && executor[0]) || proxyOwner)
 
-        ;(await multiStep.lastStepFinished(await cpk.address)).toNumber().should.equal(0)
+        ;(await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0)
 
         const txs = [
           {
@@ -399,7 +392,7 @@ export function testSafeTransactions({
       async () => {
         const startingBalance = await getBalance((executor && executor[0]) || proxyOwner)
 
-        ;(await multiStep.lastStepFinished(await cpk.address)).toNumber().should.equal(0)
+        ;(await multiStep.lastStepFinished(cpk.address)).toNumber().should.equal(0)
 
         const txs = [
           {
@@ -434,7 +427,7 @@ export function testSafeTransactions({
       } else {
         await sendTransaction({
           from: await cpk.getOwnerAccount(),
-          to: await cpk.address,
+          to: cpk.address,
           value: '0xde0b6b3a7640000',
           gas: '0x5b8d80'
         })

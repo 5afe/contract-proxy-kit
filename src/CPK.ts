@@ -70,14 +70,20 @@ class CPK {
    * @returns The CPK instance
    */
   constructor(opts?: CPKConfig) {
-
     this.#networks = {
       ...defaultNetworks
     }
     if (!opts) {
       return
     }
-    const { ethLibAdapter, transactionManager, ownerAccount, networks, saltNonce, isSafeApp = true } = opts
+    const {
+      ethLibAdapter,
+      transactionManager,
+      ownerAccount,
+      networks,
+      saltNonce,
+      isSafeApp = true
+    } = opts
     if (isSafeApp) {
       this.#safeAppsSdkConnector = new SafeAppsSdkConnector()
     }
@@ -111,7 +117,7 @@ class CPK {
 
     this.#isConnectedToSafe =
       (await checkConnectedToSafe(this.#ethLibAdapter.getProvider())) ||
-      (this.#safeAppsSdkConnector?.isSafeApp === true)
+      this.#safeAppsSdkConnector?.isSafeApp === true
 
     this.#contractManager = await ContractManager.create({
       ethLibAdapter: this.#ethLibAdapter,
@@ -250,11 +256,11 @@ class CPK {
    *
    * @returns The address of the Proxy contract
    */
-  get address(): Promise<Address | undefined> {
-    if (this.#safeAppsSdkConnector?.isSafeApp) {
-      return (async () => this.#safeAppsSdkConnector && (await this.#safeAppsSdkConnector.getSafeInfo()).safeAddress)()
+  get address(): Address | undefined {
+    if (this.#safeAppsSdkConnector?.safeAddress) {
+      return this.#safeAppsSdkConnector?.safeAddress
     }
-    return new Promise((resolve, reject) => resolve(this.#contractManager?.contract?.address))
+    return this.#contractManager?.contract?.address
   }
 
   /**

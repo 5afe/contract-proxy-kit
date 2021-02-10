@@ -220,7 +220,7 @@ export function shouldWorkWithEthers({
           await toTxHashPromise(
             web3.eth.sendTransaction({
               from: defaultAccountBox[0],
-              to: await cpk.address,
+              to: cpk.address,
               value: `${5e18}`
             })
           )
@@ -272,7 +272,7 @@ export function shouldWorkWithEthers({
             await toTxHashPromise(
               web3.eth.sendTransaction({
                 from: defaultAccountBox[0],
-                to: await cpk.address,
+                to: cpk.address,
                 value: `${5e18}`
               })
             )
@@ -302,7 +302,7 @@ export function shouldWorkWithEthers({
           await toTxHashPromise(
             web3.eth.sendTransaction({
               from: defaultAccountBox[0],
-              to: await cpk.address,
+              to: cpk.address,
               value: `${5e18}`
             })
           )

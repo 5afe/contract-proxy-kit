@@ -107,9 +107,8 @@ describe('CPK', () => {
 
     should.exist(cpk)
     should.exist(cpk.ethLibAdapter)
-    const safeAddress = await cpk.address
-    should.exist(safeAddress)
-    safeAddress?.should.equal(message.safeAddress)
+    should.exist(cpk.address)
+    cpk.address?.should.equal(message.safeAddress)
     should.not.exist(cpk.contractManager?.contract)
     should.not.exist(cpk.contractManager?.multiSend)
     should.not.exist(cpk.contractManager?.proxyFactory)
@@ -133,9 +132,8 @@ describe('CPK', () => {
 
     should.exist(cpk)
     should.exist(cpk.ethLibAdapter)
-    const safeAddress = await cpk.address
-    should.exist(safeAddress)
-    safeAddress?.should.equal(message.safeAddress)
+    should.exist(cpk.address)
+    cpk.address?.should.equal(message.safeAddress)
     should.not.exist(cpk.contractManager?.contract)
     should.not.exist(cpk.contractManager?.multiSend)
     should.not.exist(cpk.contractManager?.proxyFactory)

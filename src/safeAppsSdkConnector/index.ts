@@ -1,4 +1,5 @@
 import SafeAppsSDK, { SafeInfo, TxServiceModel } from '@gnosis.pm/safe-apps-sdk'
+import { Address } from '../utils/basicTypes'
 import { SimpleTransactionResult, StandardTransaction } from '../utils/transactions'
 
 interface SafeTransactionParams {
@@ -7,12 +8,14 @@ interface SafeTransactionParams {
 
 class SafeAppsSdkConnector {
   #appsSdk: SafeAppsSDK
+  #safeAddress?: Address
   #isSafeApp = false
 
   constructor() {
     this.#appsSdk = new SafeAppsSDK()
     this.#appsSdk.getSafeInfo().then((appInfo: SafeInfo) => {
       this.#isSafeApp = !!appInfo.safeAddress
+      this.#safeAddress = appInfo.safeAddress
     })
   }
 
@@ -23,6 +26,15 @@ class SafeAppsSdkConnector {
    */
   get isSafeApp(): boolean {
     return this.#isSafeApp
+  }
+
+  /**
+   * Returns the Safe address connected to the CPK if the CPK is running as a Safe App.
+   *
+   * @returns The Safe address
+   */
+  get safeAddress(): Address | undefined {
+    return this.#safeAddress
   }
 
   /**
