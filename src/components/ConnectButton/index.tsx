@@ -1,12 +1,30 @@
 import * as React from 'react'
-import Web3Connect from 'web3connect'
 import styled from 'styled-components'
-import './styles.scss'
+import Web3Connect from 'web3connect'
 
 const Web3ConnectButton = styled.div`
   display: flex;
   justify-content: center;
-  margin-bottom: 10px;
+  width: 180px;
+  & > div {
+    padding: 0;
+  }
+  .web3connect-connect-button {
+    outline: none;
+    background: #008c73;
+    border-radius: 4px;
+    color: #fff;
+    cursor: pointer;
+    transform: none;
+    font-weight: normal;
+    font-size: 14px;
+    box-shadow: none;
+  }
+  .web3connect-connect-button:hover {
+    background: #005546;
+    box-shadow: none;
+    transform: none;
+  }
 `
 
 const {
@@ -15,13 +33,11 @@ const {
 
 type ConnectButtonProps = {
   onConnect: Function
-  networkName: string
 }
 
-const ConnectButton = ({ onConnect, networkName }: ConnectButtonProps) => (
+const ConnectButton = ({ onConnect }: ConnectButtonProps) => (
   <Web3ConnectButton>
     <Web3Connect.Button
-      network={networkName}
       providerOptions={{
         walletconnect: {
           package: WalletConnectProvider,

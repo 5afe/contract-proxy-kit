@@ -1,6 +1,3 @@
-import React, { useCallback, useEffect, useState } from 'react'
-import CPK from 'contract-proxy-kit'
-import styled from 'styled-components'
 import {
   Button,
   Card,
@@ -14,6 +11,10 @@ import {
   Title
 } from '@gnosis.pm/safe-react-components'
 import { WalletState } from 'components/App'
+import CPK, { TransactionResult } from 'contract-proxy-kit'
+import React, { useCallback, useEffect, useState } from 'react'
+import styled from 'styled-components'
+import { getNetworkNameFromId } from 'utils/networks'
 
 const Line = styled.div`
   display: flex;
@@ -26,7 +27,24 @@ const TitleLine = styled.div`
 `
 
 const BigLine = styled.div`
-  margin: 10px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 20px;
+`
+
+const SButton = styled(Button)`
+  width: 242px;
+`
+
+const STextField = styled(TextField)`
+  width: 600px !important;
+`
+
+const SCard = styled(Card)`
+  width: 100%;
+  display: flex;
+  justify-content: center;
 `
 
 interface SafeModulesProps {
@@ -43,18 +61,23 @@ const headers: TableHeader[] = [
 
 const SafeModules = ({ cpk, walletState }: SafeModulesProps) => {
   const [module, setModule] = useState<string>('')
-  const [txHash, setTxHash] = useState<string>('')
+  const [txHash, setTxHash] = useState<string | null | undefined>()
+  const [safeTxHash, setSafeTxHash] = useState<string | undefined>()
   const [showTxError, setShowTxError] = useState<boolean>(false)
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [rows, setRows] = useState<TableRow[]>([])
 
   const getModules = useCallback(async () => {
-    const modules = await cpk.getModules()
-    const newRows: TableRow[] = modules.map((module, index) => ({
-      id: index.toString(),
-      cells: [{ content: module }]
-    }))
-    setRows(newRows)
+    try {
+      const modules = await cpk.getModules()
+      const newRows: TableRow[] = modules.map((module, index) => ({
+        id: index.toString(),
+        cells: [{ content: module }]
+      }))
+      setRows(newRows)
+    } catch (error) {
+      console.error(error)
+    }
   }, [cpk])
 
   useEffect(() => {
@@ -63,49 +86,57 @@ const SafeModules = ({ cpk, walletState }: SafeModulesProps) => {
 
   const enableModule = async (): Promise<void> => {
     if (!module) return
+    let txResult
     setShowTxError(false)
     setTxHash('')
+
     try {
-      // Remove any type when TransactionResult type is updated
-      const txResult: any = await cpk.enableModule(module)
-      const hash = walletState.isSafeApp ? txResult.safeTxHash : txResult.hash
-      if (hash) {
-        setTxHash(hash)
-      }
-      setIsLoading(true)
-      await new Promise((resolve, reject) =>
-        txResult.promiEvent
-          ?.then((receipt: any) => resolve(receipt))
-          .catch(reject)
-      )
-      await getModules()
+      txResult = await cpk.enableModule(module)
     } catch (e) {
+      console.error(e)
       setShowTxError(true)
     }
-    setIsLoading(false)
+
+    await handleTxResult(txResult)
   }
 
   const disableModule = async (): Promise<void> => {
     if (!module) return
+    let txResult
+
     setShowTxError(false)
     setTxHash('')
+
     try {
-      // Remove any type when TransactionResult type is updated
-      const txResult: any = await cpk.disableModule(module)
-      const hash = walletState.isSafeApp ? txResult.safeTxHash : txResult.hash
-      if (hash) {
-        setTxHash(hash)
-      }
-      setIsLoading(true)
-      await new Promise((resolve, reject) =>
-        txResult.promiEvent
-          ?.then((receipt: any) => resolve(receipt))
-          .catch(reject)
-      )
-      await getModules()
+      txResult = await cpk.disableModule(module)
     } catch (e) {
+      console.error(e)
       setShowTxError(true)
     }
+
+    await handleTxResult(txResult)
+  }
+
+  const handleTxResult = async (txResult: TransactionResult) => {
+    let txServiceModel
+
+    if (txResult.safeTxHash) {
+      setSafeTxHash(txResult.safeTxHash)
+      txServiceModel = await cpk.safeAppsSdkConnector?.getBySafeTxHash(
+        txResult.safeTxHash
+      )
+    }
+    if (txResult.hash || txServiceModel) {
+      setTxHash(txResult.hash || txServiceModel?.transactionHash)
+    }
+
+    setIsLoading(true)
+    await new Promise((resolve, reject) =>
+      txResult.promiEvent
+        ?.then((receipt: any) => resolve(receipt))
+        .catch(reject)
+    )
+    await getModules()
     setIsLoading(false)
   }
 
@@ -114,42 +145,43 @@ const SafeModules = ({ cpk, walletState }: SafeModulesProps) => {
       <Title size="sm">Safe modules</Title>
       <Line>
         <TitleLine>
-          <Text size="xl">Test with this module on Rinkeby:</Text>
+          <Text size="xl">Test module available on Rinkeby:</Text>
         </TitleLine>
         <EthHashInfo
           hash="0x33A458E072b182152Bb30243f29585a82c45A22b"
           textSize="xl"
+          showEtherscanBtn
           showCopyBtn
+          shortenHash={4}
+          network={getNetworkNameFromId(walletState?.networkId)}
         />
       </Line>
       <BigLine>
-        <TextField
+        <STextField
           id="standard-name"
           label="Module Address"
           value={module}
           onChange={(e) => setModule(e.target.value)}
         />
       </BigLine>
-      <Line>
-        <Button
+      <BigLine>
+        <SButton
           onClick={enableModule}
-          size="md"
+          size="lg"
           color="primary"
           variant="contained"
         >
           Enable module
-        </Button>
-      </Line>
-      <Line>
-        <Button
+        </SButton>
+        <SButton
           onClick={disableModule}
-          size="md"
+          size="lg"
           color="primary"
           variant="contained"
         >
           Disable module
-        </Button>
-      </Line>
+        </SButton>
+      </BigLine>
       {showTxError && (
         <Line>
           <Text size="xl" color="error">
@@ -161,33 +193,49 @@ const SafeModules = ({ cpk, walletState }: SafeModulesProps) => {
         <Line>
           <TitleLine>
             <Text size="xl" as="span" strong>
-              {walletState.isSafeApp
-                ? 'Safe transaction hash:'
-                : 'Transaction hash:'}
+              Transaction hash:
             </Text>
           </TitleLine>
           <EthHashInfo
             hash={txHash}
             textSize="xl"
             shortenHash={8}
+            showEtherscanBtn
             showCopyBtn
+            network={getNetworkNameFromId(walletState?.networkId)}
+          />
+        </Line>
+      )}
+      {safeTxHash && (
+        <Line>
+          <TitleLine>
+            <Text size="xl" as="span" strong>
+              Safe transaction hash:
+            </Text>
+          </TitleLine>
+          <EthHashInfo
+            hash={safeTxHash}
+            textSize="xl"
+            shortenHash={8}
+            showCopyBtn
+            network={getNetworkNameFromId(walletState?.networkId)}
           />
         </Line>
       )}
       {isLoading ? (
         <BigLine>
-          <Card>
+          <SCard>
             <Loader size="sm" />
-          </Card>
+          </SCard>
         </BigLine>
       ) : (
         <BigLine>
           {rows.length > 0 ? (
             <Table headers={headers} rows={rows} />
           ) : (
-            <Card>
+            <SCard>
               <Text size="xl">No modules enabled</Text>
-            </Card>
+            </SCard>
           )}
         </BigLine>
       )}
