@@ -67,3 +67,5 @@ build/
 
 # Typechain for migrations
 migrations/
+
+docs/
