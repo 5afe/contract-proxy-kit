@@ -8,15 +8,16 @@
   },
   "dependencies": {
     "contract-proxy-kit": "file:packages/contract-proxy-kit",
-    "cpk-configuration-app": "file:packages/cpk-configuration-app"
+    "cpk-configuration-app": "file:packages/cpk-configuration-app",
+    "lerna": "^3.22.1"
   },
   "devDependencies": {
     "@gnosis.pm/conditional-tokens-contracts": "^0.5.4",
     "@gnosis.pm/safe-contracts": "1.2.0",
-    "@truffle/hdwallet-provider": "^1.2.1",
     "@testing-library/jest-dom": "^5.11.9",
     "@testing-library/react": "^11.2.5",
     "@testing-library/user-event": "^12.7.0",
+    "@truffle/hdwallet-provider": "^1.2.1",
     "@typechain/truffle-v5": "^4.0.1",
     "@types/chai": "^4.2.14",
     "@types/chai-as-promised": "^7.1.3",

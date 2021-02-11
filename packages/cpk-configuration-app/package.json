@@ -29,6 +29,11 @@
     "predeploy": "yarn build",
     "deploy": "gh-pages -d build"
   },
+  "author": "Gnosis (https://gnosis.io)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/gnosis/cpk-configuration-app/issues"
+  },
   "eslintConfig": {
     "extends": "react-app"
   },
