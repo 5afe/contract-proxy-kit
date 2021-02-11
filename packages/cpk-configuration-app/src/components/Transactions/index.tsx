@@ -62,7 +62,7 @@ const Transactions = ({
     try {
       txResult = await cpk.execTransactions(txs)
     } catch (e) {
-      console.log(e)
+      console.error(e)
       setShowTxError(true)
     }
 

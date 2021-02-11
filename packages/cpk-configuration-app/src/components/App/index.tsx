@@ -127,7 +127,6 @@ const App = () => {
           speed: RocksideSpeed.Fastest
         })
       }
-      console.log(transactionManager?.config)
 
       let newCpk
       try {

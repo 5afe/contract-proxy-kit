@@ -1,3 +1,4 @@
+import { TxServiceModel } from '@gnosis.pm/safe-apps-sdk'
 import { defaultNetworks, NetworksConfig } from './config/networks'
 import CPK, { CPKConfig } from './CPK'
 import EthersAdapter, { EthersAdapterConfig } from './ethLibAdapters/EthersAdapter'
@@ -42,6 +43,8 @@ export type {
   Transaction,
   ExecOptions,
   TransactionResult,
+  TxServiceModel,
   // Configuration
   NetworksConfig
 }
+

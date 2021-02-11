@@ -95,6 +95,7 @@ const SafeModules = ({ cpk, walletState }: SafeModulesProps) => {
     } catch (e) {
       console.error(e)
       setShowTxError(true)
+      return
     }
 
     await handleTxResult(txResult)
@@ -112,6 +113,7 @@ const SafeModules = ({ cpk, walletState }: SafeModulesProps) => {
     } catch (e) {
       console.error(e)
       setShowTxError(true)
+      return
     }
 
     await handleTxResult(txResult)
@@ -120,19 +122,19 @@ const SafeModules = ({ cpk, walletState }: SafeModulesProps) => {
   const handleTxResult = async (txResult: TransactionResult) => {
     let txServiceModel
 
-    if (txResult.safeTxHash) {
+    if (txResult?.safeTxHash) {
       setSafeTxHash(txResult.safeTxHash)
       txServiceModel = await cpk.safeAppsSdkConnector?.getBySafeTxHash(
         txResult.safeTxHash
       )
     }
-    if (txResult.hash || txServiceModel) {
+    if (txResult?.hash || txServiceModel) {
       setTxHash(txResult.hash || txServiceModel?.transactionHash)
     }
 
     setIsLoading(true)
     await new Promise((resolve, reject) =>
-      txResult.promiEvent
+      txResult?.promiEvent
         ?.then((receipt: any) => resolve(receipt))
         .catch(reject)
     )
