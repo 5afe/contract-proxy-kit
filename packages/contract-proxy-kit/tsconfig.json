@@ -8,6 +8,7 @@
     "target": "ES6",
     "module": "ES2020",
     "outDir": "lib/esm",
+    "types" : [ "node" ],
     "strict": true,
     "strictBindCallApply": true,
     "strictFunctionTypes": true,
