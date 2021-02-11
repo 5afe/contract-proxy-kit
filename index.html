@@ -1,0 +1,516 @@
+<!doctype html>
+<html class="default no-js">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>contract-proxy-kit</title>
+	<meta name="description" content="Documentation for contract-proxy-kit">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="assets/css/main.css">
+	<script async src="assets/js/search.js" id="search-script"></script>
+</head>
+<body>
+<header>
+	<div class="tsd-page-toolbar">
+		<div class="container">
+			<div class="table-wrap">
+				<div class="table-cell" id="tsd-search" data-index="assets/js/search.json" data-base=".">
+					<div class="field">
+						<label for="tsd-search-field" class="tsd-widget search no-caption">Search</label>
+						<input id="tsd-search-field" type="text" />
+					</div>
+					<ul class="results">
+						<li class="state loading">Preparing search index...</li>
+						<li class="state failure">The search index is not available</li>
+					</ul>
+					<a href="index.html" class="title">contract-proxy-kit</a>
+				</div>
+				<div class="table-cell" id="tsd-widgets">
+					<div id="tsd-filter">
+						<a href="#" class="tsd-widget options no-caption" data-toggle="options">Options</a>
+						<div class="tsd-filter-group">
+							<div class="tsd-select" id="tsd-filter-visibility">
+								<span class="tsd-select-label">All</span>
+								<ul class="tsd-select-list">
+									<li data-value="public">Public</li>
+									<li data-value="protected">Public/Protected</li>
+									<li data-value="private" class="selected">All</li>
+								</ul>
+							</div>
+							<input type="checkbox" id="tsd-filter-inherited" checked />
+							<label class="tsd-widget" for="tsd-filter-inherited">Inherited</label>
+							<input type="checkbox" id="tsd-filter-externals" checked />
+							<label class="tsd-widget" for="tsd-filter-externals">Externals</label>
+						</div>
+					</div>
+					<a href="#" class="tsd-widget menu no-caption" data-toggle="menu">Menu</a>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="tsd-page-title">
+		<div class="container">
+			<h1>contract-proxy-kit</h1>
+		</div>
+	</div>
+</header>
+<div class="container container-main">
+	<div class="row">
+		<div class="col-8 col-content">
+			<div class="tsd-panel tsd-typography">
+				<a href="#contract-proxy-kit" id="contract-proxy-kit" style="color: inherit; text-decoration: none;">
+					<h1>Contract Proxy Kit</h1>
+				</a>
+				<p><a href="https://travis-ci.org/gnosis/contract-proxy-kit"><img src="https://travis-ci.org/gnosis/contract-proxy-kit.svg?branch=master" alt="Build Status"></a>
+				<a href="https://coveralls.io/github/gnosis/contract-proxy-kit?branch=master"><img src="https://coveralls.io/repos/github/gnosis/contract-proxy-kit/badge.svg?branch=master" alt="Coverage Status"></a></p>
+				<p><strong>Warning:</strong> This documentation is for the 2.x series of the contract proxy kit. For documentation on the 1.x series, go <a href="https://github.com/gnosis/contract-proxy-kit/tree/v1.1.1#contract-proxy-kit">here</a>.</p>
+				<p>Enable batched transactions and contract account interactions using a unique deterministic Gnosis Safe.</p>
+				<pre><code><span style="color: #001080">npm</span><span style="color: #000000"> </span><span style="color: #001080">install</span><span style="color: #000000"> </span><span style="color: #001080">contract</span><span style="color: #000000">-</span><span style="color: #001080">proxy</span><span style="color: #000000">-</span><span style="color: #001080">kit</span>
+</code></pre>
+				<a href="#resources" id="resources" style="color: inherit; text-decoration: none;">
+					<h2>Resources</h2>
+				</a>
+				<p><a href="https://www.youtube.com/watch?v=YGw8WfBw5OI">Video introduction to Building with Safe Apps SDK &amp; Contract Proxy Kit</a></p>
+				<p><a href="https://docs.gnosis.io/safe/docs/cpktutorial1/">CPK basic tutorial</a></p>
+				<p><a href="https://github.com/gnosis/contract-proxy-kit/tree/master/assets/CPKdiagram.png">CPK architecture diagram</a></p>
+				<a href="#usage" id="usage" style="color: inherit; text-decoration: none;">
+					<h2>Usage</h2>
+				</a>
+				<p>The Contract Proxy Kit package exposes a <em>CPK</em> class:</p>
+				<pre><code class="language-js"><span style="color: #AF00DB">import</span><span style="color: #000000"> </span><span style="color: #001080">CPK</span><span style="color: #000000"> </span><span style="color: #AF00DB">from</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;contract-proxy-kit&#039;</span>
+</code></pre>
+				<p><em>CPK</em> requires either <a href="https://web3js.readthedocs.io">web3.js</a> or <a href="https://docs.ethers.io/ethers.js/html/">ethers.js</a> to function. Currently the following versions are supported:</p>
+				<ul>
+					<li>web3.js 1.3</li>
+					<li>web3.js 2.0 alpha</li>
+					<li>ethers.js 4.0</li>
+					<li>ethers.js 5.0</li>
+				</ul>
+				<a href="#cpkcreate" id="cpkcreate" style="color: inherit; text-decoration: none;">
+					<h3>CPK.create</h3>
+				</a>
+				<p>To create a <em>CPK</em> instance, use the static method <code>CPK.create</code>. This method accepts an options object as a parameter, and will result in a promise which resolves to a <em>CPK</em> instance if successful and rejects with an error otherwise.</p>
+				<p>This will not deploy a contract on any networks. Rather, the deployment of a proxy gets batched into the first set of transactions when calling <a href="#cpkexectransactions">CPK#execTransaction</a>.</p>
+				<p>In order to obtain the proxy address, use the property <a href="#cpkaddress">CPK#address</a>. This address is deterministically derived from the owner address, and accessing the property does not require the proxy to be deployed.</p>
+				<a href="#using-with-web3js" id="using-with-web3js" style="color: inherit; text-decoration: none;">
+					<h4>Using with web3.js</h4>
+				</a>
+				<p>To use <em>CPK</em> with web3.js, supply <code>CPK.create</code> with a <em>Web3</em> instance as the value of the <code>web3</code> key. For example:</p>
+				<pre><code class="language-js"><span style="color: #AF00DB">import</span><span style="color: #000000"> </span><span style="color: #001080">CPK</span><span style="color: #000000">, { </span><span style="color: #001080">Web3Adapter</span><span style="color: #000000"> } </span><span style="color: #AF00DB">from</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;contract-proxy-kit&#039;</span><span style="color: #000000">;</span>
+<span style="color: #AF00DB">import</span><span style="color: #000000"> </span><span style="color: #001080">Web3</span><span style="color: #000000"> </span><span style="color: #AF00DB">from</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;web3&#039;</span><span style="color: #000000">;</span>
+
+<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">web3</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">Web3</span><span style="color: #000000">(</span><span style="color: #008000">/*...*/</span><span style="color: #000000">);</span>
+
+<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">ethLibAdapter</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">Web3Adapter</span><span style="color: #000000">({ </span><span style="color: #001080">web3</span><span style="color: #000000"> });</span>
+
+<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">cpk</span><span style="color: #000000"> = </span><span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #0070C1">CPK</span><span style="color: #000000">.</span><span style="color: #795E26">create</span><span style="color: #000000">({ </span><span style="color: #001080">ethLibAdapter</span><span style="color: #000000"> });</span>
+</code></pre>
+				<p>The proxy owner will be inferred by first trying <code>web3.eth.defaultAccount</code>, and then trying to select the 0th account from <code>web3.eth.getAccounts</code>. However, an owner account may also be explicitly set with the <code>ownerAccount</code> key:</p>
+				<pre><code class="language-js"><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">cpk</span><span style="color: #000000"> = </span><span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #0070C1">CPK</span><span style="color: #000000">.</span><span style="color: #795E26">create</span><span style="color: #000000">({ </span><span style="color: #001080">ethLibAdapter</span><span style="color: #000000">, </span><span style="color: #001080">ownerAccount:</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1&#039;</span><span style="color: #000000"> });</span>
+</code></pre>
+				<a href="#using-with-ethersjs" id="using-with-ethersjs" style="color: inherit; text-decoration: none;">
+					<h4>Using with ethers.js</h4>
+				</a>
+				<p>To use <em>CPK</em> with ethers.js, supply <code>CPK.create</code> with the <code>ethers</code> object and an ethers.js <em>Signer</em> which has an active <em>Provider</em> connection. For example:</p>
+				<pre><code class="language-js"><span style="color: #AF00DB">import</span><span style="color: #000000"> </span><span style="color: #001080">CPK</span><span style="color: #000000">, { </span><span style="color: #001080">EthersAdapter</span><span style="color: #000000"> } </span><span style="color: #AF00DB">from</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;contract-proxy-kit&#039;</span><span style="color: #000000">;</span>
+<span style="color: #AF00DB">import</span><span style="color: #000000"> { </span><span style="color: #001080">ethers</span><span style="color: #000000"> } </span><span style="color: #AF00DB">from</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;ethers&#039;</span><span style="color: #000000">);</span>
+
+<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">provider</span><span style="color: #000000"> = </span><span style="color: #001080">ethers</span><span style="color: #000000">.</span><span style="color: #795E26">getDefaultProvider</span><span style="color: #000000">(</span><span style="color: #A31515">&#039;homestead&#039;</span><span style="color: #000000">);</span>
+<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">wallet</span><span style="color: #000000"> = </span><span style="color: #001080">ethers</span><span style="color: #000000">.</span><span style="color: #001080">Wallet</span><span style="color: #000000">.</span><span style="color: #795E26">createRandom</span><span style="color: #000000">().</span><span style="color: #795E26">connect</span><span style="color: #000000">(</span><span style="color: #001080">provider</span><span style="color: #000000">);</span>
+
+<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">ethLibAdapter</span><span style="color: #000000"> = </span><span style="color: #0000FF">new</span><span style="color: #000000"> </span><span style="color: #795E26">EthersAdapter</span><span style="color: #000000">({ </span><span style="color: #001080">ethers</span><span style="color: #000000">, </span><span style="color: #001080">signer:</span><span style="color: #000000"> </span><span style="color: #001080">wallet</span><span style="color: #000000"> });</span>
+
+<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">cpk</span><span style="color: #000000"> = </span><span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #0070C1">CPK</span><span style="color: #000000">.</span><span style="color: #795E26">create</span><span style="color: #000000">({ </span><span style="color: #001080">ethLibAdapter</span><span style="color: #000000"> });</span>
+</code></pre>
+				<p>The proxy owner will be the account associated with the signer.</p>
+				<a href="#networks-configuration" id="networks-configuration" style="color: inherit; text-decoration: none;">
+					<h4>Networks configuration</h4>
+				</a>
+				<p>Regardless of which type of underlying API is being used, the <em>CPK</em> instance will check the ID of the network given by the provider in order to prepare for contract interactions. By default, Ethereum Mainnet (ID 1) and the Rinkeby (ID 4), Goerli (ID 5), and Kovan (ID 42) test networks will have preconfigured addresses for the required contracts:</p>
+				<ul>
+					<li><code>masterCopyAddress</code>: Gnosis Safe master copy</li>
+					<li><code>proxyFactoryAddress</code>: CPK factory</li>
+					<li><code>multiSendAddress</code>: MultiSend contract for batching transactions</li>
+					<li><code>fallbackHandlerAddress</code>: A fallback handler (DefaultCallbackHandler)</li>
+				</ul>
+				<p>However, address configurations for networks may be added or overridden by supplying a configuration object as the value of the <code>networks</code> key in the options. For example, adding a configuration for a network with ID (4447) may be done in the following manner:</p>
+				<pre><code class="language-js"><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">cpk</span><span style="color: #000000"> = </span><span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #0070C1">CPK</span><span style="color: #000000">.</span><span style="color: #795E26">create</span><span style="color: #000000">({</span>
+<span style="color: #000000">  </span><span style="color: #008000">// ...otherOptions,</span>
+<span style="color: #000000">  </span><span style="color: #001080">networks:</span><span style="color: #000000"> {</span>
+<span style="color: #000000">    </span><span style="color: #098658">4447</span><span style="color: #001080">:</span><span style="color: #000000"> {</span>
+<span style="color: #000000">      </span><span style="color: #001080">masterCopyAddress:</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;0x2C2B9C9a4a25e24B174f26114e8926a9f2128FE4&#039;</span><span style="color: #000000">,</span>
+<span style="color: #000000">      </span><span style="color: #001080">proxyFactoryAddress:</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;0x345cA3e014Aaf5dcA488057592ee47305D9B3e10&#039;</span><span style="color: #000000">,</span>
+<span style="color: #000000">      </span><span style="color: #001080">multiSendAddress:</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;0x8f0483125FCb9aaAEFA9209D8E9d7b9C8B9Fb90F&#039;</span><span style="color: #000000">,</span>
+<span style="color: #000000">      </span><span style="color: #001080">fallbackHandlerAddress:</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;0xAa588d3737B611baFD7bD713445b314BD453a5C8&#039;</span><span style="color: #000000">,</span>
+<span style="color: #000000">    },</span>
+<span style="color: #000000">  },</span>
+<span style="color: #000000">});</span>
+</code></pre>
+				<p>Please refer to the <code>migrations/</code> folder of this package for information on how to deploy the required contracts on a network, and note that these addresses must be available for the connected network in order for <em>CPK</em> creation to be successful.</p>
+				<a href="#salt-nonce-configuration" id="salt-nonce-configuration" style="color: inherit; text-decoration: none;">
+					<h4>Salt nonce configuration</h4>
+				</a>
+				<p>The <code>CPK.saltNonce</code> property is predetermined, but it may be passed in as a parameter to generate new proxies for which the owner controls.</p>
+				<pre><code class="language-js"><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">saltNonce</span><span style="color: #000000"> = </span><span style="color: #A31515">&quot;&lt;NEW_SALT_NONCE&gt;&quot;</span><span style="color: #000000">;</span>
+<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">cpk</span><span style="color: #000000"> = </span><span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #0070C1">CPK</span><span style="color: #000000">.</span><span style="color: #795E26">create</span><span style="color: #000000">({ </span><span style="color: #001080">ethLibAdapter</span><span style="color: #000000">, </span><span style="color: #001080">saltNonce</span><span style="color: #000000"> });</span>
+</code></pre>
+				<!---
+#### Transaction relayer configuration
+
+By default, the CPK will not use any transaction relayer. However, the [Safe Relay Service](https://github.com/gnosis/safe-relay-service) can be used to submit all the transactions when the optional property `transactionManager` is passed to the CPK constructor with an instance of the class `SafeTxRelayManager`.
+
+```js
+const SafeTxRelayManager = new SafeTxRelayManager({ url: 'https://safe-relay.gnosis.io/'})
+const cpk = await CPK.create({
+  // ...otherOptions,
+  transactionManager: SafeTxRelayManager,
+});
+```
+
+The URL of the [Safe Relay Service](https://github.com/gnosis/safe-relay-service) is different depending on the network:
+ - Mainnet: https://safe-relay.gnosis.io/
+ - Rinkeby: https://safe-relay.rinkeby.gnosis.io/
+--->
+				<a href="#cpkgetowneraccount" id="cpkgetowneraccount" style="color: inherit; text-decoration: none;">
+					<h3>CPK#getOwnerAccount</h3>
+				</a>
+				<p>This may be used to figure out which account the proxy considers the owner account. It returns a Promise which resolves to the owner account:</p>
+				<pre><code class="language-js"><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">ownerAccount</span><span style="color: #000000"> = </span><span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #001080">cpk</span><span style="color: #000000">.</span><span style="color: #795E26">getOwnerAccount</span><span style="color: #000000">()</span>
+</code></pre>
+				<a href="#cpkaddress" id="cpkaddress" style="color: inherit; text-decoration: none;">
+					<h3>CPK#address</h3>
+				</a>
+				<p>Once created, the <code>address</code> property on a <em>CPK</em> instance will provide the proxy&#39;s checksummed Ethereum address:</p>
+				<pre><code class="language-js"><span style="color: #000000">&gt; </span><span style="color: #001080">cpk</span><span style="color: #000000">.</span><span style="color: #001080">address</span>
+<span style="color: #A31515">&#039;0xdb6F36fC4e07eAfCAba1D0056609A76C91c5A1bC&#039;</span>
+</code></pre>
+				<p>This address is calculated even if the proxy has not been deployed yet, and it is deterministically generated from the proxy owner address. This means that for any given owner, the same proxy owner address will always be generated.</p>
+				<a href="#support-for-connection-to-a-gnosis-safe" id="support-for-connection-to-a-gnosis-safe" style="color: inherit; text-decoration: none;">
+					<h4>Support for connection to a Gnosis Safe</h4>
+				</a>
+				<p>If the provider underlying the <em>CPK</em> instance is connected to a Gnosis Safe via WalletConnect, the address will match the owner account:</p>
+				<pre><code class="language-js"><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">ownerAccount</span><span style="color: #000000"> = </span><span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #001080">cpk</span><span style="color: #000000">.</span><span style="color: #795E26">getOwnerAccount</span><span style="color: #000000">()</span>
+<span style="color: #001080">cpk</span><span style="color: #000000">.</span><span style="color: #001080">address</span><span style="color: #000000"> === </span><span style="color: #001080">ownerAccount</span><span style="color: #000000"> </span><span style="color: #008000">// this will be true in that case</span>
+</code></pre>
+				<p><em>CPK</em> will use the Safe&#39;s native support for batching transactions, and will not create an additional proxy contract account.</p>
+				<a href="#cpkexectransactions" id="cpkexectransactions" style="color: inherit; text-decoration: none;">
+					<h3>CPK#execTransactions</h3>
+				</a>
+				<p>To execute transactions using a <em>CPK</em> instance, call <code>execTransactions</code> with an <em>Array</em> of transactions to execute. If the proxy has not been deployed, this will also batch the proxy&#39;s deployment into the transaction. Multiple transactions will be batched and executed together if the proxy has been deployed.</p>
+				<p>Each of the <code>transactions</code> provided as input to this function must be an <em>Object</em> with the following properties:</p>
+				<ul>
+					<li><code>operation</code>: Either <code>CPK.Call</code> (0) or <code>CPK.DelegateCall</code> (1) to execute the transaction as either a normal call or a delegatecall. Note: when connected to Gnosis Safe via WalletConnect, this property is ignored, and <code>CPK.Call</code> is assumed. Optional property, <code>CPK.Call</code> is the default value.</li>
+					<li><code>to</code>: The target address of the transaction.</li>
+					<li><code>value</code>: The amount of ether to send along with this transaction. Optional property, <code>0</code> is the default value.</li>
+					<li><code>data</code>: The calldata to send along with the transaction. Optional property, <code>0x</code> is the default value.</li>
+				</ul>
+				<p>If any of the transactions would revert, this function will reject instead, and nothing will be executed.</p>
+				<p>For example, if the proxy account holds some ether, it may batch send ether to multiple accounts like so:</p>
+				<pre><code class="language-js"><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">cpk</span><span style="color: #000000"> = </span><span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #0070C1">CPK</span><span style="color: #000000">.</span><span style="color: #795E26">create</span><span style="color: #000000">(</span><span style="color: #008000">/* ... */</span><span style="color: #000000">);</span>
+<span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">txObject</span><span style="color: #000000"> = </span><span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #001080">cpk</span><span style="color: #000000">.</span><span style="color: #795E26">execTransactions</span><span style="color: #000000">([</span>
+<span style="color: #000000">  {</span>
+<span style="color: #000000">    </span><span style="color: #001080">operation:</span><span style="color: #000000"> </span><span style="color: #0070C1">CPK</span><span style="color: #000000">.</span><span style="color: #001080">Call</span><span style="color: #000000">, </span><span style="color: #008000">// Not needed because this is the default value.</span>
+<span style="color: #000000">    </span><span style="color: #001080">data:</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;0x&#039;</span><span style="color: #000000">, </span><span style="color: #008000">// Not needed because this is the default value.</span>
+<span style="color: #000000">    </span><span style="color: #001080">to:</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;0x90f8bf6a479f320ead074411a4b0e7944ea8c9c1&#039;</span><span style="color: #000000">,</span>
+<span style="color: #000000">    </span><span style="color: #001080">value:</span><span style="color: #000000"> </span><span style="color: #A31515">`</span><span style="color: #0000FF">${</span><span style="color: #098658">1e18</span><span style="color: #0000FF">}</span><span style="color: #A31515">`</span><span style="color: #000000">,</span>
+<span style="color: #000000">  },</span>
+<span style="color: #000000">  {</span>
+<span style="color: #000000">    </span><span style="color: #001080">operation:</span><span style="color: #000000"> </span><span style="color: #0070C1">CPK</span><span style="color: #000000">.</span><span style="color: #001080">Call</span><span style="color: #000000">, </span><span style="color: #008000">// Not needed because this is the default value.</span>
+<span style="color: #000000">    </span><span style="color: #001080">data:</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;0x&#039;</span><span style="color: #000000">, </span><span style="color: #008000">// Not needed because this is the default value.</span>
+<span style="color: #000000">    </span><span style="color: #001080">to:</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;0xffcf8fdee72ac11b5c542428b35eef5769c409f0&#039;</span><span style="color: #000000">,</span>
+<span style="color: #000000">    </span><span style="color: #001080">value:</span><span style="color: #000000"> </span><span style="color: #A31515">`</span><span style="color: #0000FF">${</span><span style="color: #098658">1e18</span><span style="color: #0000FF">}</span><span style="color: #A31515">`</span><span style="color: #000000">,</span>
+<span style="color: #000000">  },</span>
+<span style="color: #000000">]);</span>
+</code></pre>
+				<a href="#example-calls-to-web3jstruffle-contracts" id="example-calls-to-web3jstruffle-contracts" style="color: inherit; text-decoration: none;">
+					<h4>Example calls to web3.js/Truffle contracts</h4>
+				</a>
+				<p>The <code>data</code> field may be used to make calls to contracts from the proxy account. Suppose that <code>erc20</code> is a <em>web3.eth.Contract</em> instance for an ERC20 token for which the proxy account holds a balance, and <code>exchange</code> is a <em>web3.eth.Contract</em> instance of an exchange contract with an deposit requirement, where calling the deposit function on the exchange requires an allowance for the exchange by the depositor. Batching these transactions may be done like so:</p>
+				<pre><code class="language-js"><span style="color: #0000FF">const</span><span style="color: #000000"> { </span><span style="color: #0070C1">promiEvent</span><span style="color: #000000">, </span><span style="color: #0070C1">hash</span><span style="color: #000000"> } = </span><span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #001080">cpk</span><span style="color: #000000">.</span><span style="color: #795E26">execTransactions</span><span style="color: #000000">([</span>
+<span style="color: #000000">  {</span>
+<span style="color: #000000">    </span><span style="color: #001080">to:</span><span style="color: #000000"> </span><span style="color: #001080">erc20</span><span style="color: #000000">.</span><span style="color: #001080">options</span><span style="color: #000000">.</span><span style="color: #001080">address</span><span style="color: #000000">,</span>
+<span style="color: #000000">    </span><span style="color: #001080">data:</span><span style="color: #000000"> </span><span style="color: #001080">erc20</span><span style="color: #000000">.</span><span style="color: #001080">methods</span><span style="color: #000000">.</span><span style="color: #795E26">approve</span><span style="color: #000000">(</span>
+<span style="color: #000000">      </span><span style="color: #001080">exchange</span><span style="color: #000000">.</span><span style="color: #001080">options</span><span style="color: #000000">.</span><span style="color: #001080">address</span><span style="color: #000000">,</span>
+<span style="color: #000000">      </span><span style="color: #A31515">`</span><span style="color: #0000FF">${</span><span style="color: #098658">1e18</span><span style="color: #0000FF">}</span><span style="color: #A31515">`</span><span style="color: #000000">,</span>
+<span style="color: #000000">    ).</span><span style="color: #795E26">encodeABI</span><span style="color: #000000">(),</span>
+<span style="color: #000000">  },</span>
+<span style="color: #000000">  {</span>
+<span style="color: #000000">    </span><span style="color: #001080">to:</span><span style="color: #000000"> </span><span style="color: #001080">exchange</span><span style="color: #000000">.</span><span style="color: #001080">options</span><span style="color: #000000">.</span><span style="color: #001080">address</span><span style="color: #000000">,</span>
+<span style="color: #000000">    </span><span style="color: #001080">data:</span><span style="color: #000000"> </span><span style="color: #001080">exchange</span><span style="color: #000000">.</span><span style="color: #001080">methods</span><span style="color: #000000">.</span><span style="color: #795E26">deposit</span><span style="color: #000000">(</span>
+<span style="color: #000000">      </span><span style="color: #001080">erc20</span><span style="color: #000000">.</span><span style="color: #001080">options</span><span style="color: #000000">.</span><span style="color: #001080">address</span><span style="color: #000000">,</span>
+<span style="color: #000000">      </span><span style="color: #A31515">`</span><span style="color: #0000FF">${</span><span style="color: #098658">1e18</span><span style="color: #0000FF">}</span><span style="color: #A31515">`</span><span style="color: #000000">,</span>
+<span style="color: #000000">    ).</span><span style="color: #795E26">encodeABI</span><span style="color: #000000">(),</span>
+<span style="color: #000000">  },</span>
+<span style="color: #000000">]);</span>
+
+</code></pre>
+				<p>Suppose instead <code>erc20</code> and <code>exchange</code> are Truffle contract abstraction instances instead. Since Truffle contract abstraction instances contain a reference to an underlying <em>web3.eth.Contract</em> instance, they may be used in a similar manner:</p>
+				<pre><code class="language-js"><span style="color: #0000FF">const</span><span style="color: #000000"> { </span><span style="color: #0070C1">promiEvent</span><span style="color: #000000">, </span><span style="color: #0070C1">hash</span><span style="color: #000000"> } = </span><span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #001080">cpk</span><span style="color: #000000">.</span><span style="color: #795E26">execTransactions</span><span style="color: #000000">([</span>
+<span style="color: #000000">  {</span>
+<span style="color: #000000">    </span><span style="color: #001080">to:</span><span style="color: #000000"> </span><span style="color: #001080">erc20</span><span style="color: #000000">.</span><span style="color: #001080">address</span><span style="color: #000000">,</span>
+<span style="color: #000000">    </span><span style="color: #001080">data:</span><span style="color: #000000"> </span><span style="color: #001080">erc20</span><span style="color: #000000">.</span><span style="color: #001080">contract</span><span style="color: #000000">.</span><span style="color: #001080">methods</span><span style="color: #000000">.</span><span style="color: #795E26">approve</span><span style="color: #000000">(</span>
+<span style="color: #000000">      </span><span style="color: #001080">exchange</span><span style="color: #000000">.</span><span style="color: #001080">address</span><span style="color: #000000">,</span>
+<span style="color: #000000">      </span><span style="color: #A31515">`</span><span style="color: #0000FF">${</span><span style="color: #098658">1e18</span><span style="color: #0000FF">}</span><span style="color: #A31515">`</span><span style="color: #000000">,</span>
+<span style="color: #000000">    ).</span><span style="color: #795E26">encodeABI</span><span style="color: #000000">(),</span>
+<span style="color: #000000">  },</span>
+<span style="color: #000000">  {</span>
+<span style="color: #000000">    </span><span style="color: #001080">to:</span><span style="color: #000000"> </span><span style="color: #001080">exchange</span><span style="color: #000000">.</span><span style="color: #001080">address</span><span style="color: #000000">,</span>
+<span style="color: #000000">    </span><span style="color: #001080">data:</span><span style="color: #000000"> </span><span style="color: #001080">exchange</span><span style="color: #000000">.</span><span style="color: #001080">contract</span><span style="color: #000000">.</span><span style="color: #001080">methods</span><span style="color: #000000">.</span><span style="color: #795E26">deposit</span><span style="color: #000000">(</span>
+<span style="color: #000000">      </span><span style="color: #001080">erc20</span><span style="color: #000000">.</span><span style="color: #001080">address</span><span style="color: #000000">,</span>
+<span style="color: #000000">      </span><span style="color: #A31515">`</span><span style="color: #0000FF">${</span><span style="color: #098658">1e18</span><span style="color: #0000FF">}</span><span style="color: #A31515">`</span><span style="color: #000000">,</span>
+<span style="color: #000000">    ).</span><span style="color: #795E26">encodeABI</span><span style="color: #000000">(),</span>
+<span style="color: #000000">  },</span>
+<span style="color: #000000">]);</span>
+
+</code></pre>
+				<a href="#example-calls-to-ethersjs-contracts" id="example-calls-to-ethersjs-contracts" style="color: inherit; text-decoration: none;">
+					<h4>Example calls to ethers.js contracts</h4>
+				</a>
+				<p>Similarly to the example in the previous section, suppose that <code>erc20</code> is a <em>ethers.Contract</em> instance for an ERC20 token for which the proxy account holds a balance, and <code>exchange</code> is a <em>ethers.Contract</em> instance of an exchange contract with an deposit requirement, where calling the deposit function on the exchange requires an allowance for the exchange by the depositor. Batching these transactions may be done like so:</p>
+				<pre><code class="language-js"><span style="color: #0000FF">const</span><span style="color: #000000"> { </span><span style="color: #0070C1">transactionResponse</span><span style="color: #000000">, </span><span style="color: #0070C1">hash</span><span style="color: #000000"> } = </span><span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #001080">cpk</span><span style="color: #000000">.</span><span style="color: #795E26">execTransactions</span><span style="color: #000000">([</span>
+<span style="color: #000000">  {</span>
+<span style="color: #000000">    </span><span style="color: #001080">to:</span><span style="color: #000000"> </span><span style="color: #001080">erc20</span><span style="color: #000000">.</span><span style="color: #001080">address</span><span style="color: #000000">,</span>
+<span style="color: #000000">    </span><span style="color: #001080">data:</span><span style="color: #000000"> </span><span style="color: #001080">erc20</span><span style="color: #000000">.</span><span style="color: #001080">interface</span><span style="color: #000000">.</span><span style="color: #001080">functions</span><span style="color: #000000">.</span><span style="color: #001080">approve</span><span style="color: #000000">.</span><span style="color: #795E26">encode</span><span style="color: #000000">(</span>
+<span style="color: #000000">      </span><span style="color: #001080">exchange</span><span style="color: #000000">.</span><span style="color: #001080">address</span><span style="color: #000000">,</span>
+<span style="color: #000000">      </span><span style="color: #A31515">`</span><span style="color: #0000FF">${</span><span style="color: #098658">1e18</span><span style="color: #0000FF">}</span><span style="color: #A31515">`</span><span style="color: #000000">,</span>
+<span style="color: #000000">    ),</span>
+<span style="color: #000000">  },</span>
+<span style="color: #000000">  {</span>
+<span style="color: #000000">    </span><span style="color: #001080">to:</span><span style="color: #000000"> </span><span style="color: #001080">exchange</span><span style="color: #000000">.</span><span style="color: #001080">address</span><span style="color: #000000">,</span>
+<span style="color: #000000">    </span><span style="color: #001080">data:</span><span style="color: #000000"> </span><span style="color: #001080">exchange</span><span style="color: #000000">.</span><span style="color: #001080">interface</span><span style="color: #000000">.</span><span style="color: #001080">functions</span><span style="color: #000000">.</span><span style="color: #001080">deposit</span><span style="color: #000000">.</span><span style="color: #795E26">encode</span><span style="color: #000000">(</span>
+<span style="color: #000000">      </span><span style="color: #001080">erc20</span><span style="color: #000000">.</span><span style="color: #001080">address</span><span style="color: #000000">,</span>
+<span style="color: #000000">      </span><span style="color: #A31515">`</span><span style="color: #0000FF">${</span><span style="color: #098658">1e18</span><span style="color: #0000FF">}</span><span style="color: #A31515">`</span><span style="color: #000000">,</span>
+<span style="color: #000000">    ),</span>
+<span style="color: #000000">  },</span>
+<span style="color: #000000">]);</span>
+</code></pre>
+				<a href="#setting-transaction-options" id="setting-transaction-options" style="color: inherit; text-decoration: none;">
+					<h4>Setting transaction options</h4>
+				</a>
+				<p>An additional optional parameter may be passed to <code>execTransactions</code> to override default options for the transaction. For example, to batch send ether while paying a gas price of 3 Gwei for the overall transaction:</p>
+				<pre><code class="language-js"><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">txObject</span><span style="color: #000000"> = </span><span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #001080">cpk</span><span style="color: #000000">.</span><span style="color: #795E26">execTransactions</span><span style="color: #000000">(</span>
+<span style="color: #000000">  [</span>
+<span style="color: #000000">    {</span>
+<span style="color: #000000">      </span><span style="color: #001080">to:</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;0x90f8bf6a479f320ead074411a4b0e7944ea8c9c1&#039;</span><span style="color: #000000">,</span>
+<span style="color: #000000">      </span><span style="color: #001080">value:</span><span style="color: #000000"> </span><span style="color: #A31515">`</span><span style="color: #0000FF">${</span><span style="color: #098658">1e18</span><span style="color: #0000FF">}</span><span style="color: #A31515">`</span><span style="color: #000000">,</span>
+<span style="color: #000000">    },</span>
+<span style="color: #000000">    {</span>
+<span style="color: #000000">      </span><span style="color: #001080">to:</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;0xffcf8fdee72ac11b5c542428b35eef5769c409f0&#039;</span><span style="color: #000000">,</span>
+<span style="color: #000000">      </span><span style="color: #001080">value:</span><span style="color: #000000"> </span><span style="color: #A31515">`</span><span style="color: #0000FF">${</span><span style="color: #098658">1e18</span><span style="color: #0000FF">}</span><span style="color: #A31515">`</span><span style="color: #000000">,</span>
+<span style="color: #000000">    },</span>
+<span style="color: #000000">  ],</span>
+<span style="color: #000000">  { </span><span style="color: #001080">gasPrice:</span><span style="color: #000000"> </span><span style="color: #A31515">`</span><span style="color: #0000FF">${</span><span style="color: #098658">3e9</span><span style="color: #0000FF">}</span><span style="color: #A31515">`</span><span style="color: #000000"> },</span>
+<span style="color: #000000">);</span>
+</code></pre>
+				<p>The gas limit for the overall transaction may also be altered. For example, to set the gas limit for a batch of transactions to one million:</p>
+				<pre><code class="language-js"><span style="color: #0000FF">const</span><span style="color: #000000"> </span><span style="color: #0070C1">txObject</span><span style="color: #000000"> = </span><span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #001080">cpk</span><span style="color: #000000">.</span><span style="color: #795E26">execTransactions</span><span style="color: #000000">(</span>
+<span style="color: #000000">  [</span>
+<span style="color: #000000">    </span><span style="color: #008000">// transactions...</span>
+<span style="color: #000000">  ],</span>
+<span style="color: #000000">  { </span><span style="color: #001080">gasLimit:</span><span style="color: #000000"> </span><span style="color: #098658">1000000</span><span style="color: #000000"> },</span>
+<span style="color: #000000">);</span>
+</code></pre>
+				<a href="#support-for-connection-to-a-gnosis-safe-1" id="support-for-connection-to-a-gnosis-safe-1" style="color: inherit; text-decoration: none;">
+					<h4>Support for connection to a Gnosis Safe</h4>
+				</a>
+				<p>When connected to a Gnosis Safe, <code>execTransactions</code> will use the Safe&#39;s native support for sending batch transactions (via <code>gs_multi_send</code>). In this case, the gas price option is not available, and <code>execTransactions</code> will only return a transaction hash.</p>
+				<pre><code class="language-js"><span style="color: #0000FF">const</span><span style="color: #000000"> { </span><span style="color: #0070C1">hash</span><span style="color: #000000"> } = </span><span style="color: #AF00DB">await</span><span style="color: #000000"> </span><span style="color: #001080">cpk</span><span style="color: #000000">.</span><span style="color: #795E26">execTransactions</span><span style="color: #000000">([</span>
+<span style="color: #000000">  {</span>
+<span style="color: #000000">    </span><span style="color: #001080">to:</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;0x90f8bf6a479f320ead074411a4b0e7944ea8c9c1&#039;</span><span style="color: #000000">,</span>
+<span style="color: #000000">    </span><span style="color: #001080">value:</span><span style="color: #000000"> </span><span style="color: #A31515">`</span><span style="color: #0000FF">${</span><span style="color: #098658">1e18</span><span style="color: #0000FF">}</span><span style="color: #A31515">`</span><span style="color: #000000">,</span>
+<span style="color: #000000">  },</span>
+<span style="color: #000000">  {</span>
+<span style="color: #000000">    </span><span style="color: #001080">to:</span><span style="color: #000000"> </span><span style="color: #A31515">&#039;0xffcf8fdee72ac11b5c542428b35eef5769c409f0&#039;</span><span style="color: #000000">,</span>
+<span style="color: #000000">    </span><span style="color: #001080">value:</span><span style="color: #000000"> </span><span style="color: #A31515">`</span><span style="color: #0000FF">${</span><span style="color: #098658">1e18</span><span style="color: #0000FF">}</span><span style="color: #A31515">`</span><span style="color: #000000">,</span>
+<span style="color: #000000">  },</span>
+<span style="color: #000000">]);</span>
+</code></pre>
+				<a href="#installation" id="installation" style="color: inherit; text-decoration: none;">
+					<h2>Installation</h2>
+				</a>
+				<p>Install dependencies for the project:</p>
+				<pre><code><span style="color: #001080">yarn</span><span style="color: #000000"> </span><span style="color: #001080">install</span>
+</code></pre>
+				<p>If at some points the contracts are modified, run the following commands to compile them again and generate their new types:</p>
+				<pre><code><span style="color: #001080">rm</span><span style="color: #000000"> -</span><span style="color: #0070C1">R</span><span style="color: #000000"> ./</span><span style="color: #001080">build</span><span style="color: #000000">/</span><span style="color: #001080">contracts</span>
+<span style="color: #001080">rm</span><span style="color: #000000"> -</span><span style="color: #0070C1">R</span><span style="color: #000000"> ./</span><span style="color: #001080">types</span><span style="color: #000000">/</span><span style="color: #001080">truffle</span><span style="color: #000000">-</span><span style="color: #001080">contracts</span>
+<span style="color: #001080">truffle</span><span style="color: #000000"> </span><span style="color: #001080">compile</span>
+<span style="color: #001080">yarn</span><span style="color: #000000"> </span><span style="color: #001080">generate</span><span style="color: #000000">-</span><span style="color: #001080">types</span>
+</code></pre>
+				<a href="#running-the-tests" id="running-the-tests" style="color: inherit; text-decoration: none;">
+					<h2>Running the tests</h2>
+				</a>
+				<p>Run an instance of <code>ganache-cli</code> deterministically:</p>
+				<pre><code><span style="color: #001080">ganache</span><span style="color: #000000">-</span><span style="color: #001080">cli</span><span style="color: #000000"> -</span><span style="color: #001080">d</span>
+</code></pre>
+				<p>Migrate the contracts to the local network:</p>
+				<pre><code><span style="color: #001080">yarn</span><span style="color: #000000"> </span><span style="color: #001080">migrate</span><span style="color: #000000"> --</span><span style="color: #001080">network</span><span style="color: #000000"> </span><span style="color: #001080">local</span>
+</code></pre>
+				<p>Run the tests against the local network:</p>
+				<pre><code><span style="color: #001080">yarn</span><span style="color: #000000"> </span><span style="color: #001080">test</span>
+</code></pre>
+				<a href="#run-your-app-as-a-safe-app" id="run-your-app-as-a-safe-app" style="color: inherit; text-decoration: none;">
+					<h2>Run your app as a Safe App</h2>
+				</a>
+				<p><em>CPK</em> uses the <a href="https://github.com/gnosis/safe-apps-sdk">Safe Apps SDK</a>, making your app available to be run in an iframe inside the <a href="https://gnosis-safe.io/">Safe Web UI</a>.</p>
+				<p>Once your app is ready to be deployed, make sure to follow these <a href="https://github.com/gnosis/safe-apps-sdk#testing-in-the-safe-multisig-application">steps to run your app as a Safe app</a>. Apart from that, no extra configuration is needed.</p>
+				<p>When running your app inside the <em>Safe Web UI</em>, the configuration used to instantiate the <em>CPK</em> will be ignored because the responsibility to send transactions is now transferred to the <em>Safe Web UI</em> and the wallet connected to it.</p>
+				<p>If needed, the method <code>CPK.safeAppsSdkConnector.isSafeApp</code> is available to check if the app using the <em>CPK</em> is running as a Safe App or not.</p>
+				<a href="#in-depth-guide" id="in-depth-guide" style="color: inherit; text-decoration: none;">
+					<h2>In-depth Guide</h2>
+				</a>
+				<p>The Contract Proxy Kit operates primarily using the following technologies:</p>
+				<ul>
+					<li>Deterministic account creation using the <code>create2</code> opcode</li>
+					<li>Gnosis Safe contracts</li>
+					<li>A <code>delegatecall</code>-able <code>MultiSend</code> contract</li>
+					<li>Its own <code>CPKFactory</code> contract</li>
+				</ul>
+				<a href="#using-create2" id="using-create2" style="color: inherit; text-decoration: none;">
+					<h3>Using <code>create2</code></h3>
+				</a>
+				<p>The original <code>create</code> operation uses the deploying account&#39;s address and an autoincrementing nonce to determine the address of the deployed contract. Because users of a factory do not have direct control of a public factory contract&#39;s nonce, there is no way to guarantee a user an address with a factory when other users can trigger the creation of new instances and the order of transactions gets determined when blocks are confirmed without using a mapping in storage.</p>
+				<p><code>create2</code> allows a public factory to strongly associate accounts with their proxies without storage. Moreover, this association may be established without any transactions. The address of a contract deployed with <code>create2</code> depends only on the deployer&#39;s address, the deployment bytecode, and the chosen salt. By keeping the deployment bytecode the same and hashing account addresses into the chosen salt, the factory contract can guarantee contract addresses for accounts.</p>
+				<a href="#gnosis-safe" id="gnosis-safe" style="color: inherit; text-decoration: none;">
+					<h3>Gnosis Safe</h3>
+				</a>
+				<p>The <a href="https://docs.gnosis.io/safe/">Gnosis Safe</a> contracts have been formally verified, and offer many features beyond just batch transactions. Since they are primarily used via proxies, deployment of instances are relatively lightweight. Other features of the Safe, such as contract module installation and multi-factor authentication, may also make it into the CPK in the future.</p>
+				<a href="#batching-transactions" id="batching-transactions" style="color: inherit; text-decoration: none;">
+					<h3>Batching Transactions</h3>
+				</a>
+				<p>Transactions are batched with the use of the <a href="https://github.com/gnosis/safe-contracts/blob/development/contracts/libraries/MultiSend.sol"><code>MultiSend</code> contract</a>, which takes a concatenated sequence of transactions and executes the transactions one by one. If any of the transactions revert, the entire batch reverts.</p>
+				<p>In order to perform these transactions as the Safe, the <code>MultiSend</code> contract gets used with the <code>delegatecall</code> mode of <code>execTransaction</code>.</p>
+				<a href="#cpkfactory" id="cpkfactory" style="color: inherit; text-decoration: none;">
+					<h3><code>CPKFactory</code></h3>
+				</a>
+				<p>Because of the unique requirements of the contract proxy kit, the <a href="https://github.com/gnosis/safe-contracts/blob/development/contracts/proxies/GnosisSafeProxyFactory.sol">canonical Gnosis Safe proxy factory</a> isn&#39;t used. Instead, a custom proxy factory contract called the <code>CPKFactory</code> is used.</p>
+				<p>The <code>CPKFactory</code> contract allows a user to construct Safe instances and perform an <code>execTransaction</code> immediately on that instance. These instances have addresses which can deterministically be generated from the user&#39;s address, as they are created with <code>create2</code> with parameters which vary only by the user&#39;s address, and a <code>saltNonce</code>.</p>
+				<p>In this package, the <code>saltNonce</code> is set to the <em>bytes32</em> value of <code>0xcfe33a586323e7325be6aa6ecd8b4600d232a9037e83c8ece69413b777dabe65</code>. This value is derived by the expression: <code>keccak256(toUtf8Bytes(&#39;Contract Proxy Kit&#39;))</code>.</p>
+				<p>The <code>CPKFactory</code> initializes the constructed Safe instances to be a one out of one signature Safe, as well as registers a default fallback handler on them, in order for the Safes to be receive ERC-721 and ERC-1155 tokens by default. The instances starts out being owned by the factory, which relays the first transaction to be executed to the newly created Safe, and after the transaction, sets the owner of the Safe to be the user creating the Safe.</p>
+				<p>When constructing the proxy instance, the deployment bytecode for an <a href="https://eips.ethereum.org/EIPS/eip-897">ERC DelegateProxy</a> pointing at a Gnosis Safe master copy is figured out. The <code>create2</code> salt is also calculated with the expression:</p>
+				<pre><code class="language-solidity">bytes32 salt = keccak256(abi.encode(msg.sender, saltNonce));
+</code></pre>
+				<p>where <code>msg.sender</code> is the user creating the proxy. The resulting proxy has an address which depends on the user address, the <code>saltNonce</code>, the <code>CPKFactory</code> address, and Safe master copy used, and the proxy creation bytecode.</p>
+				<p>To aid with figuring out the proxy address, the <code>CPKFactory</code> contract announces the proxy creation bytecode it uses via an accessor <code>proxyCreationCode</code>.</p>
+				<a href="#examples-of-applications-built-with-the-cpk" id="examples-of-applications-built-with-the-cpk" style="color: inherit; text-decoration: none;">
+					<h3>Examples of applications built with the <em>CPK</em></h3>
+				</a>
+				<ul>
+					<li><a href="https://github.com/germartinez/cpk-configuration-app">https://github.com/germartinez/cpk-configuration-app</a></li>
+					<li><a href="https://github.com/gnosis/cpk-compound-tutorial">https://github.com/gnosis/cpk-compound-tutorial</a></li>
+				</ul>
+			</div>
+		</div>
+		<div class="col-4 col-menu menu-sticky-wrap menu-highlight">
+			<nav class="tsd-navigation primary">
+				<ul>
+					<li class=" ">
+						<a href="modules.html">Exports</a>
+					</li>
+				</ul>
+			</nav>
+			<nav class="tsd-navigation secondary menu-sticky">
+				<ul class="before-current">
+					<li class=" tsd-kind-enum">
+						<a href="enums/operationtype.html" class="tsd-kind-icon">Operation<wbr>Type</a>
+					</li>
+					<li class=" tsd-kind-enum">
+						<a href="enums/rocksidespeed.html" class="tsd-kind-icon">Rockside<wbr>Speed</a>
+					</li>
+					<li class=" tsd-kind-enum">
+						<a href="enums/transactionmanagernames.html" class="tsd-kind-icon">Transaction<wbr>Manager<wbr>Names</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/cpktransactionmanager.html" class="tsd-kind-icon">Cpk<wbr>Transaction<wbr>Manager</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/ethlibadapter.html" class="tsd-kind-icon">Eth<wbr>Lib<wbr>Adapter</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/ethersadapter.html" class="tsd-kind-icon">Ethers<wbr>Adapter</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/rocksidetxrelaymanager.html" class="tsd-kind-icon">Rockside<wbr>TxRelay<wbr>Manager</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/safetxrelaymanager.html" class="tsd-kind-icon">Safe<wbr>TxRelay<wbr>Manager</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/web3adapter.html" class="tsd-kind-icon">Web3<wbr>Adapter</a>
+					</li>
+					<li class=" tsd-kind-class">
+						<a href="classes/default.html" class="tsd-kind-icon">default</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/cpkconfig.html" class="tsd-kind-icon">CPKConfig</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/ethersadapterconfig.html" class="tsd-kind-icon">Ethers<wbr>Adapter<wbr>Config</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/execoptions.html" class="tsd-kind-icon">Exec<wbr>Options</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/networksconfig.html" class="tsd-kind-icon">Networks<wbr>Config</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/transaction.html" class="tsd-kind-icon">Transaction</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/transactionmanager.html" class="tsd-kind-icon">Transaction<wbr>Manager</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/transactionmanagerconfig.html" class="tsd-kind-icon">Transaction<wbr>Manager<wbr>Config</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/transactionresult.html" class="tsd-kind-icon">Transaction<wbr>Result</a>
+					</li>
+					<li class=" tsd-kind-interface">
+						<a href="interfaces/web3adapterconfig.html" class="tsd-kind-icon">Web3<wbr>Adapter<wbr>Config</a>
+					</li>
+					<li class=" tsd-kind-type-alias tsd-is-external">
+						<a href="modules.html#txservicemodel" class="tsd-kind-icon">Tx<wbr>Service<wbr>Model</a>
+					</li>
+					<li class=" tsd-kind-variable">
+						<a href="modules.html#defaultnetworks" class="tsd-kind-icon">default<wbr>Networks</a>
+					</li>
+				</ul>
+			</nav>
+		</div>
+	</div>
+</div>
+<footer class="with-border-bottom">
+	<div class="container">
+		<h2>Legend</h2>
+		<div class="tsd-legend-group">
+			<ul class="tsd-legend">
+				<li class="tsd-kind-constructor tsd-parent-kind-class"><span class="tsd-kind-icon">Constructor</span></li>
+				<li class="tsd-kind-property tsd-parent-kind-class"><span class="tsd-kind-icon">Property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class"><span class="tsd-kind-icon">Method</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-property tsd-parent-kind-interface"><span class="tsd-kind-icon">Property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-interface"><span class="tsd-kind-icon">Method</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-constructor tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited constructor</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited method</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><span class="tsd-kind-icon">Private property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><span class="tsd-kind-icon">Private method</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static method</span></li>
+			</ul>
+		</div>
+	</div>
+</footer>
+<div class="container tsd-generator">
+	<p>Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p>
+</div>
+<div class="overlay"></div>
+<script src="assets/js/main.js"></script>
+</body>
+</html>
