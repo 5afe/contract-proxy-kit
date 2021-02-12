@@ -13,9 +13,9 @@ Enable batched transactions and contract account interactions using a unique det
 
 [Video introduction to Building with Safe Apps SDK & Contract Proxy Kit](https://www.youtube.com/watch?v=YGw8WfBw5OI)
 
-[CPK basic tutorial](https://docs.gnosis.io/safe/docs/cpktutorial1/)
+[API Documentation](https://cpk-docs.surge.sh/)
 
-[CPK architecture diagram](https://github.com/gnosis/contract-proxy-kit/tree/master/assets/CPKdiagram.png)
+![CPK Diagram](https://raw.githubusercontent.com/gnosis/contract-proxy-kit/master/packages/contract-proxy-kit/assets/CPKdiagram.png)
 
 ## Usage
 
@@ -45,20 +45,20 @@ In order to obtain the proxy address, use the property [CPK#address](#cpkaddress
 To use *CPK* with web3.js, supply `CPK.create` with a *Web3* instance as the value of the `web3` key. For example:
 
 ```js
-import CPK, { Web3Adapter } from 'contract-proxy-kit';
-import Web3 from 'web3';
+import CPK, { Web3Adapter } from 'contract-proxy-kit'
+import Web3 from 'web3'
 
-const web3 = new Web3(/*...*/);
+const web3 = new Web3(/*...*/)
 
-const ethLibAdapter = new Web3Adapter({ web3 });
+const ethLibAdapter = new Web3Adapter({ web3 })
 
-const cpk = await CPK.create({ ethLibAdapter });
+const cpk = await CPK.create({ ethLibAdapter })
 ```
 
 The proxy owner will be inferred by first trying `web3.eth.defaultAccount`, and then trying to select the 0th account from `web3.eth.getAccounts`. However, an owner account may also be explicitly set with the `ownerAccount` key:
 
 ```js
-const cpk = await CPK.create({ ethLibAdapter, ownerAccount: '0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1' });
+const cpk = await CPK.create({ ethLibAdapter, ownerAccount: '0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1' })
 ```
 
 #### Using with ethers.js
@@ -66,20 +66,20 @@ const cpk = await CPK.create({ ethLibAdapter, ownerAccount: '0x90F8bf6A479f320ea
 To use *CPK* with ethers.js, supply `CPK.create` with the `ethers` object and an ethers.js *Signer* which has an active *Provider* connection. For example:
 
 ```js
-import CPK, { EthersAdapter } from 'contract-proxy-kit';
-import { ethers } from 'ethers');
+import CPK, { EthersAdapter } from 'contract-proxy-kit'
+import { ethers } from 'ethers')
 
-const provider = ethers.getDefaultProvider('homestead');
-const wallet = ethers.Wallet.createRandom().connect(provider);
+const provider = ethers.getDefaultProvider('homestead')
+const wallet = ethers.Wallet.createRandom().connect(provider)
 
-const ethLibAdapter = new EthersAdapter({ ethers, signer: wallet });
+const ethLibAdapter = new EthersAdapter({ ethers, signer: wallet })
 
-const cpk = await CPK.create({ ethLibAdapter });
+const cpk = await CPK.create({ ethLibAdapter })
 ```
 
 The proxy owner will be the account associated with the signer.
 
-#### Networks configuration
+### Networks configuration
 
 Regardless of which type of underlying API is being used, the *CPK* instance will check the ID of the network given by the provider in order to prepare for contract interactions. By default, Ethereum Mainnet (ID 1) and the Rinkeby (ID 4), Goerli (ID 5), and Kovan (ID 42) test networks will have preconfigured addresses for the required contracts:
 
@@ -101,22 +101,37 @@ const cpk = await CPK.create({
       fallbackHandlerAddress: '0xAa588d3737B611baFD7bD713445b314BD453a5C8',
     },
   },
-});
+})
 ```
 
 Please refer to the `migrations/` folder of this package for information on how to deploy the required contracts on a network, and note that these addresses must be available for the connected network in order for *CPK* creation to be successful.
 
-#### Salt nonce configuration
+### Salt nonce configuration
 
 The `CPK.saltNonce` property is predetermined, but it may be passed in as a parameter to generate new proxies for which the owner controls.
 
 ```js
-const saltNonce = "<NEW_SALT_NONCE>";
-const cpk = await CPK.create({ ethLibAdapter, saltNonce });
+const saltNonce = "<NEW_SALT_NONCE>"
+const cpk = await CPK.create({ ethLibAdapter, saltNonce })
+```
+
+### Rockside Relay API integration
+
+By default, the CPK will not use any transaction relayer. However, [Rockside Relay API](https://docs.rockside.io/) can be used to submit all the transactions when the optional property `transactionManager` is passed to the CPK constructor with an instance of the class `RocksideTxRelayManager`.
+
+```js
+const rocksideTxRelayManager = new RocksideTxRelayManager({
+  speed: RocksideSpeed.Fastest
+})
+
+const cpk = await CPK.create({
+  // ...otherOptions,
+  transactionManager: rocksideTxRelayManager,
+})
 ```
 
 <!---
-#### Transaction relayer configuration
+### Transaction relayer configuration
 
 By default, the CPK will not use any transaction relayer. However, the [Safe Relay Service](https://github.com/gnosis/safe-relay-service) can be used to submit all the transactions when the optional property `transactionManager` is passed to the CPK constructor with an instance of the class `SafeTxRelayManager`.
 
@@ -125,7 +140,7 @@ const SafeTxRelayManager = new SafeTxRelayManager({ url: 'https://safe-relay.gno
 const cpk = await CPK.create({
   // ...otherOptions,
   transactionManager: SafeTxRelayManager,
-});
+})
 ```
 
 The URL of the [Safe Relay Service](https://github.com/gnosis/safe-relay-service) is different depending on the network:
@@ -179,7 +194,7 @@ If any of the transactions would revert, this function will reject instead, and 
 For example, if the proxy account holds some ether, it may batch send ether to multiple accounts like so:
 
 ```js
-const cpk = await CPK.create(/* ... */);
+const cpk = await CPK.create(/* ... */)
 const txObject = await cpk.execTransactions([
   {
     operation: CPK.Call, // Not needed because this is the default value.
@@ -193,7 +208,7 @@ const txObject = await cpk.execTransactions([
     to: '0xffcf8fdee72ac11b5c542428b35eef5769c409f0',
     value: `${1e18}`,
   },
-]);
+])
 ```
 
 #### Example calls to web3.js/Truffle contracts
@@ -216,7 +231,7 @@ const { promiEvent, hash } = await cpk.execTransactions([
       `${1e18}`,
     ).encodeABI(),
   },
-]);
+])
 
 ```
 
@@ -238,7 +253,7 @@ const { promiEvent, hash } = await cpk.execTransactions([
       `${1e18}`,
     ).encodeABI(),
   },
-]);
+])
 
 ```
 
@@ -262,7 +277,7 @@ const { transactionResponse, hash } = await cpk.execTransactions([
       `${1e18}`,
     ),
   },
-]);
+])
 ```
 
 #### Setting transaction options
@@ -282,7 +297,7 @@ const txObject = await cpk.execTransactions(
     },
   ],
   { gasPrice: `${3e9}` },
-);
+)
 ```
 
 The gas limit for the overall transaction may also be altered. For example, to set the gas limit for a batch of transactions to one million:
@@ -293,7 +308,7 @@ const txObject = await cpk.execTransactions(
     // transactions...
   ],
   { gasLimit: 1000000 },
-);
+)
 ```
 
 #### Support for connection to a Gnosis Safe
@@ -310,7 +325,7 @@ const { hash } = await cpk.execTransactions([
     to: '0xffcf8fdee72ac11b5c542428b35eef5769c409f0',
     value: `${1e18}`,
   },
-]);
+])
 ```
 
 ## Installation
@@ -335,11 +350,6 @@ Run an instance of `ganache-cli` deterministically:
 ganache-cli -d
 ```
 
-Migrate the contracts to the local network:
-```
-yarn migrate --network local
-```
-
 Run the tests against the local network:
 ```
 yarn test
@@ -353,7 +363,9 @@ Once your app is ready to be deployed, make sure to follow these [steps to run y
 
 When running your app inside the *Safe Web UI*, the configuration used to instantiate the *CPK* will be ignored because the responsibility to send transactions is now transferred to the *Safe Web UI* and the wallet connected to it.
 
-If needed, the method `CPK.safeAppsSdkConnector.isSafeApp` is available to check if the app using the *CPK* is running as a Safe App or not.
+If needed, the method `CPK.safeAppsSdkConnector?.isSafeApp` is available to check if the app using the *CPK* is running as a Safe App or not.
+
+In order to run a CPK app from localhost as a Safe App, copy this project structure [here](https://github.com/gnosis/safe-apps-sdk/tree/master/packages/cra-template-safe-app/template).
 
 ## In-depth Guide
 
@@ -400,7 +412,7 @@ where `msg.sender` is the user creating the proxy. The resulting proxy has an ad
 
 To aid with figuring out the proxy address, the `CPKFactory` contract announces the proxy creation bytecode it uses via an accessor `proxyCreationCode`.
 
-### Examples of applications built with the *CPK*
+## Examples of applications built with the *CPK*
 
-- https://github.com/germartinez/cpk-configuration-app
+- https://github.com/gnosis/contract-proxy-kit/tree/master/packages/cpk-configuration-app
 - https://github.com/gnosis/cpk-compound-tutorial
