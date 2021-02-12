@@ -23,12 +23,13 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "format": "prettier --write src/**/*.{js,jsx,ts,tsx,json}"
+    "format": "prettier --write src/**/*.{js,jsx,ts,tsx,json}",
+    "deploy": "react-scripts build && surge --project=build --domain=https://cpk-app.surge.sh"
   },
   "author": "Gnosis (https://gnosis.io)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/gnosis/cpk-configuration-app/issues"
+    "url": "https://github.com/gnosis/contract-proxy-kit/issues"
   },
   "eslintConfig": {
     "extends": "react-app"

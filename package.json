@@ -6,6 +6,14 @@
       "packages/*"
     ]
   },
+  "scripts": {
+    "cpk:build": "lerna run build --scope contract-proxy-kit --stream",
+    "cpk:test": "lerna run test --scope contract-proxy-kit --stream",
+    "cpk:publish-docs": "lerna run publish-docs --scope contract-proxy-kit --stream",
+    "app:build": "lerna run build --scope cpk-configuration-app --stream",
+    "app:start": "lerna run start --scope cpk-configuration-app --stream",
+    "app:deploy": "lerna run deploy --scope cpk-configuration-app --stream"
+  },
   "devDependencies": {
     "@gnosis.pm/conditional-tokens-contracts": "^0.5.4",
     "@gnosis.pm/safe-contracts": "1.2.0",

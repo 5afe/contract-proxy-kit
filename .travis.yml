@@ -14,7 +14,8 @@ before_install:
 
 install:
   - yarn global add ganache-cli@6.9.1
-  - yarn install
+  - yarn global add lerna
+  - lerna bootstrap
 
 jobs:
   include:
@@ -24,7 +25,7 @@ jobs:
       - ganache-cli -d --defaultBalanceEther 10000 -h 0.0.0.0 --noVMErrorsOnRPCResponse > /dev/null &
       - sleep 60
     script:
-      - yarn test
+      - yarn cpk:test
     after_script:
       - docker logs $CONTAINER_ID
       - docker stop $CONTAINER_ID
