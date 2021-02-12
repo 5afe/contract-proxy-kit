@@ -12,8 +12,7 @@
     "test-rpc": "run-with-testrpc --noVMErrorsOnRPCResponse 'yarn test'",
     "coverage": "nyc report --reporter=text-lcov | coveralls",
     "format": "prettier-eslint --write $PWD/'src/**/*.{js,ts,json}' $PWD/'test/**/*.{js,ts,json}'",
-    "build": "tsc && tsc -p tsconfig.cjs.json && yarn typedoc src/index.ts",
-    "prepack": "yarn build"
+    "build": "tsc && tsc -p tsconfig.cjs.json && yarn typedoc src/index.ts"
   },
   "repository": {
     "type": "git",

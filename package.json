@@ -6,11 +6,6 @@
       "packages/*"
     ]
   },
-  "dependencies": {
-    "contract-proxy-kit": "file:packages/contract-proxy-kit",
-    "cpk-configuration-app": "file:packages/cpk-configuration-app",
-    "lerna": "^3.22.1"
-  },
   "devDependencies": {
     "@gnosis.pm/conditional-tokens-contracts": "^0.5.4",
     "@gnosis.pm/safe-contracts": "1.2.0",
@@ -41,6 +36,7 @@
     "geth-dev-assistant": "^0.1.8",
     "jsdom": "^16.4.0",
     "jsdom-global": "^3.0.2",
+    "lerna": "^3.22.1",
     "nyc": "^15.1.0",
     "prettier": "^2.2.1",
     "prettier-eslint-cli": "^5.0.0",
