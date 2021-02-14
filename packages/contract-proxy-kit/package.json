@@ -33,7 +33,7 @@
     "wallet"
   ],
   "author": "Gnosis (https://gnosis.io)",
-  "license": "MIT",
+  "license": "GPL-3.0",
   "bugs": {
     "url": "https://github.com/gnosis/contract-proxy-kit/issues"
   },

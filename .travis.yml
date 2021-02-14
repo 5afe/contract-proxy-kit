@@ -14,8 +14,6 @@ before_install:
 
 install:
   - yarn global add ganache-cli@6.9.1
-  - yarn global add lerna
-  - lerna bootstrap
 
 jobs:
   include:
