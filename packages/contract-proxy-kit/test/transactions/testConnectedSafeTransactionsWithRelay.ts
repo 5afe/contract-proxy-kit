@@ -48,7 +48,7 @@ export function testConnectedSafeTransactionsWithRelay({
     let multiStep: any
     let erc20: any
 
-    beforeEach('rebind symbols', async () => {
+    beforeEach(async () => {
       cpk = await getCPK()
       const pOwner = await cpk.getOwnerAccount()
       if (!pOwner) throw new Error('proxyOwner is undefined')
@@ -59,13 +59,13 @@ export function testConnectedSafeTransactionsWithRelay({
       conditionalTokens = await getContracts().ConditionalTokens.new()
     })
 
-    beforeEach('deploy mock contracts', async () => {
+    beforeEach(async () => {
       multiStep = await getContracts().MultiStep.new()
       erc20 = await getContracts().ERC20Mintable.new()
       await erc20.mint(proxyOwner, `${1e20}`)
     })
 
-    beforeEach('give proxy ERC20 allowance', async () => {
+    beforeEach(async () => {
       const hash = await sendTransaction({
         from: proxyOwner,
         to: erc20.address,
