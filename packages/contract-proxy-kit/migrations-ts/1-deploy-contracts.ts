@@ -17,3 +17,5 @@ module.exports = function (deployer: Truffle.Deployer, network: string) {
     ].forEach(deploy)
   }
 } as Truffle.Migration
+
+export { }
