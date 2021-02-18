@@ -68,4 +68,8 @@ build/
 # Typechain for migrations
 migrations/
 
+# Documentation
 docs/
+
+# VSCode
+.vscode
