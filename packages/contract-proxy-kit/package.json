@@ -12,7 +12,7 @@
     "test-rpc": "run-with-testrpc --noVMErrorsOnRPCResponse 'yarn test'",
     "coverage": "nyc report --reporter=text-lcov | coveralls",
     "format": "prettier-eslint --write $PWD/'src/**/*.{js,ts,json}' $PWD/'test/**/*.{js,ts,json}'",
-    "build": "tsc -p tsconfig.cjs.json && yarn typedoc src/index.ts",
+    "build": "tsc && tsc -p tsconfig.cjs.json && yarn typedoc src/index.ts",
     "publish-docs": "yarn build && surge --project=docs --domain=https://cpk-docs.surge.sh"
   },
   "repository": {

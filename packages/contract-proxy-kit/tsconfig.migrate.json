@@ -1,8 +1,11 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "./tsconfig.cjs.json",
   "compilerOptions": {
     "outDir": "migrations",
-    "skipLibCheck": true
+    "skipLibCheck": true,
   },
-  "include": ["./migrations-ts", "./types/"]
+  "include": [
+    "./migrations-ts",
+    "./types"
+  ]
 }
