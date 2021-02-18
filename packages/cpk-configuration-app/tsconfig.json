@@ -2,7 +2,7 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "baseUrl": "src",
-    "jsx": "react",
+    "jsx": "react-jsx",
     "lib": [
       "es6",
       "dom"
@@ -10,6 +10,7 @@
     "module": "ESNext",
     "noEmit": true,
     "target": "ESNext",
+    "allowJs": true
   },
   "include": [
     "src"
