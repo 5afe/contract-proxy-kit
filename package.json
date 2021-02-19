@@ -1,66 +1,34 @@
 {
-  "name": "contract-proxy-kit",
-  "version": "2.2.0-alpha.3",
-  "description": "Enable batched transactions and contract account interactions using a unique deterministic Gnosis Safe.",
-  "main": "lib/cjs/index.js",
-  "module": "lib/esm/index.js",
+  "name": "contract-proxy-kit-monorepo",
+  "private": true,
+  "workspaces": {
+    "packages": [
+      "packages/*"
+    ]
+  },
   "scripts": {
-    "generate-types": "typechain --target=truffle-v5 './build/contracts/*.json'",
-    "migrate": "tsc -p ./tsconfig.migrate.json --outDir ./migrations && truffle migrate --network local",
-    "test-ts": "TS_NODE_PROJECT='./tsconfig.cjs.json' nyc mocha -t 20000 -r ts-node/register -r jsdom-global/register ./test/contract-proxy-kit.ts --exit",
-    "test": "yarn generate-types && yarn migrate && yarn test-ts",
-    "test-rpc": "run-with-testrpc --noVMErrorsOnRPCResponse 'yarn test'",
-    "coverage": "nyc report --reporter=text-lcov | coveralls",
-    "format": "prettier-eslint --write $PWD/'src/**/*.{js,ts,json}' $PWD/'test/**/*.{js,ts,json}'",
-    "build": "tsc && tsc -p tsconfig.cjs.json && yarn typedoc src/index.ts",
-    "prepack": "yarn build"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/gnosis/contract-proxy-kit.git"
-  },
-  "keywords": [
-    "gnosis",
-    "safe",
-    "proxy",
-    "cpk",
-    "sdk",
-    "ethereum",
-    "smart",
-    "contract",
-    "batch",
-    "transaction",
-    "wallet"
-  ],
-  "author": "Gnosis (https://gnosis.io)",
-  "license": "GPL-3.0",
-  "bugs": {
-    "url": "https://github.com/gnosis/contract-proxy-kit/issues"
-  },
-  "files": [
-    "contracts",
-    "lib",
-    "src"
-  ],
-  "homepage": "https://github.com/gnosis/contract-proxy-kit#readme",
-  "dependencies": {
-    "@gnosis.pm/safe-apps-sdk": "^1.1.0",
-    "@truffle/contract": "^4.3.6",
-    "@types/uuid": "^8.3.0",
-    "bignumber.js": "^9.0.1",
-    "ethereumjs-util": "^7.0.7",
-    "node-fetch": "^2.6.1",
-    "uuid": "^8.3.2"
+    "cpk:build": "lerna run build --scope contract-proxy-kit --stream",
+    "cpk:test": "lerna run test --scope contract-proxy-kit --stream",
+    "cpk:publish-docs": "lerna run publish-docs --scope contract-proxy-kit --stream",
+    "app:build": "lerna run build --scope cpk-configuration-app --stream",
+    "app:start": "lerna run start --scope cpk-configuration-app --stream",
+    "app:deploy": "lerna run deploy --scope cpk-configuration-app --stream"
   },
   "devDependencies": {
     "@gnosis.pm/conditional-tokens-contracts": "^0.5.4",
     "@gnosis.pm/safe-contracts": "1.2.0",
+    "@testing-library/jest-dom": "^5.11.9",
+    "@testing-library/react": "^11.2.5",
+    "@testing-library/user-event": "^12.7.0",
     "@truffle/hdwallet-provider": "^1.2.1",
     "@typechain/truffle-v5": "^4.0.1",
     "@types/chai": "^4.2.14",
     "@types/chai-as-promised": "^7.1.3",
     "@types/mocha": "^8.2.0",
     "@types/node-fetch": "^2.5.8",
+    "@types/react": "^17.0.1",
+    "@types/react-dom": "^17.0.0",
+    "@types/styled-components": "^5.1.7",
     "@typescript-eslint/eslint-plugin": "^4.14.2",
     "@typescript-eslint/parser": "^4.14.2",
     "chai": "^4.3.0",
@@ -76,6 +44,7 @@
     "geth-dev-assistant": "^0.1.8",
     "jsdom": "^16.4.0",
     "jsdom-global": "^3.0.2",
+    "lerna": "^3.22.1",
     "nyc": "^15.1.0",
     "prettier": "^2.2.1",
     "prettier-eslint-cli": "^5.0.0",
@@ -84,7 +53,7 @@
     "truffle": "^5.1.65",
     "truffle-typings": "^1.0.8",
     "ts-node": "^9.1.1",
-    "typechain": "^3.0.0",
+    "typechain": "^4.0.1",
     "typedoc": "^0.20.23",
     "typescript": "^4.1.3",
     "wait-port": "^0.2.9",

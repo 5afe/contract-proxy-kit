@@ -39,7 +39,7 @@ jspm_packages/
 # TypeScript
 typings/
 lib
-types/truffle-contracts
+**/types/truffle-contracts
 
 # Optional npm cache directory
 .npm
@@ -67,3 +67,9 @@ build/
 
 # Typechain for migrations
 migrations/
+
+# Documentation
+docs/
+
+# VSCode
+.vscode

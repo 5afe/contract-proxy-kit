@@ -18,4 +18,4 @@ module.exports = function (deployer: Truffle.Deployer, network: string) {
   }
 } as Truffle.Migration
 
-export {}
+export { }

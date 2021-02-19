@@ -6,6 +6,6 @@
   },
   "include": [
     "./migrations-ts",
-    "./types",
+    "./types"
   ]
 }
