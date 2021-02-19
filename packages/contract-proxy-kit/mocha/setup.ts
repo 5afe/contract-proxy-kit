@@ -17,6 +17,8 @@ function getRandomValues(buf: Uint8Array) {
   }
   const bytes = crypto.randomBytes(buf.length)
   buf.set(bytes)
+
+  return buf
 }
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
