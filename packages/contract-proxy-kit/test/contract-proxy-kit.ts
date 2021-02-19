@@ -9,6 +9,7 @@ import Web3Maj2Alpha from 'web3-2-alpha'
 import CPK, { SafeTxRelayManager, Web3Adapter } from '../src'
 import { Address } from '../src/utils/basicTypes'
 import { zeroAddress } from '../src/utils/constants'
+import { shouldWorkWithEthers } from './ethers/shouldWorkWithEthers'
 import {
   getContractInstances,
   getContracts,
@@ -152,44 +153,44 @@ describe('CPK', () => {
     ;(() => new SafeTxRelayManager({} as any)).should.throw('url property missing from options')
   })
 
-  //describe('with CPK transaction manager', () => {
-    //web3Versions.forEach((Web3) => {
+  describe('with CPK transaction manager', () => {
+    web3Versions.forEach((Web3) => {
       shouldWorkWithWeb3({
-        Web3: web3Versions[0],
+        Web3,
         defaultAccountBox,
         safeOwnerBox,
         gnosisSafeProviderBox
       })
-    //})
-  //  ethersVersions.forEach((ethers) => {
-  //    shouldWorkWithEthers({
-  //      ethers,
-  //      defaultAccountBox,
-  //      safeOwnerBox,
-  //      gnosisSafeProviderBox
-  //    })
-  //  })
-  //})
+    })
+    ethersVersions.forEach((ethers) => {
+      shouldWorkWithEthers({
+        ethers,
+        defaultAccountBox,
+        safeOwnerBox,
+        gnosisSafeProviderBox
+      })
+    })
+  })
 
-  //describe('with Safe Relay transaction manager', () => {
-  //  const transactionManager = new SafeTxRelayManager({ url: 'http://localhost:8000' })
-  //  web3Versions.forEach((Web3) => {
-  //    shouldWorkWithWeb3({
-  //      Web3,
-  //      defaultAccountBox,
-  //      safeOwnerBox,
-  //      gnosisSafeProviderBox,
-  //      transactionManager
-  //    })
-  //  })
-  //  ethersVersions.forEach((ethers) => {
-  //    shouldWorkWithEthers({
-  //      ethers,
-  //      defaultAccountBox,
-  //      safeOwnerBox,
-  //      gnosisSafeProviderBox,
-  //      transactionManager
-  //    })
-  //  })
-  //})
+  describe('with Safe Relay transaction manager', () => {
+    const transactionManager = new SafeTxRelayManager({ url: 'http://localhost:8000' })
+    web3Versions.forEach((Web3) => {
+      shouldWorkWithWeb3({
+        Web3,
+        defaultAccountBox,
+        safeOwnerBox,
+        gnosisSafeProviderBox,
+        transactionManager
+      })
+    })
+    ethersVersions.forEach((ethers) => {
+      shouldWorkWithEthers({
+        ethers,
+        defaultAccountBox,
+        safeOwnerBox,
+        gnosisSafeProviderBox,
+        transactionManager
+      })
+    })
+  })
 })

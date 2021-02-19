@@ -9,6 +9,7 @@ import CPK, {
   Web3Adapter
 } from '../../src'
 import { Address } from '../../src/utils/basicTypes'
+import { testConnectedSafeTransactionsWithRelay } from '../transactions/testConnectedSafeTransactionsWithRelay'
 import { testSafeTransactions } from '../transactions/testSafeTransactions'
 import { AccountType, toTxHashPromise } from '../utils'
 import { getContractInstances, TestContractInstances } from '../utils/contracts'
@@ -190,7 +191,7 @@ export function shouldWorkWithWeb3({
           `0x8d80ff0a000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000f200${multiStepAddress}00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000024c01cf093000000000000000000000000000000000000000000000000000000000000000100${multiStepAddress}00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000024c01cf09300000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000`
         )
       })
-/*
+
       describe('with warm instance', () => {
         let cpk: CPK
 
@@ -231,7 +232,7 @@ export function shouldWorkWithWeb3({
           accountType: AccountType.Warm
         })
       })
-*/
+
       describe('with fresh accounts', () => {
         testSafeTransactions({
           web3: ueb3,
@@ -267,7 +268,7 @@ export function shouldWorkWithWeb3({
           accountType: AccountType.Fresh
         })
       })
-/*
+
       describe('with mock connected to a Gnosis Safe provider', () => {
         const safeWeb3Box: any[] = []
 
@@ -315,7 +316,7 @@ export function shouldWorkWithWeb3({
           isCpkTransactionManager,
           accountType: AccountType.Connected
         })
-      })*/
+      })
     })
   })
 }
