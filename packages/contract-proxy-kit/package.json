@@ -1,0 +1,56 @@
+{
+  "name": "contract-proxy-kit",
+  "version": "2.2.0-alpha.3",
+  "description": "Enable batched transactions and contract account interactions using a unique deterministic Gnosis Safe.",
+  "main": "lib/cjs/index.js",
+  "module": "lib/esm/index.js",
+  "scripts": {
+    "generate-types": "typechain --target=truffle-v5 './build/contracts/*.json'",
+    "migrate": "tsc -p ./tsconfig.migrate.json --outDir ./migrations && truffle migrate --network local",
+    "test-ts": "TS_NODE_PROJECT='./tsconfig.cjs.json' nyc mocha -t 20000 -r ts-node/register -r jsdom-global/register --file ./mocha/setup.ts ./test/contract-proxy-kit.ts --exit",
+    "test": "yarn generate-types && yarn migrate && yarn test-ts",
+    "test-rpc": "run-with-testrpc --noVMErrorsOnRPCResponse 'yarn test'",
+    "coverage": "nyc report --reporter=text-lcov | coveralls",
+    "format": "prettier-eslint --write $PWD/'src/**/*.{js,ts,json}' $PWD/'test/**/*.{js,ts,json}'",
+    "build": "tsc && tsc -p tsconfig.cjs.json && yarn typedoc src/index.ts",
+    "publish-docs": "yarn build && surge --project=docs --domain=https://cpk-docs.surge.sh"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gnosis/contract-proxy-kit.git"
+  },
+  "keywords": [
+    "gnosis",
+    "safe",
+    "proxy",
+    "cpk",
+    "sdk",
+    "ethereum",
+    "smart",
+    "contract",
+    "batch",
+    "transaction",
+    "wallet"
+  ],
+  "author": "Gnosis (https://gnosis.io)",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/gnosis/contract-proxy-kit/issues"
+  },
+  "files": [
+    "contracts",
+    "lib",
+    "src"
+  ],
+  "homepage": "https://github.com/gnosis/contract-proxy-kit#readme",
+  "dependencies": {
+    "@gnosis.pm/safe-apps-sdk": "^1.1.0",
+    "@truffle/contract": "^4.3.6",
+    "@types/uuid": "^8.3.0",
+    "bignumber.js": "^9.0.1",
+    "ethereumjs-util": "^7.0.7",
+    "ethers": "4.0.45",
+    "node-fetch": "^2.6.1",
+    "uuid": "^8.3.2"
+  }
+}
