@@ -98,7 +98,8 @@ class EthersAdapter extends EthLibAdapter {
    * @returns The balance of the address
    */
   async getBalance(address: Address): Promise<BigNumber> {
-    return await this.signer.provider.getBalance(address)
+    const balance = await this.signer.provider.getBalance(address)
+    return new BigNumber(balance.toString())
   }
 
   /**
