@@ -1,19 +1,14 @@
 import should from 'should'
 import Web3Maj1Min3 from 'web3-1-3'
-import CPK, {
-  EthersAdapter,
-  NetworksConfig,
-  Transaction,
-  TransactionManager,
-  TransactionResult
-} from '../../src'
+import CPK, { EthersAdapter, NetworksConfig, Transaction, TransactionManager } from '../../src'
 import { Address } from '../../src/utils/basicTypes'
 import { testConnectedSafeTransactionsWithRelay } from '../transactions/testConnectedSafeTransactionsWithRelay'
 import { testSafeTransactions } from '../transactions/testSafeTransactions'
 import { AccountType, toTxHashPromise } from '../utils'
 import { getContractInstances, TestContractInstances } from '../utils/contracts'
+import { ethersTestHelpers } from './utils'
 
-interface TestCpkWithEthersProps {
+interface testCpkWithEthersProps {
   ethers: any
   defaultAccountBox: Address[]
   safeOwnerBox: Address[]
@@ -27,7 +22,7 @@ export function testCpkWithEthers({
   safeOwnerBox,
   gnosisSafeProviderBox,
   transactionManager
-}: TestCpkWithEthersProps): void {
+}: testCpkWithEthersProps): void {
   describe(`with ethers version ${ethers.version}`, () => {
     let contracts: TestContractInstances
     const web3 = new Web3Maj1Min3('http://localhost:8545')
@@ -38,88 +33,8 @@ export function testCpkWithEthers({
       new ethers.providers.Web3Provider(web3.currentProvider)
     )
 
-    const ethersTestHelpers = (signerBox: any[]): any => ({
-      checkAddressChecksum: (address?: Address): boolean => {
-        if (!address) {
-          return false
-        }
-        return ethers.utils.getAddress(address) === address
-      },
-      sendTransaction: async ({
-        from,
-        gas,
-        ...txObj
-      }: {
-        from: Address
-        gas: number
-      }): Promise<any> => {
-        const signer = signerBox[0]
-        const expectedFrom = await signer.getAddress()
-        if (from && from.toLowerCase() !== expectedFrom.toLowerCase()) {
-          throw new Error(`from ${from} doesn't match signer ${expectedFrom}`)
-        }
-
-        if (signer.constructor.name === 'JsonRpcSigner') {
-          // mock Gnosis Safe provider
-          return (await signer.sendTransaction({ gasLimit: gas, ...txObj })).hash
-        }
-
-        // See: https://github.com/ethers-io/ethers.js/issues/299
-        const nonce: number = await signer.provider.getTransactionCount(await signer.getAddress())
-
-        let signedTx: string
-        // TO-DO: Use semver comparison
-        if (ethers.version.split('.')[0] === '4') {
-          signedTx = await signer.sign({ nonce, gasLimit: gas, ...txObj })
-        } else if (ethers.version.split('.')[0] === 'ethers/5') {
-          signedTx = await signer.signTransaction({ nonce, gasLimit: gas, ...txObj })
-        } else throw new Error(`ethers version ${ethers.version} not supported`)
-
-        return (await signer.provider.sendTransaction(signedTx)).hash
-      },
-      randomHexWord: (): string => ethers.utils.hexlify(ethers.utils.randomBytes(32)),
-      fromWei: (amount: number): number =>
-        Number(ethers.utils.formatUnits(amount.toString(), 'ether')),
-      getTransactionCount: (address: Address): Promise<number> =>
-        signer.provider.getTransactionCount(address),
-      getBalance: (address: Address): Promise<number> => signer.provider.getBalance(address),
-      testedTxObjProps: 'the TransactionResponse and the hash',
-      checkTxObj: (
-        txsSize: number,
-        accountType: AccountType,
-        txResult: TransactionResult
-      ): void => {
-        const safeConnected = accountType === AccountType.Connected
-        should.exist(txResult.hash)
-        if (!safeConnected || (safeConnected && txsSize === 1)) {
-          should.exist(txResult.transactionResponse)
-        }
-      },
-      waitTxReceipt: (txResult: TransactionResult): any =>
-        signer.provider.waitForTransaction(txResult.hash),
-      waitSafeTxReceipt: async (txResult: TransactionResult): Promise<any> => {
-        if (!txResult.transactionResponse) return
-        const receipt = await txResult.transactionResponse
-        if (!receipt) return
-        txResult.hash?.should.equal(receipt.hash)
-        return receipt
-      }
-    })
-
     before('setup contracts', async () => {
       contracts = getContractInstances()
-    })
-
-    it('should not produce ethLibAdapter instances when ethers not provided', async () => {
-      ;((): EthersAdapter => new EthersAdapter({ signer } as any)).should.throw(
-        'ethers property missing from options'
-      )
-    })
-
-    it('should not produce ethLibAdapter instances when signer not provided', async () => {
-      ;((): EthersAdapter => new EthersAdapter({ ethers } as any)).should.throw(
-        'signer property missing from options'
-      )
     })
 
     it('should not produce CPK instances when ethers not connected to a recognized network', async () => {
@@ -237,7 +152,7 @@ export function testCpkWithEthers({
 
         testSafeTransactions({
           web3,
-          ...ethersTestHelpers([signer]),
+          ...ethersTestHelpers(ethers, signer, [signer]),
           async getCPK() {
             return cpk
           },
@@ -251,7 +166,7 @@ export function testCpkWithEthers({
         const freshSignerBox: any[] = []
         testSafeTransactions({
           web3,
-          ...ethersTestHelpers(freshSignerBox),
+          ...ethersTestHelpers(ethers, signer, freshSignerBox),
           async getCPK() {
             freshSignerBox[0] = ethers.Wallet.createRandom().connect(
               new ethers.providers.Web3Provider(web3.currentProvider)
@@ -311,7 +226,7 @@ export function testCpkWithEthers({
         if (!isCpkTransactionManager) {
           testConnectedSafeTransactionsWithRelay({
             web3,
-            ...ethersTestHelpers(safeSignerBox),
+            ...ethersTestHelpers(ethers, signer, safeSignerBox),
             async getCPK() {
               return cpk
             },
@@ -326,7 +241,7 @@ export function testCpkWithEthers({
 
         testSafeTransactions({
           web3,
-          ...ethersTestHelpers(safeSignerBox),
+          ...ethersTestHelpers(ethers, signer, safeSignerBox),
           async getCPK() {
             return cpk
           },
