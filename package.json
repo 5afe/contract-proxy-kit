@@ -8,7 +8,7 @@
   },
   "scripts": {
     "cpk:build": "lerna run build --scope contract-proxy-kit --stream",
-    "cpk:test": "lerna run test --scope contract-proxy-kit --stream",
+    "cpk:test": "FORCE_COLOR=1 lerna run test --scope contract-proxy-kit --stream",
     "cpk:publish-docs": "lerna run publish-docs --scope contract-proxy-kit --stream",
     "app:build": "lerna run build --scope cpk-configuration-app --stream",
     "app:start": "lerna run start --scope cpk-configuration-app --stream",
