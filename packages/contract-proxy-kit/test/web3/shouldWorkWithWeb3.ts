@@ -14,7 +14,7 @@ import { testSafeTransactions } from '../transactions/testSafeTransactions'
 import { AccountType, toTxHashPromise } from '../utils'
 import { getContractInstances, TestContractInstances } from '../utils/contracts'
 
-interface ShouldWorkWithWeb3Props {
+interface TestCpkWithWeb3Props {
   Web3: typeof Web3Maj1Min3 | typeof Web3Maj2Alpha
   defaultAccountBox: Address[]
   safeOwnerBox: Address[]
@@ -22,13 +22,13 @@ interface ShouldWorkWithWeb3Props {
   transactionManager?: TransactionManager
 }
 
-export function shouldWorkWithWeb3({
+export function testCpkWithWeb3({
   Web3,
   defaultAccountBox,
   safeOwnerBox,
   gnosisSafeProviderBox,
   transactionManager
-}: ShouldWorkWithWeb3Props): void {
+}: TestCpkWithWeb3Props): void {
   describe(`with Web3 version ${new Web3(Web3.givenProvider).version}`, () => {
     let contracts: TestContractInstances
     const ueb3 = new Web3('http://localhost:8545')

@@ -13,7 +13,7 @@ import { testSafeTransactions } from '../transactions/testSafeTransactions'
 import { AccountType, toTxHashPromise } from '../utils'
 import { getContractInstances, TestContractInstances } from '../utils/contracts'
 
-interface ShouldWorkWithEthersProps {
+interface TestCpkWithEthersProps {
   ethers: any
   defaultAccountBox: Address[]
   safeOwnerBox: Address[]
@@ -21,13 +21,13 @@ interface ShouldWorkWithEthersProps {
   transactionManager?: TransactionManager
 }
 
-export function shouldWorkWithEthers({
+export function testCpkWithEthers({
   ethers,
   defaultAccountBox,
   safeOwnerBox,
   gnosisSafeProviderBox,
   transactionManager
-}: ShouldWorkWithEthersProps): void {
+}: TestCpkWithEthersProps): void {
   describe(`with ethers version ${ethers.version}`, () => {
     let contracts: TestContractInstances
     const web3 = new Web3Maj1Min3('http://localhost:8545')
