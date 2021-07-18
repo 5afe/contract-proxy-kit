@@ -10,6 +10,7 @@ import CPK, { SafeTxRelayManager, Web3Adapter } from '../src'
 import { Address } from '../src/utils/basicTypes'
 import { zeroAddress } from '../src/utils/constants'
 import { testCpkWithEthers } from './ethers/shouldWorkWithEthers'
+import { testEthersAdapter } from './ethers/testEthersAdapter'
 import {
   getContractInstances,
   getContracts,
@@ -18,6 +19,7 @@ import {
 } from './utils/contracts'
 import makeEmulatedSafeProvider from './utils/makeEmulatedSafeProvider'
 import { testCpkWithWeb3 } from './web3/shouldWorkWithWeb3'
+import { testWeb3Adapter } from './web3/testWeb3Adapter'
 chai.use(chaiAsPromised)
 
 const web3Versions = [Web3Maj1Min3, Web3Maj2Alpha]
@@ -151,6 +153,13 @@ describe('Contract Proxy Kit', () => {
 
   it('should not produce SafeTxRelayManager instances when url not provided', async () => {
     ;(() => new SafeTxRelayManager({} as any)).should.throw('url property missing from options')
+  })
+
+  describe('EthLibAdapters', () => {
+    web3Versions.forEach((Web3) => testWeb3Adapter({ Web3, defaultAccountBox, safeOwnerBox }))
+    ethersVersions.forEach((ethers) =>
+      testEthersAdapter({ ethers, defaultAccountBox, safeOwnerBox })
+    )
   })
 
   describe('CPK with Transaction Manager', () => {
