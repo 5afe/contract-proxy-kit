@@ -45,10 +45,10 @@
   "homepage": "https://github.com/gnosis/contract-proxy-kit#readme",
   "dependencies": {
     "@gnosis.pm/safe-apps-sdk": "^1.1.0",
-    "@truffle/contract": "^4.3.6",
-    "@types/uuid": "^8.3.0",
+    "@truffle/contract": "^4.3.25",
+    "@types/uuid": "^8.3.1",
     "bignumber.js": "^9.0.1",
-    "ethereumjs-util": "^7.0.7",
+    "ethereumjs-util": "^7.1.0",
     "ethers": "4.0.45",
     "node-fetch": "^2.6.1",
     "uuid": "^8.3.2"

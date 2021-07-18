@@ -1,4 +1,4 @@
-import Web3Maj1Min3 from 'web3-1-3'
+import Web3Maj1Min3 from 'web3-1-4'
 import { EthersAdapter } from '../../src'
 import { Address } from '../../src/utils/basicTypes'
 import { toTxHashPromise } from '../utils'

@@ -1,4 +1,4 @@
-import Web3Maj1Min3 from 'web3-1-3'
+import Web3Maj1Min3 from 'web3-1-4'
 import Web3Maj2Alpha from 'web3-2-alpha'
 import { Web3Adapter } from '../../src'
 import { Address } from '../../src/utils/basicTypes'
