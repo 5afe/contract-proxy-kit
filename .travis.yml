@@ -1,7 +1,7 @@
-dist: xenial
+dist: focal
 os: linux
 language: node_js
-node_js: lts/dubnium
+node_js: lts/fermium
 cache: yarn
 services:
   - docker
