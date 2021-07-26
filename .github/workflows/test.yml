@@ -12,7 +12,7 @@ jobs:
         id: install-node
         uses: actions/setup-node@v1
         with:
-          node-version: 14.x
+          node-version: 15.11.x
 
       - name: Start Safe Relay Service
         id: safe-relay-service
@@ -26,7 +26,7 @@ jobs:
       - name: Install
         id: installation
         run: |
-          yarn global add ganache-cli@6.9.1
+          yarn global add ganache-cli@6.12.2
           yarn
 
       - name: Run tests
