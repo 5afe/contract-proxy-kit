@@ -20,6 +20,7 @@ jobs:
           git clone https://github.com/gnosis/safe-relay-service.git
           cd safe-relay-service
           git checkout cpk-test
+          sudo service postgresql stop
           docker-compose -f docker-compose.yml -f docker-compose.dev.yml build
           CONTAINER_ID=$(docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d)
 
@@ -34,7 +35,6 @@ jobs:
         run: |
           ganache-cli -d --defaultBalanceEther 10000 -h 0.0.0.0 --noVMErrorsOnRPCResponse > /dev/null &
           sleep 10
-          curl http://localhost:8545 -I
           yarn cpk:test
           docker logs $CONTAINER_ID
           docker stop $CONTAINER_ID
