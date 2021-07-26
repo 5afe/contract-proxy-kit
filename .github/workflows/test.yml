@@ -14,21 +14,24 @@ jobs:
           node-version: 14.x
 
       - name: Start Safe Relay Service
-        run: git clone https://github.com/gnosis/safe-relay-service.git
-        run: cd safe-relay-service
-        run: git checkout cpk-test
-        run: docker-compose -f docker-compose.yml -f docker-compose.dev.yml build
+        run: |
+          git clone https://github.com/gnosis/safe-relay-service.git
+          cd safe-relay-service
+          git checkout cpk-test
+          docker-compose -f docker-compose.yml -f docker-compose.dev.yml build
 
       - name: Install
-        run: yarn global add ganache-cli@6.9.1
-        run: yarn
+        run: |
+          yarn global add ganache-cli@6.9.1
+          yarn
 
       - name: Run tests
-        run: CONTAINER_ID=$(docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d)
-        run: ganache-cli -d --defaultBalanceEther 10000 -h 0.0.0.0 --noVMErrorsOnRPCResponse > /dev/null &
-        run: sleep 60
-        run: yarn cpk:test
-        run: docker logs $CONTAINER_ID
-        run: docker stop $CONTAINER_ID
-        run: docker rm $CONTAINER_ID
-        run: yarn coverage
+        run: |
+          CONTAINER_ID=$(docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d)
+          ganache-cli -d --defaultBalanceEther 10000 -h 0.0.0.0 --noVMErrorsOnRPCResponse > /dev/null &
+          sleep 60
+          yarn cpk:test
+          docker logs $CONTAINER_ID
+          docker stop $CONTAINER_ID
+          docker rm $CONTAINER_ID
+          yarn coverage
