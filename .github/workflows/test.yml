@@ -32,7 +32,7 @@ jobs:
       - name: Run tests
         id: tests
         run: |
-          ganache-cli -d --defaultBalanceEther 10000 -h 0.0.0.0 --noVMErrorsOnRPCResponse &
+          ganache-cli -d --defaultBalanceEther 10000 -h 0.0.0.0 --noVMErrorsOnRPCResponse > /dev/null &
           sleep 10
           curl http://localhost:8545 -I
           yarn cpk:test
