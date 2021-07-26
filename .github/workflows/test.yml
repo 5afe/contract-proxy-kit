@@ -5,14 +5,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
+        id: checkout
         uses: actions/checkout@v2
 
       - name: Install node
+        id: install-node
         uses: actions/setup-node@v1
         with:
           node-version: 14.x
 
       - name: Start Safe Relay Service
+        id: safe-relay-service
         run: |
           git clone https://github.com/gnosis/safe-relay-service.git
           cd safe-relay-service
@@ -21,19 +24,19 @@ jobs:
           CONTAINER_ID=$(docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d)
 
       - name: Install
+        id: installation
         run: |
           yarn global add ganache-cli@6.9.1
           yarn
 
-      - name: Run ganache
-        run: ganache-cli -d --defaultBalanceEther 10000 -h 0.0.0.0 --noVMErrorsOnRPCResponse > /dev/null &
-
       - name: Run tests
+        id: tests
         run: |
+          ganache-cli -d --defaultBalanceEther 10000 -h 0.0.0.0 --noVMErrorsOnRPCResponse &
+          sleep 10
+          curl http://localhost:8545 -I
           yarn cpk:test
           docker logs $CONTAINER_ID
           docker stop $CONTAINER_ID
           docker rm $CONTAINER_ID
           yarn coverage
-        wait-on: http://localhost:8545
-        wait-on-timeout: 200
