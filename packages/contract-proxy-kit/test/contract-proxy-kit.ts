@@ -180,7 +180,7 @@ describe('Contract Proxy Kit', () => {
       })
     })
   })
-
+/*
   describe('CPK with Safe Relay Transaction Manager', () => {
     const transactionManager = new SafeTxRelayManager({ url: 'http://localhost:8000' })
     web3Versions.forEach((Web3) => {
@@ -202,4 +202,5 @@ describe('Contract Proxy Kit', () => {
       })
     })
   })
+*/
 })
