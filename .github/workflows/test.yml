@@ -1,0 +1,42 @@
+name: CPK Tests
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        id: checkout
+        uses: actions/checkout@v2
+
+      - name: Install node
+        id: install-node
+        uses: actions/setup-node@v1
+        with:
+          node-version: 15.11.x
+
+      - name: Start Safe Relay Service
+        id: safe-relay-service
+        run: |
+          git clone https://github.com/gnosis/safe-relay-service.git
+          cd safe-relay-service
+          git checkout cpk-test
+          sudo service postgresql stop
+          docker-compose -f docker-compose.yml -f docker-compose.dev.yml build
+          CONTAINER_ID=$(docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d)
+
+      - name: Install
+        id: installation
+        run: |
+          yarn global add ganache-cli@6.12.2
+          yarn
+
+      - name: Run tests
+        id: tests
+        run: |
+          ganache-cli -d --defaultBalanceEther 10000 -h 0.0.0.0 --noVMErrorsOnRPCResponse > /dev/null &
+          sleep 10
+          yarn cpk:test
+          docker logs $CONTAINER_ID
+          docker stop $CONTAINER_ID
+          docker rm $CONTAINER_ID
+          yarn coverage
