@@ -22,8 +22,7 @@ jobs:
           git checkout cpk-test
           sudo service postgresql stop
           docker-compose -f docker-compose.yml -f docker-compose.dev.yml build
-          export CONTAINER_ID=$(docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d)
-          echo "CONTAINER_ID=$CONTAINER_ID >> $GITHUB_ENV"
+          docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
 
       - name: Install
         id: installation
@@ -37,6 +36,3 @@ jobs:
           ganache-cli -d --defaultBalanceEther 10000 -h 0.0.0.0 --noVMErrorsOnRPCResponse > /dev/null &
           sleep 10
           yarn cpk:test
-          docker logs ${{ env.CONTAINER_ID }}
-          docker stop ${{ env.CONTAINER_ID }}
-          docker rm ${{ env.CONTAINER_ID }}
