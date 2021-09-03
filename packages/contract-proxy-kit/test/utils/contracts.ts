@@ -1,5 +1,5 @@
 const TruffleContract = require('@truffle/contract')
-import Web3Maj1Min3 from 'web3-1-3'
+import Web3Maj1Min3 from 'web3-1-4'
 import ConditionalTokensJson from '../../build/contracts/ConditionalTokens.json'
 import CPKFactoryJson from '../../build/contracts/CPKFactory.json'
 import DailyLimitModuleJson from '../../build/contracts/DailyLimitModule.json'
