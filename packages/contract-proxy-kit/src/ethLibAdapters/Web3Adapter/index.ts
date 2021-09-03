@@ -117,7 +117,8 @@ class Web3Adapter extends EthLibAdapter {
    * @returns The balance of the address
    */
   async getBalance(address: Address): Promise<BigNumber> {
-    return new BigNumber(await this.web3.eth.getBalance(address))
+    const balance = await this.web3.eth.getBalance(address)
+    return new BigNumber(balance.toString())
   }
 
   /**

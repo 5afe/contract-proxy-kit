@@ -1,20 +1,15 @@
 import should from 'should'
-import Web3Maj1Min3 from 'web3-1-3'
+import Web3Maj1Min3 from 'web3-1-4'
 import Web3Maj2Alpha from 'web3-2-alpha'
-import CPK, {
-  NetworksConfig,
-  Transaction,
-  TransactionManager,
-  TransactionResult,
-  Web3Adapter
-} from '../../src'
+import CPK, { NetworksConfig, Transaction, TransactionManager, Web3Adapter } from '../../src'
 import { Address } from '../../src/utils/basicTypes'
 import { testConnectedSafeTransactionsWithRelay } from '../transactions/testConnectedSafeTransactionsWithRelay'
 import { testSafeTransactions } from '../transactions/testSafeTransactions'
-import { AccountType, toTxHashPromise } from '../utils'
+import { AccountType } from '../utils'
 import { getContractInstances, TestContractInstances } from '../utils/contracts'
+import { testHelperMaker } from './utils'
 
-interface ShouldWorkWithWeb3Props {
+interface TestCpkWithWeb3Props {
   Web3: typeof Web3Maj1Min3 | typeof Web3Maj2Alpha
   defaultAccountBox: Address[]
   safeOwnerBox: Address[]
@@ -22,87 +17,23 @@ interface ShouldWorkWithWeb3Props {
   transactionManager?: TransactionManager
 }
 
-export function shouldWorkWithWeb3({
+export function testCpkWithWeb3({
   Web3,
   defaultAccountBox,
   safeOwnerBox,
   gnosisSafeProviderBox,
   transactionManager
-}: ShouldWorkWithWeb3Props): void {
+}: TestCpkWithWeb3Props): void {
   describe(`with Web3 version ${new Web3(Web3.givenProvider).version}`, () => {
     let contracts: TestContractInstances
     const ueb3 = new Web3('http://localhost:8545')
     const isCpkTransactionManager =
       !transactionManager || transactionManager.config.name === 'CpkTransactionManager'
 
-    const testHelperMaker = (web3Box: any): any => ({
-      checkAddressChecksum: (address?: Address): boolean => {
-        if (!address) {
-          return false
-        }
-        return web3Box[0].utils.checkAddressChecksum(address)
-      },
-      sendTransaction: (txObj: any): any => toTxHashPromise(web3Box[0].eth.sendTransaction(txObj)),
-      randomHexWord: (): string => web3Box[0].utils.randomHex(32),
-      fromWei: (amount: number): number => Number(web3Box[0].utils.fromWei(amount)),
-      getTransactionCount: (account: Address): number =>
-        web3Box[0].eth.getTransactionCount(account),
-      testedTxObjProps: 'the PromiEvent for the transaction and the hash',
-      getBalance: (address: Address): number =>
-        web3Box[0].eth
-          .getBalance(address)
-          .then((balance: number) => web3Box[0].utils.toBN(balance)),
-      checkTxObj: (
-        txsSize: number,
-        accountType: AccountType,
-        txResult: TransactionResult,
-        isCpkTransactionManager: boolean
-      ): void => {
-        const safeConnected = accountType === AccountType.Connected
-        should.exist(txResult.hash)
-        if (!safeConnected || (safeConnected && txsSize === 1)) {
-          should.exist(txResult.promiEvent)
-          if (isCpkTransactionManager) {
-            should.exist(txResult.sendOptions)
-          }
-        }
-      },
-      waitTxReceipt: async (txResult: TransactionResult): Promise<any> => {
-        let receipt = await web3Box[0].eth.getTransactionReceipt(txResult.hash)
-        while (!receipt) {
-          await new Promise((resolve) => setTimeout(resolve, 50))
-          receipt = await web3Box[0].eth.getTransactionReceipt(txResult.hash)
-        }
-        return receipt
-      },
-      waitSafeTxReceipt: async (txResult: TransactionResult): Promise<any> => {
-        let receipt: any
-        if (!txResult.promiEvent) return
-        if (isCpkTransactionManager) {
-          receipt = await new Promise((resolve, reject) =>
-            txResult.promiEvent
-              .on('confirmation', (confirmationNumber: any, receipt: any) => resolve(receipt))
-              .catch(reject)
-          )
-        } else {
-          receipt = txResult.promiEvent.transactionHash
-        }
-        if (!receipt) return
-        txResult.hash?.should.equal(receipt.transactionHash)
-        return receipt
-      }
-    })
-
-    const ueb3TestHelpers = testHelperMaker([ueb3])
+    const ueb3TestHelpers = testHelperMaker(isCpkTransactionManager, [ueb3])
 
     before('setup contracts', async () => {
       contracts = getContractInstances()
-    })
-
-    it('should not produce ethLibAdapter instances when web3 not provided', async () => {
-      ;((): Web3Adapter => new Web3Adapter({} as any)).should.throw(
-        'web3 property missing from options'
-      )
     })
 
     it('should not produce CPK instances when web3 not connected to a recognized network', async () => {
@@ -293,7 +224,7 @@ export function shouldWorkWithWeb3({
         if (!isCpkTransactionManager) {
           testConnectedSafeTransactionsWithRelay({
             web3: ueb3,
-            ...testHelperMaker(safeWeb3Box),
+            ...testHelperMaker(isCpkTransactionManager, safeWeb3Box),
             async getCPK() {
               return cpk
             },
@@ -306,7 +237,7 @@ export function shouldWorkWithWeb3({
 
         testSafeTransactions({
           web3: ueb3,
-          ...testHelperMaker(safeWeb3Box),
+          ...testHelperMaker(isCpkTransactionManager, safeWeb3Box),
           async getCPK() {
             return cpk
           },

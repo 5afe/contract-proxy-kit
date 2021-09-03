@@ -1,6 +1,5 @@
 # Contract Proxy Kit Monorepo
 
-[![Build Status](https://travis-ci.org/gnosis/contract-proxy-kit.svg?branch=master)](https://travis-ci.org/gnosis/contract-proxy-kit)
 [![Coverage Status](https://coveralls.io/repos/github/gnosis/contract-proxy-kit/badge.svg?branch=master)](https://coveralls.io/github/gnosis/contract-proxy-kit?branch=master)
 
 ## Packages
