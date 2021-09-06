@@ -41,10 +41,11 @@ class EthersV5ContractAdapter implements Contract {
   ): Promise<EthersTransactionResult> {
     let transactionResponse
     if (options) {
-      const { from, gas, ...sendOptions } = normalizeGasLimit(options)
+      const { from, gas, value, ...sendOptions } = normalizeGasLimit(options)
       await this.ethersAdapter.checkFromAddress(from)
       transactionResponse = await this.contract.functions[methodName](...params, {
         gasLimit: gas,
+        value: value,
         ...sendOptions
       })
     } else {

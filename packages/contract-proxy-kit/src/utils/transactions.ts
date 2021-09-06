@@ -27,6 +27,7 @@ export interface CallOptions extends BaseTxOptions {
 
 export interface SendOptions extends ExecOptions {
   from: Address
+  value?: NumberLike
 }
 
 export interface EthTx {

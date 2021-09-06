@@ -17,9 +17,9 @@ import { predeterminedSaltNonce } from './utils/constants'
 import { getHexDataLength, joinHexData } from './utils/hexData'
 import { getNetworkIdFromName } from './utils/networks'
 import {
-  ExecOptions,
   normalizeGasLimit,
   OperationType,
+  SendOptions,
   standardizeTransaction,
   StandardTransaction,
   Transaction,
@@ -327,7 +327,7 @@ class CPK {
    */
   async execTransactions(
     transactions: Transaction[],
-    options?: ExecOptions
+    options?: SendOptions
   ): Promise<TransactionResult> {
     const standardizedTxs = transactions.map(standardizeTransaction)
 
