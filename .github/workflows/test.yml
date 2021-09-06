@@ -22,7 +22,7 @@ jobs:
           git checkout cpk-test
           sudo service postgresql stop
           docker-compose -f docker-compose.yml -f docker-compose.dev.yml build
-          CONTAINER_ID = $(docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d)
+          export CONTAINER_ID = $(docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d)
           echo $CONTAINER_ID
           echo "CONTAINER_ID=$CONTAINER_ID" >> $GITHUB_ENV
 
