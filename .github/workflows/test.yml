@@ -25,6 +25,7 @@ jobs:
           echo 'CONTAINER_ID<<EOF' >> $GITHUB_ENV
           docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d >> $GITHUB_ENV
           echo 'EOF' >> $GITHUB_ENV
+          echo $CONTAINER_ID
 
       - name: Install
         id: installation
@@ -36,8 +37,7 @@ jobs:
         id: tests
         run: |
           ganache-cli -d --defaultBalanceEther 10000 -h 0.0.0.0 --noVMErrorsOnRPCResponse > /dev/null &
-          sleep 10
-          yarn cpk:test
+          echo ${{ env.CONTAINER_ID }}
           docker logs ${{ env.CONTAINER_ID }}
           docker stop ${{ env.CONTAINER_ID }}
           docker rm ${{ env.CONTAINER_ID }}
