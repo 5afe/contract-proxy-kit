@@ -22,9 +22,9 @@ jobs:
           git checkout cpk-test
           sudo service postgresql stop
           docker-compose -f docker-compose.yml -f docker-compose.dev.yml build
-          export CONTAINER_ID=$(docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d)
-          echo $CONTAINER_ID
-          echo "CONTAINER_ID=$CONTAINER_ID" >> $GITHUB_ENV
+          echo 'CONTAINER_ID<<EOF' >> $GITHUB_ENV
+          docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d >> $GITHUB_ENV
+          echo 'EOF' >> $GITHUB_ENV
 
       - name: Install
         id: installation
