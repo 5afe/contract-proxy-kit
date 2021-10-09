@@ -1,7 +1,7 @@
 import ContractManager from '../contractManager'
 import EthLibAdapter, { Contract } from '../ethLibAdapters/EthLibAdapter'
 import { Address } from '../utils/basicTypes'
-import { StandardTransaction, TransactionResult } from '../utils/transactions'
+import { StandardTransaction, TransactionResult, SendOptions } from '../utils/transactions'
 
 export enum TransactionManagerNames {
   CpkTxManager = 'CpkTransactionManager',
@@ -31,7 +31,7 @@ export interface ExecTransactionProps {
   saltNonce: string
   isDeployed: boolean
   isConnectedToSafe: boolean
-  sendOptions: any
+  sendOptions: SendOptions
 }
 
 interface TransactionManager {
