@@ -66,7 +66,7 @@ To use *CPK* with ethers.js, supply `CPK.create` with the `ethers` object and an
 
 ```js
 import CPK, { EthersAdapter } from 'contract-proxy-kit'
-import { ethers } from 'ethers')
+import { ethers } from 'ethers'
 
 const provider = ethers.getDefaultProvider('homestead')
 const wallet = ethers.Wallet.createRandom().connect(provider)
